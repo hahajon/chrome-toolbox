@@ -1,0 +1,50 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+    "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+  <title></title>
+</head>
+<body>
+<embed type="application/x-npvideoalone" id="pluginId">
+  Failed to load np plugin. You might be using the old version of the extension.
+</embed>
+<script type="text/javascript">
+  var pluginId = document.getElementById('pluginId');
+  chrome.extension.onRequest.addListener(function(request, sender, sendResponse) {
+    if (request && request.msg == 'popupVideoWindow') {
+      popupVideoAloneWindow(request, sender, request.width, request.height);
+    }
+  });
+
+  function popupVideoAloneWindow(request, sender, width, height) {
+    var parentWindowId = sender.tab.windowId;
+    chrome.windows.create({width: width, height: height + 25, url: 'about:black', type: 'normal'}, function(window) {
+      chrome.tabs.move(sender.tab.id,{windowId: window.id,index:1},function(){
+        chrome.tabs.getAllInWindow(window.id, function(tabs) {
+          chrome.tabs.remove(tabs[0].id);
+          pluginId.ShowVideoAlone(sender.tab.title, request.orgTitle, parentWindowId, window.id, sender.tab.id);
+        });
+      });
+
+    });
+  }
+
+  function restoreVideoAlone(parentWindowId, curWindowId, tabId) {
+    chrome.tabs.sendRequest(tabId, {msg: 'restoreVideoAlone'}, function(response) {
+      if (response && response.msg == 'restoreVideoWindow') {
+        chrome.windows.get(parentWindowId, function(window){
+          if (window){
+            chrome.tabs.getAllInWindow(window.id,function(tabs){
+              chrome.tabs.move(tabId, {windowId:window.id,index:tabs ? tabs.length:0},function(){
+                chrome.tabs.update(tabId, {selected:true});
+              });
+            });
+          }
+      });
+      }
+    })
+  }
+</script>
+
+</body>
+</html>
