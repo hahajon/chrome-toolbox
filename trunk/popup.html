@@ -1,0 +1,87 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title></title>
+<style type="text/css">
+  body {
+    width: 180px;
+    font-size: 12px;
+    text-align: center;
+  }
+  #hit {
+    display: none;
+  }
+
+  .menu {
+    display: block;
+    width: 140px;
+    margin: 5px auto;
+    line-height: 20px;
+    border:1px solid #bec9ce;
+    color:#3d5d6a;
+    cursor:pointer;
+  }
+
+  .menu:hover {
+    background-color:#3d5d6a;
+    color:#ffffff;
+  }
+
+  .menu-disable {
+    width: 140px;
+    margin: 5px auto;
+    line-height: 20px;
+    border:1px solid #dddddd;
+    background: #eeeeee;
+    color: #bbbbbb;
+  }
+</style>
+<script type="text/javascript" src="webdatabase-operator.js"></script>
+</head>
+<body>
+<div id="btnFillForm" class="menu-disable"></div>
+<div id="btnSaveForm" class="menu"></div>
+<div id="btnDeleteForm" class="menu-disable"></div>
+
+<script type="text/javascript">
+  function init() {
+    i18nReplace('btnFillForm', 'btnFillForm');
+    i18nReplace('btnSaveForm', 'btnSaveForm');
+    i18nReplace('btnDeleteForm', 'btnDeleteForm');
+    setPopupMenuStatus();
+  }
+  function i18nReplace(id, messageName) {
+    document.getElementById(id).innerText = chrome.i18n.getMessage(messageName);
+  }
+  init();
+
+  function setPopupMenuStatus() {
+    chrome.tabs.getSelected(null, function(tab) {
+      document.getElementById('btnSaveForm').addEventListener('click', function(){
+        chrome.tabs.executeScript(null, {code: 'sendFormData("' + tab.url + '","' + tab.title + '")'});
+        window.close();
+      }, false);
+      var fillForm = new FillForm();
+      fillForm.selectByUrl(tab.url, function(tx, results) {
+        if (results.rows.length > 0) {
+          var formInfo = results.rows.item(0).formInfo;
+          console.log('formInfo:' + typeof formInfo);
+          document.getElementById('btnFillForm').className = 'menu';
+          document.getElementById('btnFillForm').addEventListener('click', function(){
+            chrome.tabs.executeScript(null, {code: 'fillForm(' + formInfo + ')' });
+            window.close();
+          }, false);
+          document.getElementById('btnDeleteForm').className = 'menu';
+          document.getElementById('btnDeleteForm').addEventListener('click', function(){
+            fillForm.deleteByUrl(tab.url);
+            window.close();
+          }, false);
+        }
+      });
+    });
+  }
+</script>
+</body>
+</html>
