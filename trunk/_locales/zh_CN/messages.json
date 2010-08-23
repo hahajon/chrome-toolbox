@@ -1,0 +1,8 @@
+{
+  "name": {"message": "Convenience extension (由Google提供)"},
+  "description": {"message": "支持未提交表单保存，快捷键，网址一键通"},
+  "btnFillForm": {"message": "填写当前表单"},
+  "btnSaveForm": {"message": "保存当前表单"},
+  "btnDeleteForm": {"message": "清除保存的表单数据"},
+  "saveAndClose": {"message": "保存并且关闭" }
+}
