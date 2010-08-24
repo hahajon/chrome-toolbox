@@ -1,28 +1,27 @@
 #pragma once
-#include "scriptobject_base.h"
+#include "script_object_base.h"
 #include <string> 
 #include <map>
 
 using namespace std;
 
-class CConvenienceScriptObject :
-  public CScriptObjectBase
+class ConvenienceScriptObject : public ScriptObjectBase
 {
 public:
-  CConvenienceScriptObject(void);
-  virtual ~CConvenienceScriptObject(void);
+  ConvenienceScriptObject(void);
+  virtual ~ConvenienceScriptObject(void);
 
   static NPObject* Allocate(NPP npp, NPClass *aClass); 
 
   void Deallocate();
   void Invalidate();
-  bool Construct(const NPVariant *args,uint32_t argCount,
+  bool Construct(const NPVariant *args, uint32_t argCount,
                  NPVariant *result);
 
-  bool UpdateShortCutList(const NPVariant *args,uint32_t argCount,
+  bool UpdateShortCutList(const NPVariant *args, uint32_t argCount,
                           NPVariant *result);
 
-  bool PressBossKey(const NPVariant *args,uint32_t argCount,
+  bool PressBossKey(const NPVariant *args, uint32_t argCount,
                     NPVariant *result);
 
   void TriggerEvent(const char* shortcuts);

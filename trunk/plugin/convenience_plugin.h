@@ -1,35 +1,34 @@
 #pragma once
 #include "plugin_base.h"
-#include "scriptobject_base.h"
+#include "script_object_base.h"
 #include <queue>
 
 using namespace std;
 
-class CConveniencePlugin :
-  public CPluginBase
+class ConveniencePlugin : public PluginBase
 {
 public:
-  CConveniencePlugin(void);
-  virtual ~CConveniencePlugin(void);
+  ConveniencePlugin(void);
+  virtual ~ConveniencePlugin(void);
 
-  NPError Init(NPP instance,uint16_t mode, int16_t argc, char* argn[],
-    char* argv[], NPSavedData* saved);
+  NPError Init(NPP instance, uint16_t mode, int16_t argc, char* argn[],
+               char* argv[], NPSavedData* saved);
   NPError UnInit(NPSavedData** save);
   NPError GetValue(NPPVariable variable, void *value);
   NPError SetWindow(NPWindow* window);
 
-  static CPluginBase* CreateObject() {return new CConveniencePlugin;}
+  static PluginBase* CreateObject() { return new ConveniencePlugin; }
 
-  void SetShortcutsToMemory(ShortCut_Item* list,int count);
+  void SetShortcutsToMemory(ShortCut_Item* list, int count);
   void UpdateShortcutsFromMemory();
   void TriggerEvent(const char* shortcuts);
 
 private:
-  static LRESULT WndProc(HWND hWnd,UINT Msg,WPARAM wParam,LPARAM lParam);
+  static LRESULT WndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
   static DWORD WINAPI Server_Thread(void* param);
 
 private:
-  CScriptObjectBase* scriptobject_;
+  ScriptObjectBase* scriptobject_;
   static WNDPROC old_proc_;
   HANDLE memory_file_handle_;
   HANDLE server_thread_handle_;

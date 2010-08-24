@@ -2,20 +2,20 @@
 
 #include "plugin_base.h"
 
-typedef CPluginBase* (*ConstructorPtr)();
+typedef PluginBase* (*ConstructorPtr)();
 #define MAX_PLUGIN_TYPE_COUNT 10
 
-class CPluginFactory
+class PluginFactory
 {
 public:
-  CPluginFactory(void);
-  ~CPluginFactory(void);
+  PluginFactory(void);
+  ~PluginFactory(void);
 
-  CPluginBase* NewPlugin(NPMIMEType pluginType);
+  PluginBase* NewPlugin(NPMIMEType pluginType);
 
 private:
   struct Plugin_Type_Item {
-    char szMIMEType[128];
+    char mime_type[128];
     ConstructorPtr constructor;
   };
 

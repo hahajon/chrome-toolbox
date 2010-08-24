@@ -3,14 +3,14 @@
 #include <stdio.h>
 #include <windows.h>
 
-class CLog
+class Log
 {
 public:
-  CLog(void);
-  ~CLog(void);
+  Log(void);
+  ~Log(void);
 
   bool OpenLog(LPCSTR header);
-  bool WriteLog(LPCSTR title,LPCSTR contents);
+  bool WriteLog(LPCSTR title, LPCSTR contents);
   bool CloseLog();
 
 private:
