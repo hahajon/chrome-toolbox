@@ -1,9 +1,10 @@
 {
   "name": {"message": "Convenience Tool (by Google)"},
   "description": {"message": "A quick access tool that allows you to put your favorite browser commands in one drop down menu, save unsubmitted form data, magnify images, view videos in standalone windows, and define shortcuts to open all links in any bookmark folder."},
+  "default_title": {"message": "Convenience Tool"},
   "option_title": {"message": "Convenience Tool Options"},
   "save_and_close": {"message": "Save & Close" },
-  "option": {"message": "Option"},
+  "option": {"message": "Options"},
   "set_wallpaper": {"message": "Set wallpaper"},
   "tile_text": {"message": "Tile"},
   "center_text": {"message": "Center"},
