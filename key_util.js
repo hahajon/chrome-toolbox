@@ -332,16 +332,16 @@ key_util.function_table = [
     maxthon_key: 'Alt+`', tt_key: 'Alt+`', sogou_key: 'Alt+`', ie6_key: '', ie7_key: '',
     ie8_key: '', opera_key: '', safari_key: '', firefox_key: ''
   },
-  { id: 49, function_name: 'save_form', function_description: 'save_form',
-    category: key_util.category_table.CAT_FILL_FORM,
-    isQuickly: false, isSystem: false, isSupport: true, chrome_key: '', browser360_key: '',
-    maxthon_key: 'Alt+1', tt_key: 'Ctrl+F9', sogou_key: '', ie6_key: '', ie7_key: '',
-    ie8_key: '', opera_key: '', safari_key: '', firefox_key: ''
-  },
-  { id: 50, function_name: 'fill_form', function_description: 'fill_form',
+  { id: 49, function_name: 'fill_form', function_description: 'fill_form',
     category: key_util.category_table.CAT_FILL_FORM,
     isQuickly: false, isSystem: false, isSupport: true, chrome_key: '', browser360_key: '',
     maxthon_key: 'Alt+Q', tt_key: 'F9', sogou_key: '', ie6_key: '', ie7_key: '',
+    ie8_key: '', opera_key: '', safari_key: '', firefox_key: ''
+  },
+  { id: 50, function_name: 'save_form', function_description: 'save_form',
+    category: key_util.category_table.CAT_FILL_FORM,
+    isQuickly: false, isSystem: false, isSupport: true, chrome_key: '', browser360_key: '',
+    maxthon_key: 'Alt+1', tt_key: 'Ctrl+F9', sogou_key: '', ie6_key: '', ie7_key: '',
     ie8_key: '', opera_key: '', safari_key: '', firefox_key: ''
   },
   { id: 51, function_name: 'quick_launch_1', function_description: 'quick_launch_1',
@@ -398,7 +398,7 @@ key_util.function_table = [
     maxthon_key: 'F9', tt_key: '', sogou_key: '', ie6_key: '', ie7_key: '',
     ie8_key: '', opera_key: '', safari_key: '', firefox_key: ''
   },
-  { id: 60, function_name: 'browser_silence', function_description: 'browser_silence',
+  { id: 60, function_name: 'mute_browser', function_description: 'mute_browser',
     category: key_util.category_table.CAT_OTHER,
     isQuickly: false, isSystem: false, isSupport: false, chrome_key: '', browser360_key: 'Ctrl+Shift+M',
     maxthon_key: '', tt_key: '', sogou_key: 'Alt+W', ie6_key: '', ie7_key: '',
