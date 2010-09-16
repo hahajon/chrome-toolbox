@@ -170,7 +170,7 @@ key_util.function_table = [
   { id: 22, function_name: 'clear_browsing_data_short', function_description: 'clear_browsing_data',
     category: key_util.category_table.CAT_CHROME_FEATURE,
     isQuickly: true, isSystem: true, isSupport: true, chrome_key: 'Ctrl+Shift+Delete', browser360_key: '',
-    maxthon_key: '', tt_key: '', sogou_key: '', ie6_key: '', ie7_key: '',
+    maxthon_key: '', tt_key: 'Alt+X', sogou_key: 'Alt+X', ie6_key: '', ie7_key: '',
     ie8_key: 'Ctrl+Shift+Delete', opera_key: '', safari_key: '', firefox_key: 'Ctrl+Shift+Delete'
   },
   { id: 23, function_name: 'help_short', function_description: 'help',
@@ -402,12 +402,6 @@ key_util.function_table = [
     category: key_util.category_table.CAT_OTHER,
     isQuickly: false, isSystem: false, isSupport: false, chrome_key: '', browser360_key: 'Ctrl+Shift+M',
     maxthon_key: '', tt_key: '', sogou_key: 'Alt+W', ie6_key: '', ie7_key: '',
-    ie8_key: '', opera_key: '', safari_key: '', firefox_key: ''
-  },
-  { id: 61, function_name: 'remove_historical_records', function_description: 'remove_historical_records',
-    category: key_util.category_table.CAT_CHROME_FEATURE,
-    isQuickly: false, isSystem: false, isSupport: false, chrome_key: 'Ctrl+Shift+Delete', browser360_key: '',
-    maxthon_key: '', tt_key: 'Alt+X', sogou_key: 'Alt+X', ie6_key: '', ie7_key: '',
     ie8_key: '', opera_key: '', safari_key: '', firefox_key: ''
   }
 ];
