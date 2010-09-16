@@ -67,12 +67,12 @@ body {
 .navTip {
   height: 60px;
   border-bottom: 1px solid #bfdaee;
-  padding: 0 130px 5px 130px;
+  padding: 0 140px 5px 140px;
   display:table-cell;
-  vertical-align:middle;
-  text-align: center;
+  vertical-align: middle;
+  text-align: left;
   line-height: 18px;
-  width:503px;
+  width:483px;
   background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#FEFEFE), to(#e0eaf3));
 }
 
