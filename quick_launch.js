@@ -17,7 +17,8 @@
           if (node.children) {
             li.id = 'bookmarkNode_' + node.id;
             var url = chrome.extension.getURL('images/folder_close.png');
-            li.innerHTML = '<img src ="' + url + '" alt="">' +  node.title;
+            if (node.id != 0) {
+              li.innerHTML = '<img src ="' + url + '" alt="">' +  node.title;
             (function(id) {
               li.onclick = function() {
                 createSelectedBookmarkFolderLinks(id);
@@ -25,6 +26,8 @@
               }
             })(node.id);
             parent.appendChild(li);
+            }
+
             getBookmarkFolder(parent, node.children);
           }
         }
@@ -101,8 +104,8 @@
           if (children[i].url) {
             var li = document.createElement('li');
             li.innerHTML = '<a href="' + children[i].url +
-                '" ><img src="chrome://favicon/' + children[i].url +
-                '" width="16" height="16" target="_blank" alt=""/>' +
+                '" target="_blank" ><img src="chrome://favicon/' + children[i].url +
+                '" width="16" height="16" alt=""/>' +
                 children[i].title + '</a>';
             ul.appendChild(li);
             console.log("links:" + children[i].url);

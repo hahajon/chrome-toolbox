@@ -151,9 +151,9 @@
 
   function setPopupMenuStatus() {
     var fillFormMenu = [
-      {menuId: 49, name: 'fillFormShortcut'},
-      {menuId: 50, name: 'saveFormShortcut'}
-    ]
+      {menuId: 49, name: 'saveFormShortcut'},
+      {menuId: 50, name: 'fillFormShortcut'}
+    ];
 
     var setFillFormMenuShortcut = function(element) {
       var shortcut = new Shortcut();
@@ -228,38 +228,58 @@
     var items = [];
     for (var i = 0; i < list.length; i++) {
       var item = selectItemById(list[i]);
-      if (item) {
-        items.push(item);
-      }
+      items.push(item);
     }
     return items;
+  }
+
+  var checkShortcut = function(id) {
+    shortcut.selectById(id, function(tx, results) {
+      if (results.rows.length > 0) {
+        return results.rows.shortcut;
+      }
+    });
   }
 
   function createQuicklyVisitItem() {
     var items = getQuicklyVisitItem();
     var ul = document.createElement('ul');
     ul.id = 'quicklyCommand';
-    for (var i = 0; i < items.length; i++) {
-      var item = items[i];
-      var li = document.createElement('li');
-      var shortcut = item.chrome_key;
-      var name = chrome.i18n.getMessage(item.function_name);
-      shortcut = shortcut.indexOf(',') < 0 ?
-          shortcut : shortcut.substring(0, shortcut.indexOf(','));
-      li.innerHTML = '<div class="left">' + name +
-          '</div><div class="right">' + shortcut + '</div>';
-      (function(element, shortcut) {
-        element.onclick = function() {
-          var virtualKey = key_util.getVirtualKey(shortcut);
-          console.log(virtualKey);
-          window.close();
-          bg.plugin_convenience.TriggerChromeShortcuts(virtualKey);
+    var count = 0;
+    var shortcut = new Shortcut();
+    var createItem = function(items, count) {
+      var item = items[count];
+      shortcut.selectById(item.id, function(tx, results) {
+        var shortcutStr = '';
+        if (results.rows.length > 0) {
+          shortcutStr = results.rows.item(0).shortcut;
+        } else {
+          shortcutStr = item.chrome_key;
         }
-      })(li, shortcut);
-      ul.appendChild(li);
+        shortcutStr = shortcutStr.indexOf(',') < 0 ?
+          shortcutStr : shortcutStr.substring(0, shortcutStr.indexOf(','));
+        var li = document.createElement('li');
+        var name = chrome.i18n.getMessage(item.function_name);
+        li.innerHTML = '<div class="left">' + name +
+            '</div><div class="right">' + shortcutStr + '</div>';
+        (function(element, shortcut) {
+          element.onclick = function() {
+            var virtualKey = key_util.getVirtualKey(shortcut);
+            window.close();
+            bg.plugin_convenience.TriggerChromeShortcuts(virtualKey);
+          }
+        })(li, shortcutStr);
+        ul.appendChild(li);
+        count++
+        if (items.length > count) {
+          createItem(items, count)
+        }
+      });
     }
+    createItem(items, 0);
     $('quicklyMenu').appendChild(ul);
-  }                            
+  }
+
 
 </script>
 </body>

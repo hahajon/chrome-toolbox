@@ -81,9 +81,7 @@ function Option() {
 
 
   this.table_shortcut = $('shortcutTable');
-  this.gotoShortcutTab.addEventListener('click', function() {
-    self.setNavigationBarStatus(self.nav_shortcut);
-  }, false)
+
   this.setNavigationBarStatus(this.nav_general);
   this.nav_general.addEventListener('click', this.setNavigationBarStatus, false);
   this.nav_fillForm.addEventListener('click',
@@ -128,6 +126,14 @@ function Option() {
   this.table_shortcut.appendChild(
       shortcut.showTable(categorySelect, browserSelect, self.isCompare.checked));
   this.setGeneralTabOption();
+
+  this.gotoShortcutTab.addEventListener('click', function() {
+    categorySelect.value = key_util.category_table.CAT_QUICK_LAUNCH;
+    self.table_shortcut.innerHTML = '';
+    self.table_shortcut.appendChild(
+      shortcut.showTable(categorySelect, browserSelect, self.isCompare.checked));
+    self.setNavigationBarStatus(self.nav_shortcut);
+  }, false)
   setMessage();
 }
 

@@ -239,7 +239,7 @@ a:hover {
   height: 400px;
   width: 180px;
   overflow-y: auto;
-  overflow-x: hidden;
+  overflow-x: auto;
 }
 #bookmarkTree ul {
   list-style: none;
@@ -264,8 +264,7 @@ a:hover {
 }
 
 #bookmarkTree li img {
-  position: absolute;
-  margin: 5px 0 0 -20px;
+  margin: 5px 3px 0 -20px;
 }
 
 
