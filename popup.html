@@ -127,9 +127,9 @@
     })
   }
   function init() {
-    i18nReplace('tFillForm', 'btn_fill_form');
-    i18nReplace('tSaveForm', 'btn_save_form');
-    i18nReplace('tDeleteForm', 'btn_delete_form');
+    i18nReplace('tFillForm', 'fill_form');
+    i18nReplace('tSaveForm', 'save_form');
+    i18nReplace('tDeleteForm', 'delete_form');
     i18nReplace('optionText', 'option');
     setPopupMenuStatus();
     $('optionPage').onclick = function() {
@@ -153,8 +153,8 @@
 
   function setPopupMenuStatus() {
     var fillFormMenu = [
-      {menuId: 49, name: 'saveFormShortcut'},
-      {menuId: 50, name: 'fillFormShortcut'}
+      {menuId: 49, name: 'fillFormShortcut'},
+      {menuId: 50, name: 'saveFormShortcut'}
     ];
 
     var setFillFormMenuShortcut = function(element) {

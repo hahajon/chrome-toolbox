@@ -7,9 +7,9 @@ CAT_ADDRESS: 'address_bar_shortcuts',
 CAT_WEB_PAGE: 'webpage_shortcuts',
 CAT_TEXT: 'text_shortcuts',
 CAT_BOSS_KEY: 'boss_key',
-CAT_QUICK_LAUNCH: 'quick_launch',
-CAT_FILL_FORM: 'fill_form',
-CAT_OTHER: 'other'
+CAT_QUICK_LAUNCH: 'quick_launch_shortcuts',
+CAT_FILL_FORM: 'fill_form_shortcuts',
+CAT_OTHER: 'other_shortcuts'
 }
 
 key_util.function_table_record = function() {
@@ -408,8 +408,8 @@ key_util.function_table = [
 
 key_util.extension_support_shortcut_map = [
     {id: 48, shortcut: 'Alt+`', type: true, relationId: '', operation: 'bossKey', extensionId: ''},
-    {id: 49, shortcut: 'F9', type: false, relationId: '', operation: 'saveForm', extensionId: ''},
-    {id: 50, shortcut: 'F10', type: false, relationId: '', operation: 'fillForm', extensionId: ''},
+    {id: 49, shortcut: 'F10', type: false, relationId: '', operation: 'fillForm', extensionId: ''},
+    {id: 50, shortcut: 'F9', type: false, relationId: '', operation: 'saveForm', extensionId: ''},
     {id: 51, shortcut: 'Alt+1', type: false, relationId: '', operation: 'quickLaunch', extensionId: ''},
     {id: 52, shortcut: 'Alt+2', type: false, relationId: '', operation: 'quickLaunch', extensionId: ''},
     {id: 53, shortcut: 'Alt+3', type: false, relationId: '', operation: 'quickLaunch', extensionId: ''},
