@@ -1,0 +1,157 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+    "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+  <title></title>
+  <link href="options.css" rel="stylesheet" type="text/css">
+  <script type="text/javascript" src="convenience_util.js"></script>
+  <script type="text/javascript" src="database_operator.js"></script>
+  <script type="text/javascript" src="fill_form.js"></script>
+  <script type="text/javascript" src="quick_launch.js"></script>
+  <script type="text/javascript" src="shortcut.js"></script>
+  <script type="text/javascript" src="options.js"></script>
+  <script type="text/javascript" src="key_util.js"></script>
+</head>
+<body onload="init();">
+  <div class="contentBox">
+   <div id="header">
+     <h1 id="optionTitle"></h1>
+   </div>
+
+   <div id="nav">
+     <ul>
+       <li id="mGeneral" class="choose"></li>
+       <li id="mFillForm"></li>
+       <li id="mQuicklyVisit"></li>
+       <li id="mShortcut"></li>
+       <li id="mRecommended"></li>
+     </ul>
+     <div class="clear"></div>
+   </div>
+   <div id="main">
+     <div id="generalTab">
+       <div class="innerBox">
+         <div class="itemTitle" id="title_floatingBar"></div>
+         <div class="item">
+           <label><input type="checkbox" id="imageBar" checked="true">
+             <span id="item_imageBar"></span>
+           </label>
+         </div>
+         <div class="item">
+           <label><input type="checkbox" id="videoBar" checked="true">
+             <span id="item_videoBar"></span>
+           </label>
+         </div>
+         <div class="itemTitle" id="title_tab"></div>
+         <div class="item" style="display:none">
+           <label><input type="checkbox" id="closeLastTab" checked="true">
+             <span id="item_closeLastTab"></span>
+           </label>
+         </div>
+         <div class="item">
+           <label><input type="checkbox" id="openInNewTab" checked="true">
+             <span id="item_openInNewTab"></span>
+           </label>
+         </div>
+         <div class="item">
+           <label><input type="checkbox" id="dbclickCloseTab" checked="true">
+             <span id="item_dbClickCloseTab"></span>
+           </label>
+         </div>
+      </div>
+     </div>
+
+     <div id="fillFormTab">
+     <div class="innerBox">
+      <div class="box">
+       <div class="fillForm_header">
+         <table border="0" id="fillForm_table" cellspacing="0" cellpadding="0">
+          <tr style="line-height:24px">         
+            <th><div class="fillForm_url" id="fillForm_address"></div></th>
+            <th><div class="fillForm_title" id="fillForm_title"></div></th>
+            <th><div class="fillForm_date" id="fillForm_date"></div></th>
+            <th><div class="fillForm_operate"> </div></th>
+            <th></th>
+          </tr>
+         </table>
+       </div>
+       <div class="fillForm_record" id="allFormInfo">
+
+       </div>
+     </div>
+     <div class="form_delete">
+       <a href="#" style="color: #000" id="form_deleteAll">
+         <img src="images/del.png" alt=""><span id="fillFrom_delAll"></span>
+       </a>
+     </div>
+     <div id="formContent">
+      <div id="form_close" onclick="$('formContent').style.display = 'none'">
+        <img src="images/close.png" alt="">
+      </div>
+      <div style="line-height: 25px; margin-top:20px" id='divTitle'></div>
+      <div style="line-height: 25px;" id='divURL'></div>
+      <div id="divFromInfoTable"></div>
+    </div>
+    </div>
+    </div>
+
+    <div id="quicklyVisitTab">
+    <div class="navTip">
+      <span id="bookmark_tip"></span>
+      <a href="javascript:void(0)" id="gotoShortcutTab"></a>
+    </div>
+    <div class="innerBox">
+    <div id="openBookmark">
+    </div>
+    <div id="bookmarkBox">
+      <div class="bookmarkInnerBox">
+        <div id="bookmarkTree"></div>
+        <div id="bookmarkList"></div>
+        <div class="clear"></div>
+      </div>
+      <div id="bookmarkMenuDiv">
+        <input type="hidden" id="openHitKey">
+        <button id="quicklyVisit_selectedFolder" onclick="setSelectedBookmarkFolder()"></button>
+        <button id="quicklyVisit_manageBookmark" onclick="openBookmarkTab()"></button>
+        <button id="quicklyVisit_close" onclick="closeBox('bookmarkBox')"></button>
+      </div>
+    </div>
+    </div>
+    </div>
+
+    <div id="shortcutTab">
+      <div class="innerBox">
+      <div style='margin-bottom:10px;'>
+        <label>
+          <input type="checkbox" id="isCompare">
+          <span class="font_blue" id="shortcut_compare"></span>
+        </label>
+      </div>
+      <div id="shortcutTable"></div>
+
+     </div>
+    </div>
+
+    <div id="recommendedTab">
+       <div class="innerBox">
+      <ul>
+        <li><a href="https://chrome.google.com/extensions/detail/caehdcpeofiiigpdhbabniblemipncjj" target="_blank">
+          <img src="images/icon_blue.png" alt="">Proxy Switch</a></li>
+        <li><a href="https://chrome.google.com/extensions/detail/lfkgmnnajiljnolcgolmmgnecgldgeld" target="_blank">
+          <img src="images/icon32.png" height="19" alt="">Smooth Gestures</a></li>
+        <li><a href="https://chrome.google.com/extensions/detail/aapbdbdomjkkjkaonfhkkikfgjllcleb" target="_blank">
+          <img src="images/translate19.png" height="19" alt="">Google Translate</a></li>
+        <li><a href="https://chrome.google.com/extensions/detail/cpngackimfmofbokmjmljamhdncknpmg" target="_blank">
+          <img src="images/icon_capture_19.png" height="19" alt="">Screen Capture </a></li>
+        <li><a href="https://chrome.google.com/extensions/detail/mfjkgbjaikamkkojmakjclmkianficch" target="_blank">
+          <img src="images/icon_download_19.png" height="19" alt="">Download Helper </a></li>
+        <li><a href="https://chrome.google.com/extensions/detail/jaikcnhlohebodlpkmjepipngegjbfpg" target="_blank">
+          <img src="images/dragandgo_32x32.png" height="19" alt="">Drag and go </a></li>
+      </ul>
+     </div>
+    </div>
+   </div>
+  </div>
+  <div id="footer">&copy;2010 Google</div>
+</body>
+</html>
