@@ -70,7 +70,7 @@ key_util.function_table = [
   },
   { id: 6, function_name: 'switch_tab_short', function_description: 'switch_tab',
     category: key_util.category_table.CAT_TAB_WINDOW,
-    isQuickly: false, isSystem: true, isSupport: true, chrome_key: 'Ctrl+1to8', browser360_key: '',
+    isQuickly: false, isSystem: true, isSupport: true, chrome_key: 'Ctrl+1...Ctrl+8', browser360_key: '',
     maxthon_key: '', tt_key: '', sogou_key: '', ie6_key: '', ie7_key: 'Ctrl+1 µ½ Ctrl+8',
     ie8_key: 'Ctrl+1 µ½ Ctrl+8', opera_key: '', safari_key: '', firefox_key: 'Ctrl+1 µ½ Ctrl+8'
   },
@@ -114,7 +114,7 @@ key_util.function_table = [
   },
   { id: 13, function_name: 'history_forward_short', function_description: 'history_forward',
     category: key_util.category_table.CAT_TAB_WINDOW,
-    isQuickly: true, isSystem: true, isSupport: false, chrome_key: 'Shift+Backspace,Alt+Right', browser360_key: 'Alt+Right',
+    isQuickly: false, isSystem: true, isSupport: false, chrome_key: 'Shift+Backspace,Alt+Right', browser360_key: 'Alt+Right',
     maxthon_key: 'Alt+Right', tt_key: 'Alt+Right', sogou_key: 'Alt+Right', ie6_key: 'Alt+Right,Shift+Backspace', ie7_key: 'Alt+Right,Shift+Backspace',
     ie8_key: 'Alt+Right,Shift+Backspace', opera_key: 'Ctrl+Right,Alt+Right,Shift+Backspace',
     safari_key: 'Alt+Right,Shift+Backspace', firefox_key: 'Alt+Right,Shift+Backspace'
@@ -181,7 +181,7 @@ key_util.function_table = [
   },
   { id: 24, function_name: 'open_location_short',  function_description: 'open_location',
     category: key_util.category_table.CAT_ADDRESS,
-    isQuickly: false, isSystem: true, isSupport: true, chrome_key: 'F6,Ctrl+L,Alt+D', browser360_key: 'F6,Alt+D',
+    isQuickly: true, isSystem: true, isSupport: true, chrome_key: 'F6,Ctrl+L,Alt+D', browser360_key: 'F6,Alt+D',
     maxthon_key: 'F6,Alt+D', tt_key: 'F6,Alt+D', sogou_key: 'Ctrl+L,F6,Alt+D', ie6_key: 'F6,Alt+D', ie7_key: 'F6,Alt+D',
     ie8_key: 'F6,Alt+D', opera_key: 'F8,Ctrl+L,Alt+D', safari_key: 'Alt+D,F6,Ctrl+L', firefox_key: 'Alt+D,F6,Ctrl+L'
   },
@@ -290,7 +290,7 @@ key_util.function_table = [
   },
   { id: 42, function_name: 'goto_top_short', function_description: 'goto_top',
     category: key_util.category_table.CAT_WEB_PAGE,
-    isQuickly: false, isSystem: true, isSupport: true, chrome_key: 'Home', browser360_key: 'Home',
+    isQuickly: true, isSystem: true, isSupport: true, chrome_key: 'Home', browser360_key: 'Home',
     maxthon_key: 'Home', tt_key: 'Home', sogou_key: 'Home', ie6_key: 'Home', ie7_key: 'Home',
     ie8_key: 'Home', opera_key: 'Home', safari_key: 'Home', firefox_key: 'Home'
   },

@@ -165,7 +165,7 @@
       var offsetHeight = 100;
       var width = Math.round(window.screen.width / zoom) + offsetWidth;
       var height = Math.round(window.screen.height / zoom) + offsetHeight ;
-      var url = chrome.extension.getURL('wallpaperpreview.html');
+      var url = chrome.extension.getURL('wallpaper_preview.html');
       var image = new Image();
       image.onload = function() {
         wallpaper.orgImage.data = imageToData(image, image.width, image.height);

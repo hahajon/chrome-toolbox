@@ -113,6 +113,7 @@ Shortcut.prototype.showTable = function(categorySelect, browserSelect, isCompare
     if (row.category == categorySelect.value) {
       tr = document.createElement('tr');
       field1 = document.createElement('td');
+      field1.title = chrome.i18n.getMessage(row.function_description);
       field1.innerHTML = chrome.i18n.getMessage(row.function_name);
       tr.appendChild(field1);
       if (isCompare) {
