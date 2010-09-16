@@ -405,8 +405,8 @@ key_util.function_table = [
     ie8_key: '', opera_key: '', safari_key: '', firefox_key: ''
   },
   { id: 61, function_name: 'remove_historical_records', function_description: 'remove_historical_records',
-    category: key_util.category_table.CAT_OTHER,
-    isQuickly: false, isSystem: false, isSupport: false, chrome_key: '', browser360_key: '',
+    category: key_util.category_table.CAT_CHROME_FEATURE,
+    isQuickly: false, isSystem: false, isSupport: false, chrome_key: 'Ctrl+Shift+Delete', browser360_key: '',
     maxthon_key: '', tt_key: 'Alt+X', sogou_key: 'Alt+X', ie6_key: '', ie7_key: '',
     ie8_key: '', opera_key: '', safari_key: '', firefox_key: ''
   }
