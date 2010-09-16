@@ -17,12 +17,12 @@ var $ = (function() {
     },
 
     addEvent: function(type, listener, useCapture) {
-      this.element.addEventListener(type, listener, useCapture); 
+      this.element.addEventListener(type, listener, useCapture);
     },
 
     removeElement: function() {
       this.element.parentNode.removeChild(this.element)
-    } 
+    }
   };
 
   var getElement = function(element) {
@@ -67,10 +67,10 @@ chrome.extension.sendRequest({msg: 'getStatus'}, function(response) {
 
 function initFloatingBarMenu() {
   floatingBarMenus = [
-      {menuID: '001', menuName: 'original', imageURL: 'images/floatingBar_orl.png', status: imageBarStatus,  operate: 'showOriginalPicture', specialCondition: 'checkCurPictureSize'},
-      {menuID: '002', menuName: 'zoom', imageURL: 'images/floatingBar_zoom.png', status: imageBarStatus, operate: 'magnifier'},
-      {menuID: '003', menuName: 'background', imageURL: 'images/floatingBar_bg.png', status: imageBarStatus},
-      {menuID: '004', menuName: 'video', imageURL: 'images/floatingBar_video.png', status: videoBarStatus}
+      {menuID: '001', menuName: chrome.i18n.getMessage('view_original_image'), imageURL: 'images/floatingBar_orl.png', status: imageBarStatus,  operate: 'showOriginalPicture', specialCondition: 'checkCurPictureSize'},
+      {menuID: '002', menuName: chrome.i18n.getMessage('magnifier'), imageURL: 'images/floatingBar_zoom.png', status: imageBarStatus, operate: 'magnifier'},
+      {menuID: '003', menuName: chrome.i18n.getMessage('set_wallpaper'), imageURL: 'images/floatingBar_bg.png', status: imageBarStatus},
+      {menuID: '004', menuName: chrome.i18n.getMessage('video_standalone'), imageURL: 'images/floatingBar_video.png', status: videoBarStatus}
     ];
     floatingBarClass = {
       IMG : [
@@ -98,7 +98,7 @@ var floatingBar = {
     var hidden = function() {
      if (timer != null) {
        return;
-     } 
+     }
      timer = window.setTimeout(function() {
         if ($(menuBar.id)) {
           document.body.removeChild($(menuBar.id).element);
@@ -163,7 +163,6 @@ var floatingBar = {
         floatingBar.addEvent(curElement, floatingMenu);
       }
     }
-    
   },
 
   checkCurrentElement: function(listeningElements, curElement) {
@@ -255,7 +254,7 @@ var floatingBar = {
     $(imgElement).setStyle(styleProperties);
     floatingMenu.appendChild(imgElement);
   },
-  
+
   setOtherNodesInvisible: function(element, styles) {
     while(element && element.parentNode != document.documentElement) {
       var nodes = element.parentNode.childNodes;
@@ -265,7 +264,7 @@ var floatingBar = {
           }
           if (nodes[i].style) {
             styles.push({node: nodes[i], nodeStyle: nodes[i].style.cssText});
-          } 
+          }
       }
       element = element.parentNode;
       floatingBar.setOtherNodesInvisible(element, styles);
