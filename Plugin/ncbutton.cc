@@ -29,17 +29,17 @@ void NCButton::Init(HWND parenthwnd) {
   if (postfix)
     *postfix = 0;
 
-  wsprintf(png_filename, L"%s\\resource\\tip_normal.png", filename);
+  wsprintf(png_filename, L"%s\\resources\\tip_normal.png", filename);
   normal_image_ = new Image(png_filename);
-  wsprintf(png_filename, L"%s\\resource\\tip_mouseover.png", filename);
+  wsprintf(png_filename, L"%s\\resources\\tip_mouseover.png", filename);
   mouse_over_image_ = new Image(png_filename);
-  wsprintf(png_filename, L"%s\\resource\\tip_mousedown.png", filename);
+  wsprintf(png_filename, L"%s\\resources\\tip_mousedown.png", filename);
   mouse_down_image_ = new Image(png_filename);
-  wsprintf(png_filename, L"%s\\resource\\notip_normal.png", filename);
+  wsprintf(png_filename, L"%s\\resources\\notip_normal.png", filename);
   notip_normal_image_ = new Image(png_filename);
-  wsprintf(png_filename, L"%s\\resource\\notip_mouseover.png", filename);
+  wsprintf(png_filename, L"%s\\resources\\notip_mouseover.png", filename);
   notip_mouseover_image_ = new Image(png_filename);
-  wsprintf(png_filename, L"%s\\resource\\notip_mousedown.png", filename);
+  wsprintf(png_filename, L"%s\\resources\\notip_mousedown.png", filename);
   notip_mousedown_image_ = new Image(png_filename);
 
   grph_ = Graphics::FromHWND(parent_hwnd_);
