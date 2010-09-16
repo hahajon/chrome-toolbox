@@ -1,0 +1,266 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title></title>
+<style type="text/css">
+  body {
+    width: 270px;
+    font-size: 12px;
+    text-align: center;
+    margin: 0;
+    padding: 5px 3px;
+  }
+  #hit {
+    display: none;
+  }
+
+  .disable {
+    color: #bbbbbb;
+    cursor: default;
+  }
+  ul{
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+  li{
+    padding: 0 5px;
+    margin: 0;
+    list-style: none;
+    line-height: 25px;
+    text-align: left;
+    border: 1px #ffffff solid;
+    height: 22px;
+    clear: both;
+  }
+  li:hover {
+    border-radius: 3px 3px;
+	background: -webkit-gradient(linear, left top, left bottom,
+		color-stop(0, #fff),  color-stop(0.4, hsl(215, 67%, 97%)), color-stop(0.41, hsl(213, 48%, 95%)));
+	border: solid 1px #c5cdd3;
+  }
+  .disable:hover {
+    border: 1px #ffffff solid;
+    background: #ffffff;
+  }
+
+  .left {
+    float: left;
+    overflow: hidden;
+  }
+  .left img {
+    position: absolute;
+    margin-top: 3px;
+    left: 10px;
+  }
+  .right {
+    float: right;
+  }
+
+  .separator {
+    border-top: 1px solid #dddddd;
+    height: 0px;
+    margin: 3px 2px;
+  }
+
+
+</style>
+<script type="text/javascript" src="convenience_util.js"></script>
+<script type="text/javascript" src="database_operator.js"></script>
+<script type="text/javascript" src="fill_form.js"></script>
+<script type="text/javascript" src="shortcut.js"></script>
+<script type="text/javascript" src="key_util.js"></script>
+<script language="JavaScript" type="text/javascript" src="drag_and_drop.js"></script>
+</head>
+<body>
+<div class="extensionFun">
+  <ul>
+    <li id="btnFillForm" class="disable">
+      <div class="left"><span id="tFillForm"></span></div>
+      <div class="right" id="fillFormShortcut"></div>
+    </li>
+    <li id="btnSaveForm" class="disable">
+      <div class="left"> <span id="tSaveForm"></span></div>
+      <div class="right" id="saveFormShortcut"></div>
+    </li>
+    <li id="btnDeleteForm" class="disable">
+      <div class="left"><span id="tDeleteForm"></span></div>
+    </li>
+  </ul>
+</div>
+
+<div class="separator"></div>
+<div id="quicklyMenu">
+
+</div>
+<div class="separator"></div>
+<div>
+  <ul>
+    <li id="optionPage">
+      <div class="left" id="optionText"></div> </li>
+  </ul>
+</div>
+
+
+
+<script type="text/javascript">
+  var dragsort = ToolMan.dragsort();
+  var junkdrawer = ToolMan.junkdrawer();
+  var bg = chrome.extension.getBackgroundPage();
+  function verticalOnly(item) {
+    item.toolManDragGroup.verticalOnly();
+  }
+
+  function saveOrder(item) {
+    var group = item.toolManDragGroup;
+    var list = group.element.parentNode;
+    var id = list.getAttribute("id");
+    if (id == null) {
+      return;
+    }
+    group.register('dragend', function() {
+      ToolMan.cookies().set("list-" + id, junkdrawer.serializeList(list), 365);
+    })
+  }
+  function init() {
+    i18nReplace('tFillForm', 'btn_fill_form');
+    i18nReplace('tSaveForm', 'btn_save_form');
+    i18nReplace('tDeleteForm', 'btn_delete_form');
+    i18nReplace('optionText', 'option');
+    setPopupMenuStatus();
+    $('optionPage').onclick = function() {
+      var url = chrome.extension.getURL('options.html');
+      chrome.tabs.create({url: url });
+    };
+    createQuicklyVisitItem();
+
+    dragsort.makeListSortable($("quicklyCommand"),
+		null, null);
+  }
+  function i18nReplace(id, messageName) {
+    $(id).innerText = chrome.i18n.getMessage(messageName);
+  }
+  init();
+
+  var openBookmark = function() {
+    document.body.style.backgroundColor = '#ff0000';
+  }
+
+
+  function setPopupMenuStatus() {
+    var fillFormMenu = [
+      {menuId: 49, name: 'fillFormShortcut'},
+      {menuId: 50, name: 'saveFormShortcut'}
+    ]
+
+    var setFillFormMenuShortcut = function(element) {
+      var shortcut = new Shortcut();
+      shortcut.selectById(id, function(tx, results) {
+        if (results.rows.length > 0) {
+          var t = results.rows.item(0).shortcut;
+          element.innerText = t;
+        }
+      });
+    }
+    for (var i = 0; i < fillFormMenu.length; i++) {
+      var id = fillFormMenu[i].menuId;
+      var element = $(fillFormMenu[i].name);
+      (function(element) {
+        setFillFormMenuShortcut(element);
+      })(element);
+    }
+
+    chrome.tabs.getSelected(null, function(tab) {
+      chrome.tabs.sendRequest(tab.id, {msg: 'checkForm'}, function(response) {
+        console.log(response.msg)
+        if (response.msg == 'existForm') {
+          $('btnSaveForm').className = 'menu';
+          $('btnSaveForm').addEventListener('click', function(){
+            chrome.tabs.executeScript(null,
+                {code: 'sendFormData("' + tab.url + '","' + tab.title + '")'});
+            window.close();
+          }, false);
+        } else if (response.msg == 'noForm') {
+          
+        }
+      });
+
+      var fillForm = new FillForm();
+      fillForm.selectByUrl(tab.url, function(tx, results) {
+        if (results.rows.length > 0) {
+          var formInfo = results.rows.item(0).formInfo;
+          var id = results.rows.item(0).id;
+          console.log('formInfo:' + typeof formInfo);
+          $('btnFillForm').className = 'menu';
+          $('btnFillForm').addEventListener('click',
+              function(){
+            chrome.tabs.executeScript(null,
+                {code: 'fillForm(' + formInfo + ')' });
+            window.close();
+          }, false);
+          $('btnDeleteForm').className = 'menu';
+          $('btnDeleteForm').addEventListener('click',
+              function() {
+            fillForm.deleteById(id);
+            window.setTimeout(function() {
+              window.close();
+            }, 100)
+          }, false);
+        }
+      });
+    });
+  }
+
+  function selectItemById(id) {
+    var function_table = key_util.function_table;
+    for (var i = 0; i < function_table.length; i++) {
+      if (id == function_table[i].id) {
+        return function_table[i];
+      }
+    }
+  }
+
+  function getQuicklyVisitItem() {
+    var quickly = localStorage['quicklyVisitMenu'] || '';
+    var list = quickly.split(',');
+    var items = [];
+    for (var i = 0; i < list.length; i++) {
+      var item = selectItemById(list[i]);
+      if (item) {
+        items.push(item);
+      }
+    }
+    return items;
+  }
+
+  function createQuicklyVisitItem() {
+    var items = getQuicklyVisitItem();
+    var ul = document.createElement('ul');
+    ul.id = 'quicklyCommand';
+    for (var i = 0; i < items.length; i++) {
+      var item = items[i];
+      var li = document.createElement('li');
+      var shortcut = item.chrome_key;
+      var name = chrome.i18n.getMessage(item.function_name);
+      shortcut = shortcut.indexOf(',') < 0 ?
+          shortcut : shortcut.substring(0, shortcut.indexOf(','));
+      li.innerHTML = '<div class="left">' + name +
+          '</div><div class="right">' + shortcut + '</div>';
+      (function(element, shortcut) {
+        element.onclick = function() {
+          var virtualKey = key_util.getVirtualKey(shortcut);
+          console.log(virtualKey);
+          window.close();
+          bg.plugin_convenience.TriggerChromeShortcuts(virtualKey);
+        }
+      })(li, shortcut);
+      ul.appendChild(li);
+    }
+    $('quicklyMenu').appendChild(ul);
+  }                            
+
+</script>
+</body>
+</html>
