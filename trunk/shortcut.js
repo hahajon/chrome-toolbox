@@ -146,7 +146,6 @@ Shortcut.prototype.showTable = function(categorySelect, browserSelect, isCompare
             } else {
               delQuicklyVisitMenu(id);
             }
-            
           }, false);
         })(row.id, checkbox);
       } else {
@@ -174,13 +173,17 @@ Shortcut.prototype.createSelect = function(table) {
 Shortcut.prototype.canEditable = function(element, id) {
   var self = this;
   var addInputBox = function(parentElement) {
+    if ($('keyboardInput')) {
+      $('keyboardInput').parentNode.removeChild($('keyboardInput'));
+    }
     var div = document.createElement('DIV');
     div.className = 'shortcutPad';
     div.id = 'keyboardInput';
     div.style.width = parentElement.clientWidth + 'px';
-    div.style.height = parentElement.clientHeight + 'px';
-    div.style.marginTop = -(element.clientHeight) + 'px';
+    div.style.height = parentElement.clientHeight - 2 + 'px';
+    div.style.marginTop = -(element.clientHeight - 1) + 'px';
     return div;
+
   }
   var bg = chrome.extension.getBackgroundPage();
   var addKeyboardListener = function(input) {
@@ -231,7 +234,7 @@ Shortcut.prototype.canEditable = function(element, id) {
                   if (inputBox.innerText != inputText) {
                     span.innerText = inputBox.innerText;
                     self.updateShortcut(inputBox.innerText, id);
-                    //showSavingFailedTip('tip_succeed');
+                    showSavingSucceedTip('tip_succeed');
                   }
                   document.body.onkeydown = onKeyDown;
                   removeKeyboardListener();
