@@ -1,8 +1,0 @@
-{
-  "name": {"message": "Convenience extension (by Google)"},
-  "description": {"message": ""},
-  "btnFillForm": {"message": "Fill current form"},
-  "btnSaveForm": {"message": "Save current form"},
-  "btnDeleteForm": {"message": "Delete current form"},
-  "saveAndClose": {"message": "Save & Close" }
-}
