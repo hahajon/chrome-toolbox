@@ -155,7 +155,7 @@ key_util.function_table = [
     maxthon_key: '', tt_key: '', sogou_key: '', ie6_key: '', ie7_key: '',
     ie8_key: '', opera_key: '', safari_key: '', firefox_key: ''
   },
-  { id: 20, function_name: 'context_menu', function_description: 'context_menu',
+  { id: 20, function_name: 'context_menu_short', function_description: 'context_menu',
     category: key_util.category_table.CAT_CHROME_FEATURE,
     isQuickly: false, isSystem: true, isSupport: true, chrome_key: 'Shift+F10', browser360_key: 'Shift+F10',
     maxthon_key: 'Shift+F10', tt_key: 'Shift+F10', sogou_key: 'Shift+F10', ie6_key: 'Shift+F10', ie7_key: 'Shift+F10',
