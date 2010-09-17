@@ -35,6 +35,10 @@
       getBookmarkFolder(ul, bookmarkTreeNode);
       $('bookmarkTree').appendChild(ul);
       $('bookmarkBox').style.display = 'block';
+      var left = (document.body.clientWidth - $('bookmarkBox').clientWidth) / 2;
+
+      $('bookmarkBox').style.left = left + 'px';
+
     });
   }
 
