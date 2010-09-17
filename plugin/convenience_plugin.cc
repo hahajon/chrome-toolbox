@@ -395,7 +395,7 @@ LRESULT CALLBACK GetMsgProc(int code, WPARAM wParam, LPARAM lParam){
       pt.y = GET_Y_LPARAM(msg->lParam);
       char logs[256];
       sprintf(logs, "x=%ld, y=%ld", pt.x, pt.y);
-      g_Log.WriteLog("msg", logs);
+      g_Log.WriteLog("ClickCloseTab", logs);
       if (PtInRect(&rt, pt)) {
         msg->message = WM_NULL;
         Cmd_Msg_Item item;
@@ -449,6 +449,12 @@ LRESULT CALLBACK GetMsgProc(int code, WPARAM wParam, LPARAM lParam){
       tab_client_rect.top += 15;
       tab_client_rect.bottom = tab_client_rect.top + 25;
     }
+
+    char logs[256];
+    sprintf(logs, "x=%ld, y=%ld,left=%ld,right=%ld,top=%ld,bottom=%ld,g_IsOnlyOneTab=%d",
+            pt.x, pt.y, tab_client_rect.left, tab_client_rect.right,
+            tab_client_rect.top, tab_client_rect.bottom, g_IsOnlyOneTab);
+    g_Log.WriteLog("DBClickTab", logs);
 
     if (!PtInRect(&tab_client_rect, pt))
       return CallNextHookEx(g_GetMsgHook, code, wParam, lParam);
