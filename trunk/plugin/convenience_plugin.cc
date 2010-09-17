@@ -366,8 +366,8 @@ LRESULT CALLBACK GetMsgProc(int code, WPARAM wParam, LPARAM lParam){
   }
   MSG* msg = (MSG*)lParam;
 
-  if (msg->message == WM_LBUTTONDOWN && wParam == PM_REMOVE
-      && msg->wParam == MK_LBUTTON && g_IsOnlyOneTab) {
+  if ((msg->message == WM_LBUTTONDOWN || msg->message == WM_LBUTTONDBLCLK) 
+      && wParam == PM_REMOVE && msg->wParam == MK_LBUTTON && g_IsOnlyOneTab) {
     TCHAR class_name[256];
     GetClassName(msg->hwnd, class_name, 256);
     if (wcscmp(class_name, kChromeClassName) == 0) { 
@@ -436,7 +436,7 @@ LRESULT CALLBACK GetMsgProc(int code, WPARAM wParam, LPARAM lParam){
 //////////////////////////////////////////////////////////////////////////
 
   if (msg->message == WM_LBUTTONDBLCLK && wParam == PM_REMOVE 
-      && g_DBClickCloseTab) {
+      && g_DBClickCloseTab && !g_IsOnlyOneTab) {
     POINT pt;
     pt.x = GET_X_LPARAM(msg->lParam);
     pt.y = GET_Y_LPARAM(msg->lParam);
