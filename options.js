@@ -162,6 +162,7 @@ Option.prototype.setNavigationBarStatus = function(element) {
 };
 
 Option.prototype.setGeneralTabOption = function() {
+  var bg = chrome.extension.getBackgroundPage();
   this.imageBar.checked = eval(localStorage['imageBar']);
   this.videoBar.checked = eval(localStorage['videoBar']);
   this.closeLastTab.checked = eval(localStorage['closeLastTab']);
@@ -177,6 +178,7 @@ Option.prototype.setGeneralTabOption = function() {
   });
   this.closeLastTab.addEventListener('change', function() {
     localStorage['closeLastTab'] = $('closeLastTab').checked;
+    bg.setCloseLastOneTabStatus();
     showSavingSucceedTip();
   });
   this.openInNewTab.addEventListener('change', function() {
@@ -185,7 +187,6 @@ Option.prototype.setGeneralTabOption = function() {
   });
   this.dbclickCloseTab.addEventListener('change', function() {
     localStorage['dbclickCloseTab'] = $('dbclickCloseTab').checked;
-    var bg = chrome.extension.getBackgroundPage();
     bg.dbClickCloseTab();
     showSavingSucceedTip();
   });
