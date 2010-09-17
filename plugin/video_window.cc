@@ -7,6 +7,8 @@ extern Log g_Log;
 extern HMODULE g_hMod;
 extern WNDPROC g_OldProc;
 
+const int kMinChromeHeiht = 150;
+
 enum Resize_State {
   NeedResizeState = 1,
   ReadyResizeState,
@@ -22,7 +24,7 @@ VideoWindow::~VideoWindow(void) {
 bool VideoWindow::InitWindow(HWND chromeHwnd,HWND videoHwnd) {
   chrome_hwnd_ = chromeHwnd;
   video_hwnd_ = videoHwnd;
-
+  lastSizeParam = NULL;
   tip_button_.Init(chrome_hwnd_);
 
   return true;
@@ -40,7 +42,6 @@ BOOL VideoWindow::WndProc(HWND hwnd, UINT& msg, WPARAM& wParam, LPARAM& lParam) 
   }  
   
   POINT pt;
-  static LPARAM lastSizeParam = NULL;
   static Resize_State bFlag = NeedResizeState;
   static UINT nLoop = 0;
   
@@ -68,10 +69,14 @@ BOOL VideoWindow::WndProc(HWND hwnd, UINT& msg, WPARAM& wParam, LPARAM& lParam) 
         RECT rt;
         GetWindowRect(chrome_hwnd_, &rt);
         if (nLoop++ % 10 == 0) {
-          if (lastSizeParam == NULL)
-            SendMessage(chrome_hwnd_, WM_SIZE, SIZE_RESTORED, 
-                        MAKELPARAM(rt.right-rt.left, rt.bottom-rt.top));
-          else if (bFlag == NeedResizeState) {
+          if (lastSizeParam == NULL) {
+            int height = rt.bottom - rt.top;
+            if (height < kMinChromeHeiht)
+              height = kMinChromeHeiht;
+            bFlag = ReadyResizeState;
+            SetWindowPos(chrome_hwnd_, NULL, 0, 0, rt.right-rt.left, height, 
+                         SWP_NOMOVE | SWP_NOREPOSITION);
+          } else if (bFlag == NeedResizeState) {
             bFlag = ReadyResizeState;
             SendMessage(chrome_hwnd_, WM_SIZE, SIZE_RESTORED, lastSizeParam);
           }
@@ -149,6 +154,12 @@ BOOL VideoWindow::WndProc(HWND hwnd, UINT& msg, WPARAM& wParam, LPARAM& lParam) 
         int width, height;
         width = LOWORD(lParam);
         height = HIWORD(lParam);
+        if (height < kMinChromeHeiht) {
+          SetWindowPos(chrome_hwnd_, NULL, 0, 0, width, kMinChromeHeiht, 
+                       SWP_NOMOVE | SWP_NOREPOSITION);
+          lParam = MAKELPARAM(width, kMinChromeHeiht);
+          height = kMinChromeHeiht;
+        }
         lastSizeParam = lParam;
 
         if (hChildWnd != NULL) {

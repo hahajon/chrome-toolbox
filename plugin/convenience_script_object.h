@@ -44,6 +44,7 @@ public:
   void TriggerEvent(int index);
   void TriggerChromeClose();
   void TriggerTabClose();
+  void TriggerCloseCurrentTab();
   void TriggerShortcuts(UINT modify, UINT vk);
 
   typedef map<string,ShortCut_Item> ShortCutKeyMap;

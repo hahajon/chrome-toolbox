@@ -304,6 +304,19 @@ void ConvenienceScriptObject::TriggerTabClose() {
   NPN_ReleaseVariantValue(&result);
 }
 
+void ConvenienceScriptObject::TriggerCloseCurrentTab() {
+  g_Log.WriteLog("Invoke", "TriggerCloseCurrentTab");
+
+  NPObject* window;
+  NPN_GetValue(plugin_->get_npp(), NPNVWindowNPObject, &window);
+  NPIdentifier id;
+  id = NPN_GetStringIdentifier("closeCurrentTab");
+  NPVariant result;
+  if (id)
+    NPN_Invoke(plugin_->get_npp(), window, id, NULL, 0, &result);
+  NPN_ReleaseVariantValue(&result);
+}
+
 void ConvenienceScriptObject::TriggerShortcuts(UINT modify, UINT vk) {
   INPUT inputs[4] = {0};
   int keycount = 0;

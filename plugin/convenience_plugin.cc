@@ -251,8 +251,7 @@ DWORD ConveniencePlugin::Server_Thread(void* param) {
           PostMessage(pPlugin->hwnd_, WM_TABCLOSE, 0, 0);
           break;
         case Cmd_DBClick_CloseTab:
-          PostMessage(pPlugin->hwnd_, WM_TRIGGER_CHROME_SHORTCUTS, 
-                      MOD_CONTROL, 'W');
+          PostMessage(pPlugin->hwnd_, WM_CLOSE_CURRENT_TAB, 0, 0);
           break;
         case  Cmd_KeyDown:
           PostMessage(pPlugin->hwnd_, WM_KEYDOWN, cmd.value.key_down.wparam,
@@ -481,7 +480,7 @@ LRESULT CALLBACK GetMsgProc(int code, WPARAM wParam, LPARAM lParam){
 
       item.cmd = Cmd_DBClick_CloseTab;
       if (WriteFile(client_pipe_handle, &item, sizeof(item), &writelen, 
-        NULL)) {
+                    NULL)) {
           g_Log.WriteLog("msg","write msg to server Cmd_DBClick_CloseTab");
       } else {
         g_Log.WriteLog("error","write msg to server failed Cmd_DBClick_CloseTab");
@@ -661,6 +660,10 @@ LRESULT ConveniencePlugin::WndProc(HWND hWnd, UINT Msg,
       break;
     case WM_TABCLOSE:
       pObject->TriggerTabClose();
+      break;
+    case WM_CLOSE_CURRENT_TAB:
+      Sleep(100);
+      pObject->TriggerCloseCurrentTab();
       break;
     case WM_KEYDOWN:
       {
