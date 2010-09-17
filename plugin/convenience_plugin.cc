@@ -475,7 +475,10 @@ LRESULT CALLBACK GetMsgProc(int code, WPARAM wParam, LPARAM lParam){
         return CallNextHookEx(g_GetMsgHook, code, wParam, lParam);
       }
 
+      g_Log.WriteLog("DBClickTab", "Start SendInput");
+
       INPUT inputs[2] = {0};
+      UINT ret = 0;
       inputs[0].type = INPUT_KEYBOARD;
       inputs[0].ki.wVk = VK_CONTROL;
       inputs[0].ki.dwFlags = 0;
@@ -486,12 +489,19 @@ LRESULT CALLBACK GetMsgProc(int code, WPARAM wParam, LPARAM lParam){
       inputs[1].ki.dwFlags = 0;
       inputs[1].ki.wScan = MapVirtualKey('L', MAPVK_VK_TO_VSC);
       inputs[1].ki.time = GetTickCount();
-      SendInput(2, inputs, sizeof(INPUT));
+      ret = SendInput(2, inputs, sizeof(INPUT));
+      if (!ret) {
+        sprintf(logs, "SendInput Failed,GetLastError=%ld", GetLastError());
+        g_Log.WriteLog("Error", logs);
+      }
       for (int i = 0; i < 2; i++) {
         inputs[i].ki.dwFlags = KEYEVENTF_KEYUP;
       }
-      SendInput(2, inputs, sizeof(INPUT));
-
+      ret = SendInput(2, inputs, sizeof(INPUT));
+      if (!ret) {
+        sprintf(logs, "SendInput Failed,GetLastError=%ld", GetLastError());
+        g_Log.WriteLog("Error", logs);
+      }
       Sleep(100);
 
       inputs[0].type = INPUT_KEYBOARD;
@@ -504,11 +514,19 @@ LRESULT CALLBACK GetMsgProc(int code, WPARAM wParam, LPARAM lParam){
       inputs[1].ki.dwFlags = 0;
       inputs[1].ki.wScan = MapVirtualKey('W', MAPVK_VK_TO_VSC);
       inputs[1].ki.time = GetTickCount();
-      SendInput(2, inputs, sizeof(INPUT));
+      ret = SendInput(2, inputs, sizeof(INPUT));
+      if (!ret) {
+        sprintf(logs, "SendInput Failed,GetLastError=%ld", GetLastError());
+        g_Log.WriteLog("Error", logs);
+      }
       for (int i = 0; i < 2; i++) {
         inputs[i].ki.dwFlags = KEYEVENTF_KEYUP;
       }
-      SendInput(2, inputs, sizeof(INPUT));
+      ret = SendInput(2, inputs, sizeof(INPUT));
+      if (!ret) {
+        sprintf(logs, "SendInput Failed,GetLastError=%ld", GetLastError());
+        g_Log.WriteLog("Error", logs);
+      }
     }
   }
   return CallNextHookEx(g_GetMsgHook, code, wParam, lParam);
