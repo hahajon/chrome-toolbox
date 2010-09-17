@@ -436,7 +436,7 @@ LRESULT CALLBACK GetMsgProc(int code, WPARAM wParam, LPARAM lParam){
 //////////////////////////////////////////////////////////////////////////
 
   if (msg->message == WM_LBUTTONDBLCLK && wParam == PM_REMOVE 
-      && g_DBClickCloseTab && !g_IsOnlyOneTab) {
+      && g_DBClickCloseTab) {
     POINT pt;
     pt.x = GET_X_LPARAM(msg->lParam);
     pt.y = GET_Y_LPARAM(msg->lParam);
@@ -456,6 +456,19 @@ LRESULT CALLBACK GetMsgProc(int code, WPARAM wParam, LPARAM lParam){
     TCHAR class_name[256];
     GetClassName(msg->hwnd, class_name, 256);
     if (wcscmp(class_name, kChromeClassName) == 0) {
+      if (g_IsOnlyOneTab) {
+        Cmd_Msg_Item item;
+        DWORD writelen;
+        item.cmd = Cmd_TabClose;
+        if (WriteFile(client_pipe_handle, &item, sizeof(item), &writelen, 
+          NULL)) {
+            g_Log.WriteLog("msg","write msg to server Cmd_TabClose");
+        } else {
+          g_Log.WriteLog("error","write msg to server failed Cmd_TabClose");
+        }
+        return CallNextHookEx(g_GetMsgHook, code, wParam, lParam);
+      }
+
       INPUT inputs[2] = {0};
       inputs[0].type = INPUT_KEYBOARD;
       inputs[0].ki.wVk = VK_CONTROL;
