@@ -322,8 +322,11 @@ var floatingBar = {
   restoreVideoWindow: function() {
     var nodeStyles = floatingBar.nodeStyles;
     var curVideo = floatingBar.curVideoSize.videoElement;
-    curVideo.height = floatingBar.curVideoSize.height;
-    curVideo.width = floatingBar.curVideoSize.width
+    if (curVideo) {
+      curVideo.height = floatingBar.curVideoSize.height;
+      curVideo.width = floatingBar.curVideoSize.width;
+    }
+
     for (var i = 0; i < nodeStyles.length; i++) {
       nodeStyles[i].node.style.cssText = nodeStyles[i].cssText;
       nodeStyles[i].node.style.display = nodeStyles[i].display;
