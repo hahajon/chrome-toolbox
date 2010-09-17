@@ -16,6 +16,7 @@
 #define WM_CHROMECLOSE                WM_USER+101
 #define WM_TRIGGER_CHROME_SHORTCUTS   WM_USER+102
 #define WM_TABCLOSE                   WM_USER+103
+#define WM_CLOSE_CURRENT_TAB          WM_USER+104
 
 #define EVENTID_FRESH   3456
 

@@ -8,7 +8,7 @@ extern HMODULE g_hMod;
 
 NCButton::NCButton(void) {
   is_topmost_ = false;
-  Gdiplus::GdiplusStartup(&token_,&start_input_, NULL);
+  Gdiplus::GdiplusStartup(&token_, &start_input_, NULL);
 }
 
 NCButton::~NCButton(void) {
@@ -70,10 +70,18 @@ void NCButton::OnPaint() {
   HDC hdc = grph_->GetHDC();
   mask_dc_ = CreateCompatibleDC(hdc);
   mask_bitmap_ = CreateCompatibleBitmap(hdc, normal_image_->GetWidth(),
-                                          normal_image_->GetHeight());
+                                        normal_image_->GetHeight());
   SelectObject(mask_dc_, mask_bitmap_);
-  BitBlt(mask_dc_, 0, 0, normal_image_->GetWidth(), normal_image_->GetHeight(),
-         hdc, pt.x-TIP_BUTTON_WIDTH-CONST_FRAME_BORDER, pt.y, SRCCOPY);
+  if (IsMaximized(parent_hwnd_))
+    BitBlt(mask_dc_, 0, 0, normal_image_->GetWidth(), normal_image_->GetHeight(),
+           hdc, pt.x-TIP_BUTTON_WIDTH-CONST_FRAME_BORDER, pt.y, SRCCOPY);
+  else {
+    RECT rt;
+    GetClientRect(parent_hwnd_, &rt);
+    BitBlt(mask_dc_, 0, 0, normal_image_->GetWidth(), normal_image_->GetHeight(),
+           hdc, rt.right-TIP_BUTTON_WIDTH-CONST_FRAME_BORDER, 
+           pt.y + TIP_BUTTON_HEIGHT, SRCCOPY);
+  }
   grph_->ReleaseHDC(hdc);
 
   HDC hdc_temp = CreateCompatibleDC(mask_dc_);

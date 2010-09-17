@@ -17,5 +17,6 @@ private:
   HWND chrome_hwnd_;
   HWND video_hwnd_;
   NCButton tip_button_;
+  LPARAM lastSizeParam;
 
 };
