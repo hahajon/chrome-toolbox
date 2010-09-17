@@ -215,42 +215,16 @@
     });
   }
 
-  function selectItemById(id) {
-    var function_table = key_util.function_table;
-    for (var i = 0; i < function_table.length; i++) {
-      if (id == function_table[i].id) {
-        return function_table[i];
-      }
-    }
-  }
-
-  function getQuicklyVisitItem() {
-    var quickly = localStorage['quicklyVisitMenu'] || '';
-    var list = quickly.split(',');
-    var items = [];
-    for (var i = 0; i < list.length; i++) {
-      var item = selectItemById(list[i]);
-      items.push(item);
-    }
-    return items;
-  }
-
-  var checkShortcut = function(id) {
-    shortcut.selectById(id, function(tx, results) {
-      if (results.rows.length > 0) {
-        return results.rows.shortcut;
-      }
-    });
-  }
-
   function createQuicklyVisitItem() {
-    var items = getQuicklyVisitItem();
+    var quickAccessMenu = localStorage['quicklyVisitMenu'] || '';
+    var items = quickAccessMenu.split(',');
     var ul = document.createElement('ul');
     ul.id = 'quicklyCommand';
     var count = 0;
     var shortcut = new Shortcut();
     var createItem = function(items, count) {
-      var item = items[count];
+      var id = parseInt(items[count]);
+      var item = key_util.function_table[id];
       shortcut.selectById(item.id, function(tx, results) {
         var shortcutStr = '';
         if (results.rows.length > 0) {
