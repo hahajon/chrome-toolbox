@@ -108,7 +108,7 @@ Shortcut.prototype.showTable = function(categorySelect, browserSelect, isCompare
   field4.style.cssText = 'text-align: center; padding-left: 0;';
   tr.appendChild(field4);
   table.appendChild(tr);
-  for (var i = 0; i < function_table.length; i++) {
+  for (var i = 1; i < function_table.length; i++) {
     var row = function_table[i];
     if (row.category == categorySelect.value) {
       tr = document.createElement('tr');

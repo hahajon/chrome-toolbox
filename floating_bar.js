@@ -51,6 +51,8 @@ chrome.extension.onRequest.addListener(function(request, sender, response) {
     imageBarStatus = eval(request.imageBar);
     videoBarStatus = eval(request.videoBar);
     openInNewTabStatus = eval(request.openInNewTab);
+  } else if (request.msg == 'restoreTabTitle') {
+	document.title = request.orgTitle;
   }
 });
 
@@ -105,12 +107,10 @@ var floatingBar = {
         }
       }, 1000);
     };
-
     var show = function() {
       window.clearTimeout(timer);
       timer = null;
     }
-
     listener.addEventListener('mouseout', hidden , false)
     menuBar.addEventListener('mouseover', show, false);
     menuBar.addEventListener('mouseout', hidden, false);
@@ -256,29 +256,32 @@ var floatingBar = {
   },
 
   setOtherNodesInvisible: function(element, styles) {
-    while(element && element.parentNode != document.documentElement) {
-      var nodes = element.parentNode.childNodes;
+    if (element && element.parentNode != document.documentElement) {
+      var nodes = element.parentNode.children;
       for (var i = 0; i < nodes.length; i++) {
-          if (nodes[i] != element && nodes[i].style) {
+        if (nodes[i].style && nodes[i].style.display != 'none') {
+          styles.push({node: nodes[i], display: nodes[i].style.display});
+          if (nodes[i] != element) {
             nodes[i].style.display = 'none';
           }
-          if (nodes[i].style) {
-            styles.push({node: nodes[i], nodeStyle: nodes[i].style.cssText});
-          }
+        }
       }
       element = element.parentNode;
       floatingBar.setOtherNodesInvisible(element, styles);
     }
   },
 
+  getComputedStyle: function(element, style) {
+    return window.getComputedStyle(element, style)
+  },
 
   popupVideoWindow: function(curElement, position) {
     var curElement = curElement;
     var styles = [];
     var tabTitle;
-    styles.push({node: document.body, style: document.body.style.cssText});
+    styles.push({node: document.body, cssTest: document.body.style.cssText});
     styles.push({node: curElement.parentNode,
-                 style: curElement.parentNode.style.cssText});
+                 cssTest: curElement.parentNode.style.cssText});
     var styleProperties = {position: 'fixed',
                            top: 0,
                            left: 0,
@@ -322,7 +325,8 @@ var floatingBar = {
     curVideo.height = floatingBar.curVideoSize.height;
     curVideo.width = floatingBar.curVideoSize.width
     for (var i = 0; i < nodeStyles.length; i++) {
-      nodeStyles[i].node.style.cssText = nodeStyles[i].style;
+      nodeStyles[i].node.style.cssText = nodeStyles[i].cssText;
+      nodeStyles[i].node.style.display = nodeStyles[i].display;
     }
     floatingBar.videoAloneFlag = false;
     return {msg: 'restoreVideoWindow'};

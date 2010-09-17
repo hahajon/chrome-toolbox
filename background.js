@@ -52,6 +52,12 @@
     });
   }
 
+  function closeCurrentTab() {
+    chrome.tabs.getSelected(null, function(tab) {
+      chrome.tabs.remove(tab.id);
+    });
+  }
+
   function dbClickCloseTab() {
     var parameter = eval(localStorage['dbclickCloseTab']) && true;
     plugin_convenience.SetDBClickCloseTab(parameter);
@@ -205,9 +211,11 @@
                                          index:1}, function(){
           chrome.tabs.getAllInWindow(window.id, function(tabs) {
             chrome.tabs.remove(tabs[0].id);
-            var pluginId_videoAlone = document.getElementById('pluginId_videoAlone');
+            var pluginId_videoAlone = $('pluginId_videoAlone');
             pluginId_videoAlone.ShowVideoAlone(sender.tab.title,
                 request.orgTitle, parentWindowId, window.id, sender.tab.id);
+            chrome.tabs.sendRequest(sender.tab.id,
+                {msg: 'restoreTabTitle', orgTitle: request.orgTitle});
           });
         });
       });
@@ -227,9 +235,11 @@
             } else {
               // if parent window closed, create a new window
               chrome.windows.create({type: 'normal'}, function(window) {
-                chrome.tabs.move(tabId, {windowId: window.id, index:1},
-                    function(){
+                chrome.tabs.move(tabId, {windowId: window.id, index:1}, function(){ 
                   chrome.tabs.update(tabId, {selected:true});
+                  chrome.tabs.getAllInWindow(window.id, function(tabs) {
+                    chrome.tabs.remove(tabs[0].id);
+                  });
                 });
               });
             }

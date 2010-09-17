@@ -178,7 +178,7 @@ Option.prototype.setGeneralTabOption = function() {
   });
   this.closeLastTab.addEventListener('change', function() {
     localStorage['closeLastTab'] = $('closeLastTab').checked;
-    bg.setCloseLastOneTabStatus();
+    bg.setCloseLastOneTabStatus()
     showSavingSucceedTip();
   });
   this.openInNewTab.addEventListener('change', function() {
