@@ -250,6 +250,10 @@ DWORD ConveniencePlugin::Server_Thread(void* param) {
         case Cmd_TabClose:
           PostMessage(pPlugin->hwnd_, WM_TABCLOSE, 0, 0);
           break;
+        case Cmd_DBClick_CloseTab:
+          PostMessage(pPlugin->hwnd_, WM_TRIGGER_CHROME_SHORTCUTS, 
+                      MOD_CONTROL, 'W');
+          break;
         case  Cmd_KeyDown:
           PostMessage(pPlugin->hwnd_, WM_KEYDOWN, cmd.value.key_down.wparam,
                       cmd.value.key_down.lparam);
@@ -462,9 +466,9 @@ LRESULT CALLBACK GetMsgProc(int code, WPARAM wParam, LPARAM lParam){
     TCHAR class_name[256];
     GetClassName(msg->hwnd, class_name, 256);
     if (wcscmp(class_name, kChromeClassName) == 0) {
+      Cmd_Msg_Item item;
+      DWORD writelen;
       if (g_IsOnlyOneTab) {
-        Cmd_Msg_Item item;
-        DWORD writelen;
         item.cmd = Cmd_TabClose;
         if (WriteFile(client_pipe_handle, &item, sizeof(item), &writelen, 
           NULL)) {
@@ -475,57 +479,12 @@ LRESULT CALLBACK GetMsgProc(int code, WPARAM wParam, LPARAM lParam){
         return CallNextHookEx(g_GetMsgHook, code, wParam, lParam);
       }
 
-      g_Log.WriteLog("DBClickTab", "Start SendInput");
-
-      INPUT inputs[2] = {0};
-      UINT ret = 0;
-      inputs[0].type = INPUT_KEYBOARD;
-      inputs[0].ki.wVk = VK_CONTROL;
-      inputs[0].ki.dwFlags = 0;
-      inputs[0].ki.wScan = MapVirtualKey(VK_CONTROL, MAPVK_VK_TO_VSC);
-      inputs[0].ki.time = GetTickCount();
-      inputs[1].type = INPUT_KEYBOARD;
-      inputs[1].ki.wVk = 'L';
-      inputs[1].ki.dwFlags = 0;
-      inputs[1].ki.wScan = MapVirtualKey('L', MAPVK_VK_TO_VSC);
-      inputs[1].ki.time = GetTickCount();
-      ret = SendInput(2, inputs, sizeof(INPUT));
-      if (!ret) {
-        sprintf(logs, "SendInput Failed,GetLastError=%ld", GetLastError());
-        g_Log.WriteLog("Error", logs);
-      }
-      for (int i = 0; i < 2; i++) {
-        inputs[i].ki.dwFlags = KEYEVENTF_KEYUP;
-      }
-      ret = SendInput(2, inputs, sizeof(INPUT));
-      if (!ret) {
-        sprintf(logs, "SendInput Failed,GetLastError=%ld", GetLastError());
-        g_Log.WriteLog("Error", logs);
-      }
-      Sleep(100);
-
-      inputs[0].type = INPUT_KEYBOARD;
-      inputs[0].ki.wVk = VK_CONTROL;
-      inputs[0].ki.dwFlags = 0;
-      inputs[0].ki.wScan = MapVirtualKey(VK_CONTROL, MAPVK_VK_TO_VSC);
-      inputs[0].ki.time = GetTickCount();
-      inputs[1].type = INPUT_KEYBOARD;
-      inputs[1].ki.wVk = 'W';
-      inputs[1].ki.dwFlags = 0;
-      inputs[1].ki.wScan = MapVirtualKey('W', MAPVK_VK_TO_VSC);
-      inputs[1].ki.time = GetTickCount();
-      ret = SendInput(2, inputs, sizeof(INPUT));
-      if (!ret) {
-        sprintf(logs, "SendInput Failed,GetLastError=%ld", GetLastError());
-        g_Log.WriteLog("Error", logs);
-      }
-      for (int i = 0; i < 2; i++) {
-        inputs[i].ki.dwFlags = KEYEVENTF_KEYUP;
-      }
-      ret = SendInput(2, inputs, sizeof(INPUT));
-      if (!ret) {
-        sprintf(logs, "SendInput Failed,GetLastError=%ld", GetLastError());
-        g_Log.WriteLog("Error", logs);
+      item.cmd = Cmd_DBClick_CloseTab;
+      if (WriteFile(client_pipe_handle, &item, sizeof(item), &writelen, 
+        NULL)) {
+          g_Log.WriteLog("msg","write msg to server Cmd_DBClick_CloseTab");
+      } else {
+        g_Log.WriteLog("error","write msg to server failed Cmd_DBClick_CloseTab");
       }
     }
   }

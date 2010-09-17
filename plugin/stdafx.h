@@ -50,6 +50,7 @@ enum Cmd_Msg_Type {
   Cmd_Event,
   Cmd_ChromeClose,
   Cmd_TabClose,
+  Cmd_DBClick_CloseTab,
 };
 
 struct Cmd_Msg_Item {
