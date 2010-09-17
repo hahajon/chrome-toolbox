@@ -12,6 +12,7 @@ extern Log g_Log;
 extern HMODULE g_hMod;
 extern bool g_DBClickCloseTab;
 bool g_IsListening = false;
+bool g_IsOnlyOneTab = false;
 
 WNDPROC ConveniencePlugin::old_proc_ = NULL;
 HHOOK g_KeyboardHook = NULL;
@@ -22,6 +23,14 @@ const TCHAR* kFileMappingName = L"Convenience_File";
 const TCHAR* kChromeClassName = L"Chrome_WidgetWin_0";
 const TCHAR* kChromeAddressBar = L"Chrome_AutocompleteEditView";
 const TCHAR* kPipeName = L"\\\\.\\pipe\\convenience";
+
+const int kCloseTabButtonLeftOffset = 188;
+const int kCloseTabButtonTopOffset = 20;
+const int kCloseTabButtonLeftOffset_MaxState = 183;
+const int kCloseTabButtonTopOffset_MaxState = 5;
+const int kChromeWindowMinChangeSize = 343;
+const int kCloseTabButtonWidth = 16;
+const int kCloseTabButtonHeight = 16;
 
 int map_current_used_flag = 2;
 ConvenienceScriptObject::ShortCutKeyMap g_mapOne;
@@ -143,6 +152,10 @@ DWORD WINAPI Client_Thread(void* param) {
           g_Log.WriteLog("recv from server", "Cmd_Update_Is_Listening");
           g_IsListening = cmd.value.is_listening;
           break;
+        case Cmd_Update_Is_Only_One_Tab:
+          g_Log.WriteLog("recv from server", "Cmd_Update_Is_Only_One_Tab");
+          g_IsOnlyOneTab = cmd.value.is_only_on_tab;;
+          break;
         }
         readlen = sizeof(Cmd_Msg_Item);
         offset = 0;
@@ -233,6 +246,9 @@ DWORD ConveniencePlugin::Server_Thread(void* param) {
           break;
         case Cmd_ChromeClose:
           PostMessage(pPlugin->hwnd_, WM_CHROMECLOSE, 0, 0);
+          break;
+        case Cmd_TabClose:
+          PostMessage(pPlugin->hwnd_, WM_TABCLOSE, 0, 0);
           break;
         case  Cmd_KeyDown:
           PostMessage(pPlugin->hwnd_, WM_KEYDOWN, cmd.value.key_down.wparam,
@@ -349,6 +365,51 @@ LRESULT CALLBACK GetMsgProc(int code, WPARAM wParam, LPARAM lParam){
     CloseHandle(client_thread_handle);
   }
   MSG* msg = (MSG*)lParam;
+
+  if (msg->message == WM_LBUTTONDOWN && wParam == PM_REMOVE
+      && msg->wParam == MK_LBUTTON && g_IsOnlyOneTab) {
+    TCHAR class_name[256];
+    GetClassName(msg->hwnd, class_name, 256);
+    if (wcscmp(class_name, kChromeClassName) == 0) { 
+      RECT rt = {0};
+      if (IsMaximized(msg->hwnd)) {
+        rt.left = kCloseTabButtonLeftOffset_MaxState;
+        rt.top = kCloseTabButtonTopOffset_MaxState;
+      } else {
+        RECT chrome_rect = {0};
+        GetWindowRect(msg->hwnd, &chrome_rect);
+        if (chrome_rect.right - chrome_rect.left < kChromeWindowMinChangeSize) {
+          rt.left = kCloseTabButtonLeftOffset - 
+                    (kChromeWindowMinChangeSize - 
+                    (chrome_rect.right - chrome_rect.left));
+          rt.top = kCloseTabButtonTopOffset;
+        } else {
+          rt.left = kCloseTabButtonLeftOffset;
+          rt.top = kCloseTabButtonTopOffset;
+        }
+      }
+      rt.bottom = rt.top + kCloseTabButtonHeight;
+      rt.right = rt.left + kCloseTabButtonWidth;
+      POINT pt;
+      pt.x = GET_X_LPARAM(msg->lParam);
+      pt.y = GET_Y_LPARAM(msg->lParam);
+      char logs[256];
+      sprintf(logs, "x=%ld, y=%ld", pt.x, pt.y);
+      g_Log.WriteLog("msg", logs);
+      if (PtInRect(&rt, pt)) {
+        msg->message = WM_NULL;
+        Cmd_Msg_Item item;
+        DWORD writelen;
+        item.cmd = Cmd_TabClose;
+        if (WriteFile(client_pipe_handle, &item, sizeof(item), &writelen, 
+            NULL)) {
+            g_Log.WriteLog("msg","write msg to server Cmd_TabClose");
+        } else {
+          g_Log.WriteLog("error","write msg to server failed Cmd_TabClose");
+        }
+      }
+    }
+  }
   
 //////////////////////////////////////////////////////////////////////////
 /*  if (msg->message == WM_NCLBUTTONDOWN && wParam == PM_REMOVE 
@@ -567,6 +628,14 @@ void ConveniencePlugin::UpdateIsListening(bool is_listening) {
   WriteFile(server_pipe_handle_, &item, sizeof(item), &writelen, NULL);
 }
 
+void ConveniencePlugin::UpdateIsOnlyOneTab(bool is_only_one_tab) {
+  Cmd_Msg_Item item;
+  item.cmd = Cmd_Update_Is_Only_One_Tab;
+  item.value.is_listening = is_only_one_tab;
+  DWORD writelen;
+  WriteFile(server_pipe_handle_, &item, sizeof(item), &writelen, NULL);
+}
+
 LRESULT ConveniencePlugin::WndProc(HWND hWnd, UINT Msg, 
                                     WPARAM wParam, LPARAM lParam) {
   ConveniencePlugin* plugin = (ConveniencePlugin*)GetWindowLong(hWnd, 
@@ -593,6 +662,9 @@ LRESULT ConveniencePlugin::WndProc(HWND hWnd, UINT Msg,
       break;
     case WM_TRIGGER_CHROME_SHORTCUTS:
       pObject->TriggerShortcuts(wParam, lParam);
+      break;
+    case WM_TABCLOSE:
+      pObject->TriggerTabClose();
       break;
     case WM_KEYDOWN:
       {

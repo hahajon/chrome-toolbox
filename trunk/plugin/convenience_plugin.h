@@ -22,6 +22,7 @@ public:
   void SetShortcutsToMemory(ShortCut_Item* list, int count);
   void UpdateDBClick_CloseTab(bool double_click_closetab);
   void UpdateIsListening(bool is_listening);
+  void UpdateIsOnlyOneTab(bool is_only_one_tab);
   void UpdateShortcutsFromMemory();
   void TriggerEvent(const char* shortcuts);
 

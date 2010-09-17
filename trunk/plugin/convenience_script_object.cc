@@ -48,6 +48,10 @@ NPObject* ConvenienceScriptObject::Allocate(NPP npp, NPClass *aClass) {
     item.function_pointer = ON_INVOKEHELPER(&ConvenienceScriptObject::
         RemoveListener);
     pRet->AddFunction(item);    
+    strcpy(item.function_name, "IsOnlyOneTab");
+    item.function_pointer = ON_INVOKEHELPER(&ConvenienceScriptObject::
+        IsOnlyOneTab);
+    pRet->AddFunction(item);    
   }
   return pRet;
 }
@@ -287,6 +291,19 @@ void ConvenienceScriptObject::TriggerChromeClose() {
   NPN_ReleaseVariantValue(&result);
 }
 
+void ConvenienceScriptObject::TriggerTabClose() {
+  g_Log.WriteLog("Invoke", "TriggerTabClose");
+
+  NPObject* window;
+  NPN_GetValue(plugin_->get_npp(), NPNVWindowNPObject, &window);
+  NPIdentifier id;
+  id = NPN_GetStringIdentifier("beforeLastTabClose");
+  NPVariant result;
+  if (id)
+    NPN_Invoke(plugin_->get_npp(), window, id, NULL, 0, &result);
+  NPN_ReleaseVariantValue(&result);
+}
+
 void ConvenienceScriptObject::TriggerShortcuts(UINT modify, UINT vk) {
   INPUT inputs[4] = {0};
   int keycount = 0;
@@ -463,6 +480,18 @@ bool ConvenienceScriptObject::RemoveListener(const NPVariant *args,
   NPN_ReleaseObject(input_object_);
   ConveniencePlugin* plugin = (ConveniencePlugin*)plugin_;
   plugin->UpdateIsListening(is_listened_);
+  return true;
+}
+
+bool ConvenienceScriptObject::IsOnlyOneTab(const NPVariant *args, 
+                                           uint32_t argCount, 
+                                           NPVariant *result) {
+  if (argCount != 1 || !NPVARIANT_IS_BOOLEAN(args[0]))
+    return false;
+
+  bool only_one_tab = NPVARIANT_TO_BOOLEAN(args[0]);
+  ConveniencePlugin* plugin = (ConveniencePlugin*)plugin_;
+  plugin->UpdateIsOnlyOneTab(only_one_tab);
   return true;
 }
 

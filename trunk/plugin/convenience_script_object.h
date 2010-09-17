@@ -34,6 +34,8 @@ public:
                    NPVariant *result);
   bool RemoveListener(const NPVariant *args, uint32_t argCount,
                       NPVariant *result);
+  bool IsOnlyOneTab(const NPVariant *args, uint32_t argCount,
+                    NPVariant *result);
 
   void OnKeyDown(bool contrl, bool alt, bool shift, WPARAM wParam,
                  LPARAM lParam);
@@ -41,6 +43,7 @@ public:
   void TriggerEvent(const char* shortcuts);
   void TriggerEvent(int index);
   void TriggerChromeClose();
+  void TriggerTabClose();
   void TriggerShortcuts(UINT modify, UINT vk);
 
   typedef map<string,ShortCut_Item> ShortCutKeyMap;
