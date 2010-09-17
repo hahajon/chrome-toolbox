@@ -72,11 +72,11 @@ BEGIN
             VALUE "FileDescription", "This is a npapi plugin built for Chrome on Windows."
             VALUE "FileOpenName", "Convenience Plugin|Set WallPaper Plugin|Stand Video Alone Plugin"
             VALUE "FileVersion", "1, 0, 0, 1"
-            VALUE "InternalName", "npConvenience"
+            VALUE "InternalName", "convenience"
             VALUE "LegalCopyright", "Copyright (C) 2010"
             VALUE "MIMEType", "application/x-npconvenience|application/x-npwallpaper|application/x-npvideoalone"
-            VALUE "OriginalFilename", "npConvenience.dll"
-            VALUE "ProductName", "npConvenience"
+            VALUE "OriginalFilename", "convenience.dll"
+            VALUE "ProductName", "convenience"
             VALUE "ProductVersion", "1, 0, 0, 1"
         END
     END
@@ -94,7 +94,7 @@ END
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-IDI_TRAYICON            ICON                    "resource\\chrome.ico"
+IDI_TRAYICON            ICON                    "resources\\chrome.ico"
 #endif    // 中文(中华人民共和国) resources
 /////////////////////////////////////////////////////////////////////////////
 

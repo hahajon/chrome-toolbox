@@ -1,4 +1,4 @@
-LIBRARY	"npConvenience"
+LIBRARY	"convenience"
 
 EXPORTS
 	NP_GetEntryPoints     @1
