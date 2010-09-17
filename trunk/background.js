@@ -30,12 +30,25 @@
     }
   });
 
-  function closeTab() {
-    chrome.tabs.getAllInWindow(null, function(tabs) {
-      if (tabs.length == 1) {
-        chrome.tabs.create({url: 'chrome://newtab/'});
-        return {msg: 'close'};
-      }
+  function setCloseLastOneTabStatus() {
+    var isCloseWindow = eval(localStorage['closeLastTab']) && true;
+    if (isCloseWindow) {
+      chrome.tabs.getAllInWindow(null, function(tabs) {
+        console.log(tabs.length);
+        if (tabs.length > 1) {
+          plugin_convenience.IsOnlyOneTab(false);
+        } else if (tabs.length == 1) {
+          plugin_convenience.IsOnlyOneTab(true);
+        }
+      });
+    } else {
+      plugin_convenience.IsOnlyOneTab(false);
+    }
+  }
+
+  function beforeLastTabClose() {
+    chrome.tabs.getSelected(null, function(tab) {
+      chrome.tabs.update(tab.id, {url: 'chrome://newtab/'});
     });
   }
 
@@ -54,17 +67,6 @@
         }
       });
     }
-  }
-
-  function chromeBeforeClose() {
-    isCloseWindow = true;
-//    chrome.windows.getCurrent(function(window) {
-//      chrome.windows.remove(window.id, function() {
-//        setTimeout(function() {
-//          isCloseWindow = false;
-//        }, 300);
-//      });
-//    });
   }
 
   function executeShortcut(obj) {
@@ -113,12 +115,20 @@
     localStorage['openInNewTab'] = localStorage['openInNewTab'] || 'false';
     localStorage['dbclickCloseTab'] = localStorage['dbclickCloseTab'] || 'true';
     localStorage['quicklyVisitMenu'] = localStorage['quicklyVisitMenu'] || '5,15';
+    setCloseLastOneTabStatus();
     dbClickCloseTab();
   }
 
-//  chrome.tabs.onRemoved.addListener(function(tabId) {
-//    closeLastTabNotCloseWindow();
-//  });
+  chrome.tabs.onCreated.addListener(function(tab) {
+    setCloseLastOneTabStatus();
+  });
+  chrome.tabs.onRemoved.addListener(function(tabId) {
+    setCloseLastOneTabStatus();
+  });
+  chrome.windows.onFocusChanged.addListener(function(windowId) {
+    console.log('foucused');
+    setCloseLastOneTabStatus();
+  });
 
   chrome.tabs.onSelectionChanged.addListener(function(tabId) {
     chrome.tabs.sendRequest(tabId, {msg: 'status',
