@@ -15,6 +15,7 @@
 #define WM_CHROMEHWND                 WM_USER+100
 #define WM_CHROMECLOSE                WM_USER+101
 #define WM_TRIGGER_CHROME_SHORTCUTS   WM_USER+102
+#define WM_TABCLOSE                   WM_USER+103
 
 #define EVENTID_FRESH   3456
 
@@ -43,10 +44,12 @@ enum Cmd_Msg_Type {
   Cmd_Response_Update,
   Cmd_Update_DBClick_CloseTab,
   Cmd_Update_Is_Listening,
+  Cmd_Update_Is_Only_One_Tab,
   Cmd_KeyDown,
   Cmd_KeyUp,
   Cmd_Event,
   Cmd_ChromeClose,
+  Cmd_TabClose,
 };
 
 struct Cmd_Msg_Item {
@@ -55,6 +58,7 @@ struct Cmd_Msg_Item {
     UINT shortcuts_Id;
     bool double_click_closetab;
     bool is_listening;
+    bool is_only_on_tab;
     struct KeyDown {
       WPARAM wparam;
       LPARAM lparam;
