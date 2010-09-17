@@ -54,7 +54,8 @@
 
   function closeCurrentTab() {
     chrome.tabs.getSelected(null, function(tab) {
-      chrome.tabs.remove(tab.id);
+      window.setTimeout(function() {chrome.tabs.remove(tab.id);}, 100)
+
     });
   }
 
@@ -222,29 +223,75 @@
     },
 
     restore: function(parentWindowId, curWindowId, tabId) {
-      chrome.tabs.sendRequest(tabId, {msg: 'restoreVideoAlone'}, function(response) {
-        if (response && response.msg == 'restoreVideoWindow') {
-          chrome.windows.get(parentWindowId, function(window){
-            if (window){
-              chrome.tabs.getAllInWindow(window.id,function(tabs){
-                chrome.tabs.move(tabId, {windowId: window.id,
-                    index: tabs ? tabs.length:0 }, function(){
-                  chrome.tabs.update(tabId, {selected:true});
-                });
+      var newWindow = null;
+      var restoreAllTabs = function(tabs , count) {
+        if (tabs[count].id == tabId && ++count >= tabs.length) {
+          return;
+        }
+        chrome.windows.get(parentWindowId, function(window) {
+          if (window) {
+            chrome.tabs.getAllInWindow(window.id, function(parentTabs){
+              chrome.tabs.move(tabs[count].id, {windowId: window.id,
+                  index: parentTabs ? parentTabs.length:0 }, function() {
+                count++;
+                if (tabs.length > count) {
+                  restoreOtherTabs(tabs, count);
+                }
               });
-            } else {
-              // if parent window closed, create a new window
-              chrome.windows.create({type: 'normal'}, function(window) {
-                chrome.tabs.move(tabId, {windowId: window.id, index:1}, function(){ 
-                  chrome.tabs.update(tabId, {selected:true});
-                  chrome.tabs.getAllInWindow(window.id, function(tabs) {
-                    chrome.tabs.remove(tabs[0].id);
+            });
+          } else {
+            chrome.windows.create({type: 'normal'}, function(window) {
+              newWindow = window;
+              restoreNoParentWindow(tabs, window.id, count);
+            });
+          }
+        });
+      }
+
+      var restoreNoParentWindow = function(tabs, parentWindowId, count) {
+        chrome.tabs.move(tabs[count].id, {windowId: parentWindowId, index:0}, function(){
+          count++;
+          if (tabs.length > count) {
+            restoreNoParentWindow(tabs, parentWindowId, count);
+          }
+        });
+      }
+
+      chrome.tabs.getAllInWindow(curWindowId, function(tabs) {
+        restoreAllTabs(tabs, 0);
+        chrome.tabs.sendRequest(tabId, {msg: 'restoreVideoAlone'}, function(response) {
+          if (response && response.msg == 'restoreVideoWindow') {
+            chrome.windows.get(parentWindowId, function(window){
+              if (window) {
+                chrome.tabs.getAllInWindow(window.id, function(curTabs){
+                  chrome.tabs.move(tabId, {windowId: window.id,
+                      index: curTabs ? curTabs.length:0 }, function() {
+                    chrome.tabs.update(tabId, {selected:true});
                   });
                 });
-              });
-            }
-          });
-        }
+              } else {
+                // if parent window closed, create a new window
+                if (newWindow) {
+                  chrome.tabs.move(tabId, {windowId: newWindow.id, index:1}, function(){
+                    chrome.tabs.update(tabId, {selected:true});
+                    chrome.tabs.getAllInWindow(newWindow.id, function(tabs) {
+                      chrome.tabs.remove(tabs[0].id);
+                    });
+                  });
+                } else {
+                  chrome.windows.create({type: 'normal'}, function(window) {
+                    chrome.tabs.move(tabId, {windowId: window.id, index:1}, function(){
+                      chrome.tabs.update(tabId, {selected:true});
+                      chrome.tabs.getAllInWindow(window.id, function(tabs) {
+                        chrome.tabs.remove(tabs[0].id);
+                      });
+                    });
+                  });
+                }
+              }
+            });
+          }
+        });
       });
     }
   }

@@ -161,8 +161,8 @@
       var shortcut = new Shortcut();
       shortcut.selectById(id, function(tx, results) {
         if (results.rows.length > 0) {
-          var t = results.rows.item(0).shortcut;
-          element.innerText = t;
+          var shortcutStr = results.rows.item(0).shortcut;
+          element.innerText = shortcutStr;
         }
       });
     }
