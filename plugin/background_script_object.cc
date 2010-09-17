@@ -103,7 +103,8 @@ void WINAPI TimerProc(HWND hWnd, UINT nMsg, UINT nIDEvent, DWORD dwTime) {
       versionInfo.dwOSVersionInfoSize = sizeof (OSVERSIONINFO);
       GetVersionEx(&versionInfo);
     }
-    if (versionInfo.dwMajorVersion >= 6) {
+    if (versionInfo.dwMajorVersion >= 6 && 
+        (versionInfo.dwMajorVersion != 6 || versionInfo.dwMinorVersion != 0)) {
       cx = 0;
       cy = 0;
     }
