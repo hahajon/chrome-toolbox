@@ -9,12 +9,6 @@ extern WNDPROC g_OldProc;
 
 const int kMinChromeHeiht = 150;
 
-enum Resize_State {
-  NeedResizeState = 1,
-  ReadyResizeState,
-  FinishResizeState,
-};
-
 VideoWindow::VideoWindow(void) {
 }
 
@@ -25,6 +19,8 @@ bool VideoWindow::InitWindow(HWND chromeHwnd,HWND videoHwnd) {
   chrome_hwnd_ = chromeHwnd;
   video_hwnd_ = videoHwnd;
   lastSizeParam = NULL;
+  bFlag = NeedResizeState;
+  nLoop = 9;
   tip_button_.Init(chrome_hwnd_);
 
   return true;
@@ -42,8 +38,6 @@ BOOL VideoWindow::WndProc(HWND hwnd, UINT& msg, WPARAM& wParam, LPARAM& lParam) 
   }  
   
   POINT pt;
-  static Resize_State bFlag = NeedResizeState;
-  static UINT nLoop = 0;
   
   char logs[256]; 
   sprintf(logs, "hwnd=0x%X,msg=0x%04X,wParam=%ld,lParam=%ld,ThreadID=%ld",
@@ -76,6 +70,7 @@ BOOL VideoWindow::WndProc(HWND hwnd, UINT& msg, WPARAM& wParam, LPARAM& lParam) 
             bFlag = ReadyResizeState;
             SetWindowPos(chrome_hwnd_, NULL, 0, 0, rt.right-rt.left, height, 
                          SWP_NOMOVE | SWP_NOREPOSITION);
+            lastSizeParam = MAKELPARAM(rt.right-rt.left, height);
           } else if (bFlag == NeedResizeState) {
             bFlag = ReadyResizeState;
             SendMessage(chrome_hwnd_, WM_SIZE, SIZE_RESTORED, lastSizeParam);

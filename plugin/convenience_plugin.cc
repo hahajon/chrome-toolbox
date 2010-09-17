@@ -662,6 +662,7 @@ LRESULT ConveniencePlugin::WndProc(HWND hWnd, UINT Msg,
       pObject->TriggerTabClose();
       break;
     case WM_CLOSE_CURRENT_TAB:
+      Sleep(10);
       pObject->TriggerCloseCurrentTab();
       break;
     case WM_KEYDOWN:

@@ -3,6 +3,12 @@
 #include <windows.h>
 #include "ncbutton.h"
 
+enum Resize_State {
+  NeedResizeState = 1,
+  ReadyResizeState,
+  FinishResizeState,
+};
+
 class VideoWindow {
 public:
   VideoWindow(void);
@@ -18,5 +24,7 @@ private:
   HWND video_hwnd_;
   NCButton tip_button_;
   LPARAM lastSizeParam;
+  Resize_State bFlag;
+  UINT nLoop;
 
 };
