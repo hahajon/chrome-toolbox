@@ -235,7 +235,7 @@
                   index: parentTabs ? parentTabs.length:0 }, function() {
                 count++;
                 if (tabs.length > count) {
-                  restoreOtherTabs(tabs, count);
+                  restoreAllTabs(tabs, count);
                 }
               });
             });
