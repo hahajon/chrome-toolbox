@@ -1,15 +1,15 @@
 var key_util = {};
 
 key_util.category_table = {
-CAT_TAB_WINDOW: 'tab_and_window_shortcuts',
-CAT_CHROME_FEATURE: 'google_chrome_feature_shortcuts',
-CAT_ADDRESS: 'address_bar_shortcuts',
-CAT_WEB_PAGE: 'webpage_shortcuts',
-CAT_TEXT: 'text_shortcuts',
-CAT_BOSS_KEY: 'boss_key',
-CAT_QUICK_LAUNCH: 'quick_launch_shortcuts',
-CAT_FILL_FORM: 'fill_form_shortcuts',
-CAT_OTHER: 'other_shortcuts'
+  CAT_TAB_WINDOW: 'tab_and_window_shortcuts',
+  CAT_CHROME_FEATURE: 'google_chrome_feature_shortcuts',
+  CAT_ADDRESS: 'address_bar_shortcuts',
+  CAT_WEB_PAGE: 'webpage_shortcuts',
+  CAT_TEXT: 'text_shortcuts',
+  CAT_BOSS_KEY: 'boss_key',
+  CAT_QUICK_LAUNCH: 'quick_launch_shortcuts',
+  CAT_FILL_FORM: 'fill_form_shortcuts',
+  CAT_MUTE: 'mute_shortcuts'
 }
 
 key_util.function_table_record = function() {
@@ -399,8 +399,7 @@ key_util.function_table[59] = { id: 59, function_name: 'quick_launch_9', functio
     ie8_key: '', opera_key: '', safari_key: '', firefox_key: ''
   };
 key_util.function_table[60] = { id: 60, function_name: 'mute_browser', function_description: 'mute_browser',
-
-    category: key_util.category_table.CAT_OTHER,
+    category: key_util.category_table.CAT_MUTE,
     isQuickly: false, isSystem: false, isSupport: false, chrome_key: '', browser360_key: 'Ctrl+Shift+M',
     maxthon_key: '', tt_key: '', sogou_key: 'Alt+W', ie6_key: '', ie7_key: '',
     ie8_key: '', opera_key: '', safari_key: '', firefox_key: ''
@@ -419,6 +418,7 @@ key_util.extension_support_shortcut_map = [
     {id: 57, shortcut: 'Alt+7', type: false, relationId: '', operation: 'quickLaunch', extensionId: ''},
     {id: 58, shortcut: 'Alt+8', type: false, relationId: '', operation: 'quickLaunch', extensionId: ''},
     {id: 59, shortcut: 'Alt+9', type: false, relationId: '', operation: 'quickLaunch', extensionId: ''},
+    {id: 60, shortcut: 'Alt+W', type: false, relationId: '', operation: 'browserMute', extensionId: ''}
 ];
 
 key_util.key_code_map = [];
