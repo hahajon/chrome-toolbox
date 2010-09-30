@@ -67,6 +67,10 @@
     margin: 3px 2px;
   }
 
+  #muteName {
+    padding-left:25px;
+  }
+
 
 </style>
 <script type="text/javascript" src="convenience_util.js"></script>
@@ -92,7 +96,15 @@
     </li>
   </ul>
 </div>
-
+<div class="separator"></div>
+<div class="extensionFun">
+ <ul>
+   <li id="btnMute">
+     <div class="left" id="muteName"></div>
+     <div class="right" id="muteShortcut"></div>
+   </li>
+ </ul>
+</div>
 <div class="separator"></div>
 <div id="quicklyMenu">
 
@@ -111,6 +123,8 @@
   var dragsort = ToolMan.dragsort();
   var junkdrawer = ToolMan.junkdrawer();
   var bg = chrome.extension.getBackgroundPage();
+  var shortcut = new Shortcut();
+  var fillForm = new FillForm();
   function verticalOnly(item) {
     item.toolManDragGroup.verticalOnly();
   }
@@ -126,12 +140,37 @@
       ToolMan.cookies().set("list-" + id, junkdrawer.serializeList(list), 365);
     })
   }
+
+  function setMuteMenu() {
+    var muteMenuId = 60;
+    shortcut.selectById(muteMenuId, function(tx, results) {
+      if (results.rows.length > 0) {
+        var muteMenu = $('btnMute');
+        var muteName = $('muteName');
+        var muteShortcut = $('muteShortcut');
+        i18nReplace('muteName', 'browser_mute');
+        var imageUrl = eval(localStorage['browserMute'])?
+            'images/mute_19.png' : 'images/speaker_19.png';
+        muteName.style.background = 'url(' + imageUrl + ') no-repeat 1px 2px';
+        muteShortcut.innerText = results.rows.item(0).shortcut;
+        muteMenu.onclick = function() {
+          bg.browserMute();
+          var imageUrl = eval(localStorage['browserMute'])?
+            'images/mute_19.png' : 'images/speaker_19.png';
+          muteName.style.background = 'url(' + imageUrl + ') no-repeat 1px 2px';
+        }
+      }
+    });
+
+  }
+
   function init() {
     i18nReplace('tFillForm', 'fill_form');
     i18nReplace('tSaveForm', 'save_form');
     i18nReplace('tDeleteForm', 'delete_form');
     i18nReplace('optionText', 'option');
     setPopupMenuStatus();
+    setMuteMenu();
     $('optionPage').onclick = function() {
       var url = chrome.extension.getURL('options.html');
       chrome.tabs.create({url: url });
@@ -158,7 +197,6 @@
     ];
 
     var setFillFormMenuShortcut = function(element) {
-      var shortcut = new Shortcut();
       shortcut.selectById(id, function(tx, results) {
         if (results.rows.length > 0) {
           var shortcutStr = results.rows.item(0).shortcut;
@@ -184,12 +222,9 @@
                 {code: 'sendFormData("' + tab.url + '","' + tab.title + '")'});
             window.close();
           }, false);
-        } else if (response.msg == 'noForm') {
-          
         }
       });
 
-      var fillForm = new FillForm();
       fillForm.selectByUrl(tab.url, function(tx, results) {
         if (results.rows.length > 0) {
           var formInfo = results.rows.item(0).formInfo;
@@ -221,7 +256,6 @@
     var ul = document.createElement('ul');
     ul.id = 'quicklyCommand';
     var count = 0;
-    var shortcut = new Shortcut();
     var createItem = function(items, count) {
       var id = parseInt(items[count]);
       var item = key_util.function_table[id];
@@ -241,8 +275,8 @@
         (function(element, shortcut) {
           element.onclick = function() {
             var virtualKey = key_util.getVirtualKey(shortcut);
+            bg.plugin.convenience.TriggerChromeShortcuts(virtualKey);
             window.close();
-            bg.plugin_convenience.TriggerChromeShortcuts(virtualKey);
           }
         })(li, shortcutStr);
         ul.appendChild(li);

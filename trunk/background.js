@@ -4,7 +4,12 @@
   shortcut.createTable();
   shortcut.insertRecord(key_util.extension_support_shortcut_map, 0);
   var isCloseWindow = false;
-  var plugin_convenience = document.getElementById('plugin_convenience');
+  var plugin = {
+    convenience: document.getElementById('plugin_convenience'),
+    videoAlone: document.getElementById('plugin_videoAlone'),
+    wallpaper: document.getElementById('plugin_wallpaper'),
+    browserMute: document.getElementById('plugin_mute')
+  }
   chrome.extension.onRequest.addListener(function(request, sender, sendResponse) {
     switch(request.msg) {
       case 'popupVideoWindow':
@@ -25,8 +30,6 @@
       case 'deleteForm':
         fillForm.deleteByUrl(request.url);
         break;
-      case 'closeTab':
-
     }
   });
 
@@ -36,13 +39,13 @@
       chrome.tabs.getAllInWindow(null, function(tabs) {
         console.log(tabs.length);
         if (tabs.length > 1) {
-          plugin_convenience.IsOnlyOneTab(false);
+          plugin.convenience.IsOnlyOneTab(false);
         } else if (tabs.length == 1) {
-          plugin_convenience.IsOnlyOneTab(true);
+          plugin.convenience.IsOnlyOneTab(true);
         }
       });
     } else {
-      plugin_convenience.IsOnlyOneTab(false);
+      plugin.convenience.IsOnlyOneTab(false);
     }
   }
 
@@ -61,7 +64,7 @@
 
   function dbClickCloseTab() {
     var parameter = eval(localStorage['dbclickCloseTab']) && true;
-    plugin_convenience.SetDBClickCloseTab(parameter);
+    plugin.convenience.SetDBClickCloseTab(parameter);
   }
 
   function closeLastTabNotCloseWindow() {
@@ -88,7 +91,9 @@
           break;
         case 'quickLaunch':
           openBookmarkFolderLinks(obj.relationId);
-          console.log(obj.relationId);
+          break;
+        case 'browserMute':
+          browserMute();
           break;
       }
     }
@@ -112,7 +117,7 @@
   }
 
   function bossKeyExecute() {
-    plugin_convenience.PressBossKey();
+    plugin.convenience.PressBossKey();
   }
 
   function init() {
@@ -122,6 +127,8 @@
     localStorage['openInNewTab'] = localStorage['openInNewTab'] || 'false';
     localStorage['dbclickCloseTab'] = localStorage['dbclickCloseTab'] || 'true';
     localStorage['quicklyVisitMenu'] = localStorage['quicklyVisitMenu'] || '5,15';
+    localStorage['browserMute'] = localStorage['browserMute'] || 'false';
+    plugin.browserMute.MuteBrowser(eval(localStorage['browserMute']));
     setCloseLastOneTabStatus();
     dbClickCloseTab();
   }
@@ -159,13 +166,13 @@
     orgImage: {data: '', width:0, height: 0},
     compressiveImage: {data: '', width:0, height: 0},
     applyWallpaper: function(data, mode) {
-      document.getElementById('plugin_wallpaper').ApplyWallPaper(data, mode);
+      plugin.wallpaper.ApplyWallPaper(data, mode);
     },
     restoreWallpaper: function() {
-      document.getElementById('plugin_wallpaper').RestoreWallPaper();
+      plugin.wallpaper.RestoreWallPaper();
     },
     setWallpaper: function() {
-      document.getElementById('plugin_wallpaper').SetWallPaper();
+      plugin.wallpaper.SetWallPaper();
     },
 
     openPreviewWindow: function(imageSrc) {
@@ -212,8 +219,7 @@
                                          index:1}, function(){
           chrome.tabs.getAllInWindow(window.id, function(tabs) {
             chrome.tabs.remove(tabs[0].id);
-            var pluginId_videoAlone = $('pluginId_videoAlone');
-            pluginId_videoAlone.ShowVideoAlone(sender.tab.title,
+            plugin.videoAlone.ShowVideoAlone(sender.tab.title,
                 request.orgTitle, parentWindowId, window.id, sender.tab.id);
             chrome.tabs.sendRequest(sender.tab.id,
                 {msg: 'restoreTabTitle', orgTitle: request.orgTitle});
@@ -295,4 +301,11 @@
       });
     }
   }
+
+  function browserMute() {
+    var muteFlag = eval(localStorage['browserMute']);
+    plugin.browserMute.MuteBrowser(!muteFlag);
+    localStorage['browserMute'] = !muteFlag;
+  }
+  
   init();

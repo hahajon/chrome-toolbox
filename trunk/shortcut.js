@@ -39,7 +39,7 @@ Shortcut.prototype.selectAllToNP = function() {
       shortcutList.push(record);
     }
     var bg = chrome.extension.getBackgroundPage();
-    bg.plugin_convenience.UpdateShortCutList(shortcutList);
+    bg.plugin.convenience.UpdateShortCutList(shortcutList);
   });
 }
 
@@ -187,10 +187,10 @@ Shortcut.prototype.canEditable = function(element, id) {
   }
   var bg = chrome.extension.getBackgroundPage();
   var addKeyboardListener = function(input) {
-    bg.plugin_convenience.AddListener(input);
+    bg.plugin.convenience.AddListener(input);
   }
   var removeKeyboardListener = function() {
-    bg.plugin_convenience.RemoveListener();
+    bg.plugin.convenience.RemoveListener();
   }
   var removeInputBox = function(element) {
     if (element) {
