@@ -407,8 +407,8 @@ key_util.function_table[60] = { id: 60, function_name: 'mute_browser', function_
 
 key_util.extension_support_shortcut_map = [
     {id: 48, shortcut: 'Alt+`', type: true, relationId: '', operation: 'bossKey', extensionId: ''},
-    {id: 49, shortcut: 'F10', type: false, relationId: '', operation: 'fillForm', extensionId: ''},
-    {id: 50, shortcut: 'F9', type: false, relationId: '', operation: 'saveForm', extensionId: ''},
+    {id: 49, shortcut: 'F9', type: false, relationId: '', operation: 'fillForm', extensionId: ''},
+    {id: 50, shortcut: 'F10', type: false, relationId: '', operation: 'saveForm', extensionId: ''},
     {id: 51, shortcut: 'Alt+1', type: false, relationId: '', operation: 'quickLaunch', extensionId: ''},
     {id: 52, shortcut: 'Alt+2', type: false, relationId: '', operation: 'quickLaunch', extensionId: ''},
     {id: 53, shortcut: 'Alt+3', type: false, relationId: '', operation: 'quickLaunch', extensionId: ''},
