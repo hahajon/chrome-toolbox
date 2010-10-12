@@ -76,7 +76,7 @@ BEGIN
             VALUE "LegalCopyright", "Copyright (C) 2010"
             VALUE "MIMEType", "application/x-npconvenience|application/x-npwallpaper|application/x-npvideoalone"
             VALUE "OriginalFilename", "convenience.dll"
-            VALUE "ProductName", "convenience"
+            VALUE "ProductName", "Chrome Toolbox Plugin"
             VALUE "ProductVersion", "1, 0, 0, 1"
         END
     END

@@ -146,13 +146,13 @@ bool ConvenienceScriptObject::UpdateShortCutList(const NPVariant *args,
         if (NPVARIANT_IS_BOOLEAN(property_value))
           item.ishotkey = NPVARIANT_TO_BOOLEAN(property_value);
       }
-      key_map_new->insert(ShortCutPair(item.shortcuts_key, item));
       item.object = array_object;
+      key_map_new->insert(ShortCutPair(item.shortcuts_key, item));
       shortcuts_list_[i] = item;
     }
 
     ConveniencePlugin* pPlugin = (ConveniencePlugin*)plugin_;
-    pPlugin->SetShortcutsToMemory(shortcuts_list_,len);
+    pPlugin->SetShortcutsToMemory(shortcuts_list_, len);
     
     ShortCutKeyMap::iterator iter;
     for (iter = key_map_old->begin(); iter != key_map_old->end(); iter++) {
@@ -264,6 +264,8 @@ void ConvenienceScriptObject::TriggerEvent(const char* shortcuts) {
 
 void ConvenienceScriptObject::TriggerEvent(int index) {
   g_Log.WriteLog("TriggerEvent", "index");
+  if (shortcuts_list_[index].ishotkey)
+    return;
 
   NPObject* window;
   NPN_GetValue(plugin_->get_npp(), NPNVWindowNPObject, &window);
@@ -478,7 +480,10 @@ bool ConvenienceScriptObject::AddListener(const NPVariant *args,
   if (argCount != 1 || !NPVARIANT_IS_OBJECT(args[0]))
     return false;
 
+  char logs[256];
   input_object_ = NPVARIANT_TO_OBJECT(args[0]);
+  sprintf(logs, "input_object_=%ld", input_object_);
+  g_Log.WriteLog("AddListener", logs);
   NPN_RetainObject(input_object_);
   is_listened_ = true;
   ConveniencePlugin* plugin = (ConveniencePlugin*)plugin_;
@@ -489,8 +494,14 @@ bool ConvenienceScriptObject::AddListener(const NPVariant *args,
 bool ConvenienceScriptObject::RemoveListener(const NPVariant *args, 
                                              uint32_t argCount, 
                                              NPVariant *result) {
+  if (!is_listened_)
+    return true;
+
   is_listened_ = false;
   NPN_ReleaseObject(input_object_);
+  char logs[256];
+  sprintf(logs, "input_object_=%ld", input_object_);
+  g_Log.WriteLog("RemoveListener", logs);
   ConveniencePlugin* plugin = (ConveniencePlugin*)plugin_;
   plugin->UpdateIsListening(is_listened_);
   return true;
@@ -547,6 +558,8 @@ void ConvenienceScriptObject::OnKeyDown(bool contrl, bool alt, bool shift,
 
     STRINGZ_TO_NPVARIANT(keys.c_str(), prop_value);
 
+    g_Log.WriteLog("msg", "NPN_SetProperty Start");
     NPN_SetProperty(plugin_->get_npp(), input_object_, id, &prop_value);
+    g_Log.WriteLog("msg", "NPN_SetProperty End");
   }
 }
