@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="convenience"
-	ProjectGUID="{56881815-5F21-442D-8C73-881B62BDB425}"
-	RootNamespace="npConvenience"
+	Name="apihook"
+	ProjectGUID="{5E6C86ED-E1C8-458E-83C1-1622DA355BF2}"
+	RootNamespace="apihook"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="196613"
 	>
@@ -41,11 +41,11 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;NPCONVENIENCE_EXPORTS"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;APIHOOK_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="1"
-				UsePrecompiledHeader="1"
+				RuntimeLibrary="3"
+				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="4"
 			/>
@@ -60,9 +60,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="gdiplus.lib comctl32.lib"
 				LinkIncremental="2"
-				ModuleDefinitionFile="convenience.def"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				TargetMachine="1"
@@ -116,7 +114,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;NPCONVENIENCE_EXPORTS"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;APIHOOK_EXPORTS;_EXPORT_APIHOOK_INCLUDE_"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
@@ -134,9 +132,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="gdiplus.lib comctl32.lib"
 				LinkIncremental="1"
-				ModuleDefinitionFile="convenience.def"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
@@ -175,31 +171,7 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\background_plugin.cc"
-				>
-			</File>
-			<File
-				RelativePath=".\background_script_object.cc"
-				>
-			</File>
-			<File
-				RelativePath=".\browser_mute_plugin.cc"
-				>
-			</File>
-			<File
-				RelativePath=".\browser_mute_script_object.cc"
-				>
-			</File>
-			<File
-				RelativePath=".\convenience.def"
-				>
-			</File>
-			<File
-				RelativePath=".\convenience_plugin.cc"
-				>
-			</File>
-			<File
-				RelativePath=".\convenience_script_object.cc"
+				RelativePath=".\api_hook.cc"
 				>
 			</File>
 			<File
@@ -210,50 +182,6 @@
 				RelativePath=".\log.cc"
 				>
 			</File>
-			<File
-				RelativePath=".\ncbutton.cc"
-				>
-			</File>
-			<File
-				RelativePath=".\npn_entry.cc"
-				>
-			</File>
-			<File
-				RelativePath=".\npp_entry.cc"
-				>
-			</File>
-			<File
-				RelativePath=".\plugin_base.cc"
-				>
-			</File>
-			<File
-				RelativePath=".\plugin_factory.cc"
-				>
-			</File>
-			<File
-				RelativePath=".\script_object_base.cc"
-				>
-			</File>
-			<File
-				RelativePath=".\script_object_factory.cc"
-				>
-			</File>
-			<File
-				RelativePath=".\video_alone_plugin.cc"
-				>
-			</File>
-			<File
-				RelativePath=".\video_alone_script_object.cc"
-				>
-			</File>
-			<File
-				RelativePath=".\video_window.cc"
-				>
-			</File>
-			<File
-				RelativePath=".\video_window_manager.cc"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="Í·ÎÄ¼þ"
@@ -261,27 +189,11 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\background_plugin.h"
+				RelativePath=".\api_hook.h"
 				>
 			</File>
 			<File
-				RelativePath=".\background_script_object.h"
-				>
-			</File>
-			<File
-				RelativePath=".\browser_mute_plugin.h"
-				>
-			</File>
-			<File
-				RelativePath=".\browser_mute_script_object.h"
-				>
-			</File>
-			<File
-				RelativePath=".\convenience_plugin.h"
-				>
-			</File>
-			<File
-				RelativePath=".\convenience_script_object.h"
+				RelativePath=".\apihook.h"
 				>
 			</File>
 			<File
@@ -289,47 +201,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\ncbutton.h"
-				>
-			</File>
-			<File
-				RelativePath=".\plugin_base.h"
-				>
-			</File>
-			<File
-				RelativePath=".\plugin_factory.h"
-				>
-			</File>
-			<File
-				RelativePath=".\resource.h"
-				>
-			</File>
-			<File
-				RelativePath=".\script_object_base.h"
-				>
-			</File>
-			<File
-				RelativePath=".\script_object_factory.h"
+				RelativePath=".\mydsound.h"
 				>
 			</File>
 			<File
 				RelativePath=".\stdafx.h"
-				>
-			</File>
-			<File
-				RelativePath=".\video_alone_plugin.h"
-				>
-			</File>
-			<File
-				RelativePath=".\video_alone_script_object.h"
-				>
-			</File>
-			<File
-				RelativePath=".\video_window.h"
-				>
-			</File>
-			<File
-				RelativePath=".\video_window_manager.h"
 				>
 			</File>
 		</Filter>
@@ -338,14 +214,6 @@
 			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
-			<File
-				RelativePath=".\resources\chrome.ico"
-				>
-			</File>
-			<File
-				RelativePath=".\convenience.rc"
-				>
-			</File>
 		</Filter>
 	</Files>
 	<Globals>

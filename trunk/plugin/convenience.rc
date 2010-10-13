@@ -70,11 +70,11 @@ BEGIN
         BLOCK "040904b0"
         BEGIN
             VALUE "FileDescription", "This is a npapi plugin built for Chrome on Windows."
-            VALUE "FileOpenName", "Convenience Plugin|Set WallPaper Plugin|Stand Video Alone Plugin"
+            VALUE "FileOpenName", "Convenience Plugin|Set WallPaper Plugin|Stand Video Alone Plugin|Browser Mute Plugin"
             VALUE "FileVersion", "1, 0, 0, 1"
             VALUE "InternalName", "convenience"
             VALUE "LegalCopyright", "Copyright (C) 2010"
-            VALUE "MIMEType", "application/x-npconvenience|application/x-npwallpaper|application/x-npvideoalone"
+            VALUE "MIMEType", "application/x-npconvenience|application/x-npwallpaper|application/x-npvideoalone|application/x-browsermute"
             VALUE "OriginalFilename", "convenience.dll"
             VALUE "ProductName", "Chrome Toolbox Plugin"
             VALUE "ProductVersion", "1, 0, 0, 1"

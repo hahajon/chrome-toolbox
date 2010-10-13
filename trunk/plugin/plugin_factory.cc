@@ -3,6 +3,7 @@
 #include "convenience_plugin.h"
 #include "background_plugin.h"
 #include "video_alone_plugin.h"
+#include "browser_mute_plugin.h"
 
 PluginFactory::PluginFactory(void) {
   memset(plugin_type_list_, sizeof(plugin_type_list_), 0);
@@ -12,6 +13,8 @@ PluginFactory::PluginFactory(void) {
   plugin_type_list_[1].constructor = &BackgroundPlugin::CreateObject;
   strcpy(plugin_type_list_[2].mime_type,"application/x-npvideoalone");
   plugin_type_list_[2].constructor = &VideoAlonePlugin::CreateObject;
+  strcpy(plugin_type_list_[3].mime_type,"application/x-browsermute");
+  plugin_type_list_[3].constructor = &BrowserMutePlugin::CreateObject;
 }
 
 PluginFactory::~PluginFactory(void) {
