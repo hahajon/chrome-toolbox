@@ -60,7 +60,8 @@ FillForm.prototype.showAllFormDate = function(){
       var viewText = chrome.i18n.getMessage('fill_form_view');
       var delText = chrome.i18n.getMessage('fill_form_delete');
       table += '<tr>' +
-          '<td><div class="fillForm_url">' + url + '</div></td>' +
+          '<td><div class="fillForm_url"><a href="' + url +
+          '" target="_blank">' + url + '</a></div></td>' +
           '<td><div class="fillForm_title">' + title + '</div></td>' +
           '<td><div class="fillForm_date">' + date + '</div></td>' +
           '<td><div class="fillForm_operate"><a href="#" ' +

@@ -33,7 +33,7 @@ Shortcut.prototype.selectAllToNP = function() {
       record.shortcut = key_util.getVirtualKey(results.rows.item(i).shortcut);
       record.relationId = results.rows.item(i).relationId;
       record.operation = results.rows.item(i).operation;
-      record.type = results.rows.item(i).type;
+      record.type = eval(results.rows.item(i).type);
       record.extensionId = results.rows.item(i).extensionId;
 
       shortcutList.push(record);

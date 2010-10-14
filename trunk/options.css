@@ -67,19 +67,18 @@ body {
 .navTip {
   height: 60px;
   border-bottom: 1px solid #bfdaee;
-  padding: 0 140px 5px 140px;
+  padding: 0 30px 5px 30px;
   display:table-cell;
   vertical-align: middle;
   text-align: left;
   line-height: 18px;
-  width:483px;
+  width:703px;
   background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#FEFEFE), to(#e0eaf3));
 }
 
 .navTip span {
   color: #5e759f;
   font-size: 12px;
-  font-weight: bold;
 }
 
 #main {
@@ -124,15 +123,15 @@ body {
   padding-left: 10px;
 }
 .fillForm_url {
-  width: 290px;
+  width: 280px;
   padding-left: 10px;
 }
 .fillForm_date {
-  width: 100px;
+  width: 130px;
   text-align: center;
 }
 .fillForm_operate {
-  width: 100px;
+  width: 80px;
   text-align: center;
 }
 .fillForm_record {
@@ -415,6 +414,45 @@ vertical-align: text-bottom;
   text-decoration: underline;
 }
 
+.recommendedTitle {
+  border-bottom: 1px solid #cccccc;
+  color: #1a9ed4;
+  font-size: 14px;
+  font-weight: bold;
+  line-height: 30px;
+}
+
+.recommendedTable {
+  margin-bottom: 30px;
+}
+
+.recommendedTable td {
+  border: 0;
+  padding-top: 25px;
+}
+
+.recommendedTable .description{
+  width: 70%;
+  padding-right: 40px;
+  color: #5f6065;
+}
+
+.recommendedTable .image {
+  width: 40px;
+  text-align: right;
+}
+
+.recommendedTable a {
+  font-size: 13px;
+  font-weight: bold;
+  color: #6275a0;
+}
+
+.recommendedInnerBox {
+  min-height: 200px;
+  padding: 20px 50px;
+}
+
 .shortcutPad {
   position: absolute;
   border: 1px solid #b9d6f0;
@@ -472,6 +510,16 @@ vertical-align: text-bottom;
 .tip_failed {
   color: #ffffff;
   background: #ff8080;
+}
+
+.more {
+  float: right;
+}
+
+.more a {
+  font-size: 12px;
+  font-weight: normal;
+  text-decoration: underline;
 }
 
 .clear {

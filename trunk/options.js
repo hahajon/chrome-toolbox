@@ -37,7 +37,27 @@ function setMessage() {
     {id: 'quicklyVisit_manageBookmark', message: 'quick_launch_manage_bookmark'},
     {id: 'quicklyVisit_close', message: 'quick_launch_close'},
     {id: 'bookmark_tip', message: 'bookmark_tip'},
-    {id: 'gotoShortcutTab', message: 'bookmark_tip2'}
+    {id: 'shortcut_tip', message: 'tab_shortcut_description'},
+    {id: 'fillForm_tip', message: 'tab_fill_form_description'},
+    {id: 'gotoShortcutTab', message: 'bookmark_tip2'},
+    {id: 'more', message: 'more'},
+    {id: 'more2', message: 'more'},
+    {id: 'recommended_fromGoogle', message: 'recommended_from_google'},
+    {id: 'recommended_fromThird', message: 'recommended_from_third_party'},
+    {id: 'screenCapture', message: 'recommended_screen_capture'},
+    {id: 'screenCaptureDesc', message: 'recommended_screen_capture_desc'},
+    {id: 'downloadHelper', message: 'recommended_download_helper'},
+    {id: 'downloadHelperDesc', message: 'recommended_download_helper_desc'},
+    {id: 'googleTranslate', message: 'recommended_google_translate'},
+    {id: 'googleTranslateDesc', message: 'recommended_google_translate_desc'},
+    {id: 'proxySwitch', message: 'recommended_proxy_switch'},
+    {id: 'proxySwitchDesc', message: 'recommended_proxy_switch_desc'},
+    {id: 'dragAndGo', message: 'recommended_drag_and_go'},
+    {id: 'dragAndGoDesc', message: 'recommended_drag_and_go_desc'},
+    {id: 'smoothGestures', message: 'recommended_smooth_gestures'},
+    {id: 'smoothGesturesDesc', message: 'recommended_smooth_gestures_desc'},
+    {id: 'tabMenu', message: 'recommended_tab_menu'},
+    {id: 'tabMenuDesc', message: 'recommended_tab_menu_desc'}
   ];
   document.title = chrome.i18n.getMessage('option_title');
   for (var i = 0; i < i18n_map.length; i++) {
@@ -82,8 +102,9 @@ function Option() {
 
   this.table_shortcut = $('shortcutTable');
 
-  this.setNavigationBarStatus(this.nav_general);
-  this.nav_general.addEventListener('click', this.setNavigationBarStatus, false);
+  this.setNavigationBarStatus(this.nav_shortcut);
+  this.nav_general.addEventListener('click',
+      this.setNavigationBarStatus, false);
   this.nav_fillForm.addEventListener('click',
       this.setNavigationBarStatus, false);
   this.nav_quicklyVisit.addEventListener('click',
@@ -143,10 +164,10 @@ Option.prototype.setNavigationBarStatus = function(element) {
     this_obj = element;
   }
   var navigationBarMap = [
-      {menu: 'mGeneral', tab: 'generalTab'},
+      {menu: 'mShortcut', tab: 'shortcutTab'},
       {menu: 'mFillForm', tab: 'fillFormTab'},
       {menu: 'mQuicklyVisit', tab: 'quicklyVisitTab'},
-      {menu: 'mShortcut', tab: 'shortcutTab'},
+      {menu: 'mGeneral', tab: 'generalTab'},
       {menu: 'mRecommended', tab: 'recommendedTab'}];
   for (var i = 0; i < navigationBarMap.length; i++) {
     var navMenu = $(navigationBarMap[i].menu);

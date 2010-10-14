@@ -15,6 +15,29 @@ function checkForm() {
   }
 }
 
+function IsCreditCardNumber(text) {
+  text = text.replace(/\-|\s/g, '');
+  var sum = 0;
+  var odd = false;
+  if (isNaN(text)) {
+    return false;
+  }
+  if (text.length > 17 || text.length < 13) {
+    return false;
+  }
+  for (var i = text.length -1; i >= 0; i--) {
+    var digit = parseInt(text.charAt(i));
+    if (odd) {
+      digit *= 2;
+      sum += parseInt(digit / 10) + digit % 10;
+    } else {
+      sum += digit;
+    }
+    odd = !odd;
+  }
+  return (sum % 10) == 0;
+}
+
 var formDataCollection = function() {
   var forms = document.forms;
   var formInfo = [];
@@ -28,7 +51,7 @@ var formDataCollection = function() {
         if (type == 'checkbox' || type == 'radio') {
           itemInfo.value = inputs[j].checked;
         } else {
-          if (!!inputs[j].value) {
+          if (!!inputs[j].value && !IsCreditCardNumber(inputs[j].value)) {
             itemInfo.value = inputs[j].value;
           } else {
             continue;
