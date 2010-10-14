@@ -119,26 +119,9 @@
 
 
 <script type="text/javascript">
-  var dragsort = ToolMan.dragsort();
-  var junkdrawer = ToolMan.junkdrawer();
   var bg = chrome.extension.getBackgroundPage();
   var shortcut = new Shortcut();
   var fillForm = new FillForm();
-  function verticalOnly(item) {
-    item.toolManDragGroup.verticalOnly();
-  }
-
-  function saveOrder(item) {
-    var group = item.toolManDragGroup;
-    var list = group.element.parentNode;
-    var id = list.getAttribute("id");
-    if (id == null) {
-      return;
-    }
-    group.register('dragend', function() {
-      ToolMan.cookies().set("list-" + id, junkdrawer.serializeList(list), 365);
-    })
-  }
 
   function setMuteMenu() {
     var muteMenuId = 60;
@@ -147,15 +130,21 @@
         var muteMenu = $('btnMute');
         var muteName = $('muteName');
         var muteShortcut = $('muteShortcut');
-        i18nReplace('muteName', 'browser_mute');
+
+        var name = eval(localStorage['browserMute'])?
+            'unmute_all_tabs' : 'mute_all_tabs';
         var imageUrl = eval(localStorage['browserMute'])?
             'images/mute_19.png' : 'images/speaker_19.png';
+        i18nReplace('muteName', name);
         muteName.style.background = 'url(' + imageUrl + ') no-repeat 1px 2px';
         muteShortcut.innerText = results.rows.item(0).shortcut;
         muteMenu.onclick = function() {
           bg.browserMute();
-          var imageUrl = eval(localStorage['browserMute'])?
+          name = eval(localStorage['browserMute'])?
+            'unmute_all_tabs' : 'mute_all_tabs';
+          imageUrl = eval(localStorage['browserMute'])?
             'images/mute_19.png' : 'images/speaker_19.png';
+          i18nReplace('muteName', name);
           muteName.style.background = 'url(' + imageUrl + ') no-repeat 1px 2px';
         }
       }
@@ -175,9 +164,6 @@
       chrome.tabs.create({url: url });
     };
     createQuicklyVisitItem();
-
-    dragsort.makeListSortable($("quicklyCommand"),
-		null, null);
   }
   function i18nReplace(id, messageName) {
     $(id).innerText = chrome.i18n.getMessage(messageName);
@@ -269,14 +255,16 @@
           shortcutStr : shortcutStr.substring(0, shortcutStr.indexOf(','));
         var li = document.createElement('li');
         var name = chrome.i18n.getMessage(item.function_name);
+        li.value = item.id;
         li.innerHTML = '<div class="left">' + name +
             '</div><div class="right">' + shortcutStr + '</div>';
         (function(element, shortcut) {
-          element.onclick = function() {
-            var virtualKey = key_util.getVirtualKey(shortcut);
-            bg.plugin.convenience.TriggerChromeShortcuts(virtualKey);
-            window.close();
-          }
+//          element.onclick = function() {
+//            var virtualKey = key_util.getVirtualKey(shortcut);
+////            bg.plugin.convenience.TriggerChromeShortcuts(virtualKey);
+////            window.close();
+//          }
+          dragAndDrop.makeElementSortable(element, shortcut);
         })(li, shortcutStr);
         ul.appendChild(li);
         count++

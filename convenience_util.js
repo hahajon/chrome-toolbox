@@ -11,7 +11,8 @@ function $(id) {
 function getDate() {
   var date = new Date();
   return date.getFullYear() + '-' + (date.getMonth() + 1)
-      + '-' + date.getDate();
+      + '-' + date.getDate() + ' ' + date.getHours() + ':' +
+      (date.getMinutes() < 9 ? ('0' + date.getMinutes()) : date.getMinutes());
 }
 
 function isFunction(handler) {
