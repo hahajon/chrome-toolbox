@@ -9,11 +9,19 @@ body {
   font-size: 30px;
   display: block;
   color: #4c88bc;
-  padding: 10px 0 20px 60px;
+  padding: 10px 0 0 60px;
   width: 700px;
   background: url(images/logo_48.png) no-repeat;
   text-shadow: 0 0 1px #99bbd9;
   margin-left: 30px;
+  margin-bottom: 0px;
+}
+
+#description {
+  padding:0 95px;
+  margin-bottom:40px;
+  color: #c0c0c0;
+  line-height: 20px;
 }
 
 .contentBox {
@@ -103,16 +111,24 @@ body {
 }
 
 .box {
-  border:1px solid #7f9db9;
+  border-bottom:1px solid #dfe8ef;
 }
 .fillForm_header {
-  background:url(images/bg_title.gif);
+  background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#FEFEFE), to(#eff8fa));
   height:24px;
+  border-bottom: 1px #dee7ee solid;
 }
 
 #fillForm_table th {
   border-right: 1px solid #D0D0D0;
+  color: #5e769c;
 }
+
+td {
+  line-height: 25px;
+  border-bottom:1px solid #eee;
+}
+
 .fillForm_title,.fillForm_url,.fillForm_date,.fillForm_operate {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -139,10 +155,7 @@ body {
   background:#ffffff;
   overflow: auto;
 }
-td {
-  line-height: 20px;
-  border-bottom:1px solid #eee;
-}
+
 a {
   color: #1F72D0;
   text-decoration: none;
@@ -424,6 +437,7 @@ vertical-align: text-bottom;
 
 .recommendedTable {
   margin-bottom: 30px;
+  width: 660px;
 }
 
 .recommendedTable td {
@@ -520,6 +534,13 @@ vertical-align: text-bottom;
   font-size: 12px;
   font-weight: normal;
   text-decoration: underline;
+}
+
+.disclaimer {
+  margin-top: 30px;
+  border-top: 1px #cccccc solid;
+  text-align: center;
+  line-height: 30px;
 }
 
 .clear {

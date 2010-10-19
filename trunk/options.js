@@ -16,6 +16,7 @@ var shortcut = new Shortcut();
 function setMessage() {
   var i18n_map = [
     {id: 'optionTitle', message: 'option_title'},
+    {id: 'description', message: 'description'},
     {id: 'mGeneral', message: 'tab_general' },
     {id: 'mFillForm', message: 'tab_fill_form' },
     {id: 'mQuicklyVisit', message: 'tab_quick_launch'},
@@ -57,7 +58,8 @@ function setMessage() {
     {id: 'smoothGestures', message: 'recommended_smooth_gestures'},
     {id: 'smoothGesturesDesc', message: 'recommended_smooth_gestures_desc'},
     {id: 'tabMenu', message: 'recommended_tab_menu'},
-    {id: 'tabMenuDesc', message: 'recommended_tab_menu_desc'}
+    {id: 'tabMenuDesc', message: 'recommended_tab_menu_desc'},
+    {id: 'disclaimer', message: 'disclaimer'}
   ];
   document.title = chrome.i18n.getMessage('option_title');
   for (var i = 0; i < i18n_map.length; i++) {
@@ -102,7 +104,7 @@ function Option() {
 
   this.table_shortcut = $('shortcutTable');
 
-  this.setNavigationBarStatus(this.nav_shortcut);
+  this.setNavigationBarStatus(this.nav_general);
   this.nav_general.addEventListener('click',
       this.setNavigationBarStatus, false);
   this.nav_fillForm.addEventListener('click',
