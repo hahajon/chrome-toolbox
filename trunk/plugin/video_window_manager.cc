@@ -14,7 +14,7 @@ VideoWindowManager::~VideoWindowManager(void) {
   }
 }
 
-bool VideoWindowManager::AddNewVideoWindow(HWND chromeHwnd,HWND videoHwnd) {
+bool VideoWindowManager::AddNewVideoWindow(HWND chromeHwnd, HWND videoHwnd) {
   bool bFlag = false;
 
   VideoMap::iterator pair = video_map_.find(chromeHwnd);

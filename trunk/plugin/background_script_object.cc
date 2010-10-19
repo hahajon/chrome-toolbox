@@ -90,17 +90,17 @@ void WINAPI TimerProc(HWND hWnd, UINT nMsg, UINT nIDEvent, DWORD dwTime) {
 
   if (wcscmp(class_name, L"Chrome_WidgetWin_0") == 0) {
     HWND hChildWnd = FindWindowEx(g_WallPapperWindow, NULL, 
-      L"Chrome_AutocompleteEditView", NULL);
+        L"Chrome_AutocompleteEditView", NULL);
     if (hChildWnd)
       SendMessage(hChildWnd, WM_CLOSE, 0, 0);
     hChildWnd = FindWindowEx(g_WallPapperWindow, NULL, 
-      L"Chrome_WidgetWin_0", NULL);
+        L"Chrome_WidgetWin_0", NULL);
     int cx, cy;
     cx = CONST_FRAME_BORDER;
     cy = 25;
-    static OSVERSIONINFO versionInfo = {0};
+    static OSVERSIONINFO versionInfo = { 0 };
     if (versionInfo.dwMajorVersion == 0) {
-      versionInfo.dwOSVersionInfoSize = sizeof (OSVERSIONINFO);
+      versionInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
       GetVersionEx(&versionInfo);
     }
     if (versionInfo.dwMajorVersion >= 6 && 
@@ -110,11 +110,11 @@ void WINAPI TimerProc(HWND hWnd, UINT nMsg, UINT nIDEvent, DWORD dwTime) {
     }
 
     SetWindowLong(g_WallPapperWindow, GWL_STYLE, 
-      WS_CAPTION | WS_VISIBLE | DS_FIXEDSYS | WS_OVERLAPPED | WS_CLIPCHILDREN
-      | WS_CLIPSIBLINGS | WS_SYSMENU | WS_MINIMIZEBOX);
+        WS_CAPTION | WS_VISIBLE | DS_FIXEDSYS | WS_OVERLAPPED | WS_CLIPCHILDREN
+        | WS_CLIPSIBLINGS | WS_SYSMENU | WS_MINIMIZEBOX);
 
     int width, height;
-    static RECT rt = {0};
+    static RECT rt = { 0 };
     if (rt.left == rt.right && rt.top == rt.bottom) {
       GetWindowRect(g_WallPapperWindow, &rt);
       width = rt.right - rt.left;
@@ -143,7 +143,7 @@ bool BackgroundScriptObject::SetWallPaper(const NPVariant *args,
   SetTimer(plugin_->get_hwnd(), 1, 100, TimerProc);
 
   hr = CoCreateInstance(CLSID_ActiveDesktop, NULL, CLSCTX_INPROC_SERVER,
-    IID_IActiveDesktop, (void**)&active_desktop);
+      IID_IActiveDesktop, (void**)&active_desktop);
   if (FAILED(hr))
     return false;
 
@@ -184,7 +184,7 @@ bool BackgroundScriptObject::ApplyWallPaper(const NPVariant *args,
   int base64size = NPVARIANT_TO_STRING(args[0]).UTF8Length - 7;
 
   int byteLength = Base64DecodeGetRequiredLength(base64size);
-  HGLOBAL handle = GlobalAlloc(GMEM_MOVEABLE,byteLength);
+  HGLOBAL handle = GlobalAlloc(GMEM_MOVEABLE, byteLength);
   if (!handle)
     return false;
   LPVOID bytes = GlobalLock(handle);
@@ -193,6 +193,8 @@ bool BackgroundScriptObject::ApplyWallPaper(const NPVariant *args,
   Base64Decode(base64, base64size, (BYTE*)bytes, &byteLength);
   CreateStreamOnHGlobal(handle, FALSE, &stream_);
   image_ = new Image(stream_);
+  if (!image_)
+    return false;
   stream_->Release();
   GlobalUnlock(handle);
   GlobalFree(handle);
@@ -203,7 +205,8 @@ bool BackgroundScriptObject::ApplyWallPaper(const NPVariant *args,
   wsprintf(file_name, L"%s\\ExtensionWallPaper.bmp", current_path);
   CLSID bmp_clsid;
   GetEncoderClsid(L"image/bmp", &bmp_clsid);
-  image_->Save(file_name,&bmp_clsid);
+  if (image_->Save(file_name, &bmp_clsid) != Ok)
+    return false;
 
   delete image_;
 
@@ -211,7 +214,7 @@ bool BackgroundScriptObject::ApplyWallPaper(const NPVariant *args,
   IActiveDesktop* active_desktop;
 
   hr = CoCreateInstance(CLSID_ActiveDesktop, NULL, CLSCTX_INPROC_SERVER,
-    IID_IActiveDesktop, (void**)&active_desktop);
+                        IID_IActiveDesktop, (void**)&active_desktop);
   if (FAILED(hr))
     return false;
 
@@ -249,7 +252,7 @@ bool BackgroundScriptObject::RestoreWallPaper(const NPVariant *args,
   IActiveDesktop *active_desktop;
 
   hr = CoCreateInstance(CLSID_ActiveDesktop, NULL, CLSCTX_INPROC_SERVER,
-    IID_IActiveDesktop, (void**)&active_desktop);
+                        IID_IActiveDesktop, (void**)&active_desktop);
   if (FAILED(hr))
     return false;
 

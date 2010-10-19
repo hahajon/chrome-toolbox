@@ -7,7 +7,7 @@
 WNDPROC VideoAlonePlugin::old_proc_ = NULL;
 
 VideoAlonePlugin::VideoAlonePlugin(void) {
-  Gdiplus::GdiplusStartup(&token_,&start_input_, NULL);
+  Gdiplus::GdiplusStartup(&token_, &start_input_, NULL);
 }
 
 VideoAlonePlugin::~VideoAlonePlugin(void) {
@@ -90,7 +90,7 @@ LRESULT VideoAlonePlugin::WndProc(HWND hWnd, UINT Msg,
 
           NPVariant varObject;
           NPVariant vRet;
-          NPN_GetProperty(pPlugin->npp_,pObject,
+          NPN_GetProperty(pPlugin->npp_, pObject,
                           NPN_GetStringIdentifier("videoAlone"), &varObject);
           NPN_Invoke(pPlugin->npp_, varObject.value.objectValue,
                      NPN_GetStringIdentifier("restore"), params, 3, &vRet);

@@ -16,12 +16,12 @@ BrowserMuteScriptObject::~BrowserMuteScriptObject(void) {
 NPObject* BrowserMuteScriptObject::Allocate(NPP npp, NPClass *aClass) {
   BrowserMuteScriptObject* pRet = new BrowserMuteScriptObject;
   char logs[256];
-  sprintf_s(logs,"BrowserMuteScriptObject this=%ld",pRet);
-  g_Log.WriteLog("Allocate",logs);
+  sprintf(logs, "BrowserMuteScriptObject this=%ld", pRet);
+  g_Log.WriteLog("Allocate", logs);
   if (pRet != NULL) {
     pRet->SetPlugin((PluginBase*)npp->pdata);
     Function_Item item;
-    strcpy_s(item.function_name,"MuteBrowser");
+    strcpy_s(item.function_name, "MuteBrowser");
     item.function_pointer = ON_INVOKEHELPER(&BrowserMuteScriptObject::
         MuteBrowser);
     pRet->AddFunction(item);
@@ -31,8 +31,8 @@ NPObject* BrowserMuteScriptObject::Allocate(NPP npp, NPClass *aClass) {
 
 void BrowserMuteScriptObject::Deallocate() {
   char logs[256];
-  sprintf_s(logs,"BrowserMuteScriptObject this=%ld",this);
-  g_Log.WriteLog("Deallocate",logs);
+  sprintf_s(logs, "BrowserMuteScriptObject this=%ld", this);
+  g_Log.WriteLog("Deallocate", logs);
   if (api_hook_module_)
     FreeLibrary(api_hook_module_);
   delete this;

@@ -26,8 +26,8 @@ public:
     int tab_id;
   };
 
-  typedef map<HWND,WindowID_Item> WindowMap;
-  typedef std::pair<HWND,WindowID_Item> WindowMapPair;
+  typedef map<HWND, WindowID_Item> WindowMap;
+  typedef std::pair<HWND, WindowID_Item> WindowMapPair;
 
 
 public:
