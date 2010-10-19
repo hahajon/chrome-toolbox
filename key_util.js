@@ -126,19 +126,19 @@ key_util.function_table[14] = { id: 14, function_name: 'history_home_short', fun
     ie8_key: 'Alt+Home', opera_key: 'Alt+Home,Alt+Space', safari_key: 'Ctrl+Shift+H', firefox_key: 'Alt+Home'
   };
 key_util.function_table[15] = { id: 15, function_name: 'bookmarks_bar_always_show_short', function_description: 'bookmarks_bar_always_show',
-    category: key_util.category_table.CAT_CHROME_FEATURE,
+    category: key_util.category_table.CAT_TAB_WINDOW,
     isQuickly: true, isSystem: true, isSupport: true, chrome_key: 'Ctrl+Shift+B', browser360_key: 'Ctrl+B',
     maxthon_key: '', tt_key: '', sogou_key: '', ie6_key: '', ie7_key: '',
     ie8_key: '', opera_key: 'Ctrl+B', safari_key: 'Ctrl+Shift+B', firefox_key: 'Ctrl+B'
   };
 key_util.function_table[16] = { id: 16, function_name: 'history_menu_short', function_description: 'history_menu',
-    category: key_util.category_table.CAT_CHROME_FEATURE,
+    category: key_util.category_table.CAT_TAB_WINDOW,
     isQuickly: false, isSystem: true, isSupport: true, chrome_key: 'Ctrl+H', browser360_key: 'Ctrl+H',
     maxthon_key: 'Ctrl+H', tt_key: 'Ctrl+H', sogou_key: 'Ctrl+H', ie6_key: 'Ctrl+H', ie7_key: 'Ctrl+H',
     ie8_key: 'Ctrl+H', opera_key: 'Ctrl+H', safari_key: 'Ctrl+H', firefox_key: 'Ctrl+H'
   };
 key_util.function_table[17] = { id: 17, function_name: 'show_downloads_short', function_description: 'show_downloads',
-    category: key_util.category_table.CAT_CHROME_FEATURE,
+    category: key_util.category_table.CAT_TAB_WINDOW,
     isQuickly: false, isSystem: true, isSupport: true, chrome_key: 'Ctrl+J', browser360_key: '',
     maxthon_key: '', tt_key: '', sogou_key: '', ie6_key: '', ie7_key: '',
     ie8_key: '', opera_key: 'Ctrl+J', safari_key: 'Ctrl+Alt+L', firefox_key: 'Ctrl+J'
@@ -156,25 +156,25 @@ key_util.function_table[19] = { id: 19, function_name: 'browser_toolbar_short', 
     ie8_key: '', opera_key: '', safari_key: '', firefox_key: ''
   };
 key_util.function_table[20] = { id: 20, function_name: 'context_menu_short', function_description: 'context_menu',
-    category: key_util.category_table.CAT_CHROME_FEATURE,
+    category: key_util.category_table.CAT_WEB_PAGE,
     isQuickly: false, isSystem: true, isSupport: true, chrome_key: 'Shift+F10', browser360_key: 'Shift+F10',
     maxthon_key: 'Shift+F10', tt_key: 'Shift+F10', sogou_key: 'Shift+F10', ie6_key: 'Shift+F10', ie7_key: 'Shift+F10',
     ie8_key: 'Shift+F10', opera_key: 'Shift+F10', safari_key: 'Shift+F10', firefox_key: 'Shift+F10'
   };
 key_util.function_table[21] = { id: 21, function_name: 'dev_tools_short', function_description: 'dev_tools',
-    category: key_util.category_table.CAT_CHROME_FEATURE,
+    category: key_util.category_table.CAT_TAB_WINDOW,
     isQuickly: true, isSystem: true, isSupport: true, chrome_key: 'Ctrl+Shift+J', browser360_key: '',
     maxthon_key: '', tt_key: '', sogou_key: '', ie6_key: '', ie7_key: '',
     ie8_key: 'F12', opera_key: '', safari_key: '', firefox_key: ''
   };
 key_util.function_table[22] = { id: 22, function_name: 'clear_browsing_data_short', function_description: 'clear_browsing_data',
-    category: key_util.category_table.CAT_CHROME_FEATURE,
+    category: key_util.category_table.CAT_TAB_WINDOW,
     isQuickly: true, isSystem: true, isSupport: true, chrome_key: 'Ctrl+Shift+Delete', browser360_key: '',
     maxthon_key: '', tt_key: 'Alt+X', sogou_key: 'Alt+X', ie6_key: '', ie7_key: '',
     ie8_key: 'Ctrl+Shift+Delete', opera_key: '', safari_key: '', firefox_key: 'Ctrl+Shift+Delete'
   };
 key_util.function_table[23] = { id: 23, function_name: 'help_short', function_description: 'help',
-    category: key_util.category_table.CAT_CHROME_FEATURE,
+    category: key_util.category_table.CAT_TAB_WINDOW,
     isQuickly: false, isSystem: true, isSupport: true, chrome_key: 'F1', browser360_key: 'F1',
     maxthon_key: 'F1', tt_key: 'F1', sogou_key: 'F1', ie6_key: 'F1', ie7_key: 'F1',
     ie8_key: 'F1', opera_key: 'F1', safari_key: 'F1', firefox_key: 'F1'
