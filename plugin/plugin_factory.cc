@@ -9,11 +9,11 @@ PluginFactory::PluginFactory(void) {
   memset(plugin_type_list_, sizeof(plugin_type_list_), 0);
   strcpy(plugin_type_list_[0].mime_type, "application/x-npconvenience");
   plugin_type_list_[0].constructor = &ConveniencePlugin::CreateObject;
-  strcpy(plugin_type_list_[1].mime_type,"application/x-npwallpaper");
+  strcpy(plugin_type_list_[1].mime_type, "application/x-npwallpaper");
   plugin_type_list_[1].constructor = &BackgroundPlugin::CreateObject;
-  strcpy(plugin_type_list_[2].mime_type,"application/x-npvideoalone");
+  strcpy(plugin_type_list_[2].mime_type, "application/x-npvideoalone");
   plugin_type_list_[2].constructor = &VideoAlonePlugin::CreateObject;
-  strcpy(plugin_type_list_[3].mime_type,"application/x-browsermute");
+  strcpy(plugin_type_list_[3].mime_type, "application/x-browsermute");
   plugin_type_list_[3].constructor = &BrowserMutePlugin::CreateObject;
 }
 

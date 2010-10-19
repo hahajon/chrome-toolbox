@@ -15,7 +15,7 @@ VideoWindow::VideoWindow(void) {
 VideoWindow::~VideoWindow(void) {
 }
 
-bool VideoWindow::InitWindow(HWND chromeHwnd,HWND videoHwnd) {
+bool VideoWindow::InitWindow(HWND chromeHwnd, HWND videoHwnd) {
   chrome_hwnd_ = chromeHwnd;
   video_hwnd_ = videoHwnd;
   lastSizeParam = NULL;
@@ -158,10 +158,10 @@ BOOL VideoWindow::WndProc(HWND hwnd, UINT& msg, WPARAM& wParam, LPARAM& lParam) 
         lastSizeParam = lParam;
 
         if (hChildWnd != NULL) {
-            MoveWindow(hChildWnd, cx, cy, width-2*cx, height-cy-2*cx, FALSE);
-            sprintf(logs, "width=%ld,heigth=%ld,cx=%ld,cy=%ld",
-                      width, height, cx, cy);
-            g_Log.WriteLog("MoveWindow", logs);
+          MoveWindow(hChildWnd, cx, cy, width-2*cx, height-cy-2*cx, FALSE);
+          sprintf(logs, "width=%ld,heigth=%ld,cx=%ld,cy=%ld",
+                  width, height, cx, cy);
+          g_Log.WriteLog("MoveWindow", logs);
         } else
           g_Log.WriteLog("Error", "hChildWnd==NULL");
       }

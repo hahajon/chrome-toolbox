@@ -120,7 +120,7 @@ bool ConvenienceScriptObject::UpdateShortCutList(const NPVariant *args,
     shortcuts_list_ = new ShortCut_Item[len];
 
     for (int i = 0; i < len; i++) {
-      ShortCut_Item item = {0};
+      ShortCut_Item item = { 0 };
       item.index = i;
       id = NPN_GetIntIdentifier(i);
       NPN_GetProperty(plugin_->get_npp(), shortcut_list, id, &array_item);
@@ -166,7 +166,7 @@ bool ConvenienceScriptObject::UpdateShortCutList(const NPVariant *args,
     for (iter = key_map_new->begin(); iter != key_map_new->end(); iter++) {
       if (iter->second.ishotkey) {
         ATOM atom = GlobalAddAtomA(iter->second.shortcuts_key);
-        UINT vk = 0,modify = 0;
+        UINT vk = 0, modify = 0;
         GetShortCutsKey(iter->second.shortcuts_key, modify, vk);
         if (!RegisterHotKey(plugin_->get_hwnd(), atom, modify, vk))
           MessageBox(NULL, L"RegisterHotKey Failed", L"Error", MB_OK);
@@ -239,7 +239,7 @@ void ConvenienceScriptObject::GetShortCutsKey(char* shortcuts, UINT& modify,
 }
 
 void ConvenienceScriptObject::TriggerEvent(const char* shortcuts) {
-  g_Log.WriteLog("TriggerEvent",shortcuts);
+  g_Log.WriteLog("TriggerEvent", shortcuts);
   ShortCutKeyMap* shortcut_map;
   if (shortcuts_used_flag_ == 1)
     shortcut_map = &map_one_;
@@ -443,7 +443,7 @@ bool ConvenienceScriptObject::TriggerChromeShortcuts(const NPVariant *args,
 
   UINT modify, vk, keycount = 0;
   GetShortCutsKey(shortcuts, modify, vk);
-  INPUT inputs[4] = {0};
+  INPUT inputs[4] = { 0 };
   inputs[0].type = INPUT_KEYBOARD;
   inputs[0].ki.wVk = VK_ESCAPE;
   inputs[0].ki.wScan = MapVirtualKey(VK_ESCAPE, MAPVK_VK_TO_VSC);

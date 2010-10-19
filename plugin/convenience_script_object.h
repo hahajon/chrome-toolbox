@@ -53,7 +53,7 @@ public:
   bool get_is_listened() { return is_listened_; }
 
 private:
-  void GetShortCutsKey(char* shortcuts,UINT& modify,UINT& vk);
+  void GetShortCutsKey(char* shortcuts, UINT& modify, UINT& vk);
   
 private:
   int shortcuts_used_flag_; //flag = 1,flag = 2
