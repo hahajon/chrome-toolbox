@@ -181,6 +181,7 @@
   "quick_launch_7": {"message": "快速访问7"},
   "quick_launch_8": {"message": "快速访问8"},
   "quick_launch_9": {"message": "快速访问9"},
+  "mute_browser": {"message": "网页静音"},
   "tab_and_window_shortcuts" : {"message": "标签页和窗口快捷键"},
   "google_chrome_feature_shortcuts": {"message": "谷歌浏览器功能快捷键"},
   "address_bar_shortcuts": {"message": "地址栏快捷键"},
