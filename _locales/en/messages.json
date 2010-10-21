@@ -181,6 +181,7 @@
   "quick_launch_7": {"message": "Quick launch 7"},
   "quick_launch_8": {"message": "Quick launch 8"},
   "quick_launch_9": {"message": "Quick launch 9"},
+  "mute_browser": {"message": "Browser mute"},
   "tab_and_window_shortcuts" : {"message": "Tab and window shortcuts"},
   "google_chrome_feature_shortcuts" : {"message": "Google Chrome feature shortcuts"},
   "address_bar_shortcuts": {"message": "Address bar shortcuts"},
