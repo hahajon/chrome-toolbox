@@ -103,7 +103,6 @@
     var traversalAllNode = function(nodeId) {
 
       chrome.bookmarks.getChildren(nodeId, function(children) {
-        console.log("nodeid:" + nodeId + 'list:' + children);
         for (var i = 0; i < children.length; i++) {
           if (children[i].url) {
             var li = document.createElement('li');
@@ -112,7 +111,6 @@
                 '" width="16" height="16" alt=""/>' +
                 children[i].title + '</a>';
             ul.appendChild(li);
-            console.log("links:" + children[i].url);
           } else {
             traversalAllNode(children[i].id);
           }
@@ -157,7 +155,6 @@
 
   function setSelectedBookmarkFolder() {
     if (selectedBookmarkNodeId && quickLaunchShortcutId) {
-      console.log(selectedBookmarkNodeId);
       var inputId = 'input_' + quickLaunchShortcutId;
       setSelectedBookmarkFolderName($(inputId) ,selectedBookmarkNodeId);
       var shortcut = new Shortcut();

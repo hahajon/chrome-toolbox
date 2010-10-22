@@ -44,6 +44,8 @@ var videoBarStatus = true;
 var floatingBarClass;
 var floatingBarMenus;
 var openInNewTabStatus = true;
+var isWindowsPlatform =
+    navigator.userAgent.toLowerCase().indexOf('windows') > -1;
 chrome.extension.onRequest.addListener(function(request, sender, response) {
   if (request.msg == 'restoreVideoAlone') {
     response(floatingBar.restoreVideoWindow());
@@ -51,6 +53,7 @@ chrome.extension.onRequest.addListener(function(request, sender, response) {
     imageBarStatus = eval(request.imageBar);
     videoBarStatus = eval(request.videoBar);
     openInNewTabStatus = eval(request.openInNewTab);
+    initFloatingBarMenu();
   } else if (request.msg == 'restoreTabTitle') {
 	document.title = request.orgTitle;
   }
@@ -69,10 +72,19 @@ chrome.extension.sendRequest({msg: 'getStatus'}, function(response) {
 
 function initFloatingBarMenu() {
   floatingBarMenus = [
-      {menuID: '001', menuName: chrome.i18n.getMessage('view_original_image'), imageURL: 'images/floatingBar_orl.png', status: imageBarStatus,  operate: 'showOriginalPicture', specialCondition: 'checkCurPictureSize'},
-      {menuID: '002', menuName: chrome.i18n.getMessage('magnifier'), imageURL: 'images/floatingBar_zoom.png', status: imageBarStatus, operate: 'magnifier'},
-      {menuID: '003', menuName: chrome.i18n.getMessage('set_wallpaper'), imageURL: 'images/floatingBar_bg.png', status: imageBarStatus},
-      {menuID: '004', menuName: chrome.i18n.getMessage('video_standalone'), imageURL: 'images/floatingBar_video.png', status: videoBarStatus}
+      {menuID: '001', menuName: chrome.i18n.getMessage('view_original_image'),
+          imageURL: 'images/floatingBar_orl.png', status: imageBarStatus,
+          operate: 'showOriginalPicture',
+          specialCondition: 'checkCurPictureSize', isWindowsOnly: false},
+      {menuID: '002', menuName: chrome.i18n.getMessage('magnifier'),
+          imageURL: 'images/floatingBar_zoom.png', status: imageBarStatus,
+          operate: 'magnifier', isWindowsOnly: false},
+      {menuID: '003', menuName: chrome.i18n.getMessage('set_wallpaper'),
+          imageURL: 'images/floatingBar_bg.png', status: imageBarStatus,
+           isWindowsOnly: true},
+      {menuID: '004', menuName: chrome.i18n.getMessage('video_standalone'),
+          imageURL: 'images/floatingBar_video.png', status: videoBarStatus,
+           isWindowsOnly: true}
     ];
     floatingBarClass = {
       IMG : [
@@ -93,7 +105,6 @@ var floatingBar = {
   videoAloneFlag: false,
   minWidth: 50,
   minHeight: 50,
-
 
   addEvent: function(listener, menuBar) {
     var timer = null;
@@ -133,11 +144,14 @@ var floatingBar = {
       $(floatingMenu).setStyle(styleProperties);
 
       for (var i = 0; i < checkedElements.length; i++) {
+        var isWindowsMenu =
+            !isWindowsPlatform && checkedElements[i].menu.isWindowsOnly;
 
-        if (checkedElements[i].menu.status && curElementData.minSizeChecked) {
-          var specialConditionReturnValue =
-              floatingBar.specialCondition(checkedElements[i].specialCondition,
-                                           curElement)
+        if (!isWindowsMenu && checkedElements[i].menu.status &&
+            curElementData.minSizeChecked) {
+          console.log('232343:' + checkedElements[i].menu.status)
+          var specialConditionReturnValue =  floatingBar.specialCondition(
+              checkedElements[i].specialCondition,curElement)
           if (!checkedElements[i].specialCondition ||
               (checkedElements[i].specialCondition &&
               specialConditionReturnValue)) {

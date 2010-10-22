@@ -1,7 +1,5 @@
 chrome.extension.onRequest.addListener(function(request, sender, response) {
-  console.log(request.msg);
   if (request.msg == 'checkForm') {
-    console.log(request.msg)
     response(checkForm());
   }
 });
