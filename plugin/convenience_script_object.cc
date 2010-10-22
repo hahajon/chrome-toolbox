@@ -169,7 +169,9 @@ bool ConvenienceScriptObject::UpdateShortCutList(const NPVariant *args,
         UINT vk = 0, modify = 0;
         GetShortCutsKey(iter->second.shortcuts_key, modify, vk);
         if (!RegisterHotKey(plugin_->get_hwnd(), atom, modify, vk))
-          MessageBox(NULL, L"RegisterHotKey Failed", L"Error", MB_OK);
+          MessageBox(NULL, 
+              L"Hotkey is register by other application, please redefine it",
+              L"Error", MB_OK);
       }
     }
     shortcuts_used_flag_ = shortcuts_used_flag_ == 2 ? 1 : 2;
@@ -323,21 +325,21 @@ void ConvenienceScriptObject::TriggerShortcuts(UINT modify, UINT vk) {
   INPUT inputs[4] = {0};
   int keycount = 0;
 
-  inputs[0].type = INPUT_KEYBOARD;
-  inputs[0].ki.wVk = VK_CONTROL;
-  inputs[0].ki.dwFlags = 0;
-  inputs[0].ki.wScan = MapVirtualKey(VK_CONTROL, MAPVK_VK_TO_VSC);
-  inputs[0].ki.time = GetTickCount();
-  inputs[1].type = INPUT_KEYBOARD;
-  inputs[1].ki.wVk = 'L';
-  inputs[1].ki.dwFlags = 0;
-  inputs[1].ki.wScan = MapVirtualKey('L', MAPVK_VK_TO_VSC);
-  inputs[1].ki.time = GetTickCount();
-  SendInput(2, inputs, sizeof(INPUT));
-  for (int i = 0; i < 2; i++) {
-    inputs[i].ki.dwFlags = KEYEVENTF_KEYUP;
-  }
-  SendInput(2, inputs, sizeof(INPUT));
+  //inputs[0].type = INPUT_KEYBOARD;
+  //inputs[0].ki.wVk = VK_CONTROL;
+  //inputs[0].ki.dwFlags = 0;
+  //inputs[0].ki.wScan = MapVirtualKey(VK_CONTROL, MAPVK_VK_TO_VSC);
+  //inputs[0].ki.time = GetTickCount();
+  //inputs[1].type = INPUT_KEYBOARD;
+  //inputs[1].ki.wVk = 'L';
+  //inputs[1].ki.dwFlags = 0;
+  //inputs[1].ki.wScan = MapVirtualKey('L', MAPVK_VK_TO_VSC);
+  //inputs[1].ki.time = GetTickCount();
+  //SendInput(2, inputs, sizeof(INPUT));
+  //for (int i = 0; i < 2; i++) {
+  //  inputs[i].ki.dwFlags = KEYEVENTF_KEYUP;
+  //}
+  //SendInput(2, inputs, sizeof(INPUT));
 
   Sleep(100);
 
