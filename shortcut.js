@@ -268,7 +268,7 @@ function initQuicklyVisitMenu(id) {
 
 function setQuicklyVisitMenu(element, id) {
   var quicklyVisitMenu = localStorage['quicklyVisitMenu'];
-  var menus = quicklyVisitMenu.split(',');
+  var menus = quicklyVisitMenu ? quicklyVisitMenu.split(',') : [];
   if (menus.length >= 10) {
     showSavingFailedTip('tip_failed');
     element.checked = false;
