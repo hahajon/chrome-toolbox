@@ -30,6 +30,7 @@
   "title_floating_bar": {"message": "Floating Toolbar"},
   "title_tab": {"message": "Tab"},
   "item_image_bar": {"message": "When the mouse pointer hovers over an image, show image floating toolbar (magnifier, view original image, set wallpaper)"},
+  "item_image_bar_not_windows": {"message": "When the mouse pointer hovers over an image, show image floating toolbar (magnifier, view original image)"},  
   "item_video_bar": {"message": "When the mouse pointer hovers over a video, show video floating toolbar (view video in standalone window)"},
   "item_close_last_tab": {"message": "Don't close current browser window when closing last tab, create a new tab instead."},
   "item_open_in_new_tab": {"message": "When click on a link, alway open it in a new tab"},
