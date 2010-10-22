@@ -45,20 +45,6 @@ function setMessage() {
     {id: 'more2', message: 'more'},
     {id: 'recommended_fromGoogle', message: 'recommended_from_google'},
     {id: 'recommended_fromThird', message: 'recommended_from_third_party'},
-    {id: 'screenCapture', message: 'recommended_screen_capture'},
-    {id: 'screenCaptureDesc', message: 'recommended_screen_capture_desc'},
-    {id: 'downloadHelper', message: 'recommended_download_helper'},
-    {id: 'downloadHelperDesc', message: 'recommended_download_helper_desc'},
-    {id: 'googleTranslate', message: 'recommended_google_translate'},
-    {id: 'googleTranslateDesc', message: 'recommended_google_translate_desc'},
-    {id: 'proxySwitch', message: 'recommended_proxy_switch'},
-    {id: 'proxySwitchDesc', message: 'recommended_proxy_switch_desc'},
-    {id: 'dragAndGo', message: 'recommended_drag_and_go'},
-    {id: 'dragAndGoDesc', message: 'recommended_drag_and_go_desc'},
-    {id: 'smoothGestures', message: 'recommended_smooth_gestures'},
-    {id: 'smoothGesturesDesc', message: 'recommended_smooth_gestures_desc'},
-    {id: 'tabMenu', message: 'recommended_tab_menu'},
-    {id: 'tabMenuDesc', message: 'recommended_tab_menu_desc'},
     {id: 'disclaimer', message: 'disclaimer'}
   ];
   document.title = chrome.i18n.getMessage('option_title');
@@ -101,6 +87,9 @@ function Option() {
   //a element
   this.gotoShortcutTab = $('gotoShortcutTab');
 
+  //Recommended tab element
+  this.googleExtensionsRecommended = $('googleExtensionsRecommended');
+  this.thirdPartyExtensionsRecommended = $('thirdPartyExtensionsRecommended');
 
   this.table_shortcut = $('shortcutTable');
 
@@ -157,7 +146,10 @@ function Option() {
       shortcut.showTable(categorySelect, browserSelect, self.isCompare.checked));
     self.setNavigationBarStatus(self.nav_shortcut);
   }, false)
+  createRecommendedContext(this.googleExtensionsRecommended,
+                                  this.thirdPartyExtensionsRecommended);
   setMessage();
+  setWindowOnlyElement();
 }
 
 Option.prototype.setNavigationBarStatus = function(element) {
@@ -166,11 +158,11 @@ Option.prototype.setNavigationBarStatus = function(element) {
     this_obj = element;
   }
   var navigationBarMap = [
-      {menu: 'mShortcut', tab: 'shortcutTab'},
-      {menu: 'mFillForm', tab: 'fillFormTab'},
-      {menu: 'mQuicklyVisit', tab: 'quicklyVisitTab'},
-      {menu: 'mGeneral', tab: 'generalTab'},
-      {menu: 'mRecommended', tab: 'recommendedTab'}];
+      {menu: 'mGeneral', tab: 'generalTab', isWindowsOnly: false},
+      {menu: 'mFillForm', tab: 'fillFormTab', isWindowsOnly: false},
+      {menu: 'mQuicklyVisit', tab: 'quicklyVisitTab', isWindowsOnly: true},
+      {menu: 'mShortcut', tab: 'shortcutTab', isWindowsOnly: true},
+      {menu: 'mRecommended', tab: 'recommendedTab', isWindowsOnly: false}];
   for (var i = 0; i < navigationBarMap.length; i++) {
     var navMenu = $(navigationBarMap[i].menu);
     var tab = $(navigationBarMap[i].tab);
@@ -235,6 +227,75 @@ function showSavingFailedTip(msg) {
   window.setTimeout(function() {
     document.body.removeChild(div);
   }, 5000);
+}
+
+function setWindowOnlyElement() {
+  if (!isWindowsPlatform()) {
+    var elements = document.getElementsByName('isWindowsOnly');
+    for (var i = 0; i < elements.length; i++) {
+      elements[i].style.display = 'none';
+    }
+  }
+}
+
+function createRecommendedContext(googleExtensionsRecommended,
+                                  thirdPartyExtensionsRecommended) {
+  var createTable = function(list, parent) {
+    var table = document.createElement('TABLE');
+    table.className = 'recommendedTable'
+    for(var i = 0; i < list.length; i++) {
+      var tr = document.createElement('TR');
+      var td1 = document.createElement('TD');
+      td1.className = 'description';
+      td1.innerText = chrome.i18n.getMessage(list[i].description);
+      tr.appendChild(td1);
+      var td2 = document.createElement('TD');
+      td2.className = 'image';
+      td2.innerHTML = '<img src="' +
+          chrome.extension.getURL(list[i].icon) + '" alt="">';
+      tr.appendChild(td2);
+      var td3 = document.createElement('TD');
+      td3.innerHTML = '<a href="' + list[i].href + '" target="_blank">' +
+          chrome.i18n.getMessage(list[i].name) + '</a>';
+      tr.appendChild(td3);
+      table.appendChild(tr);
+    }
+    parent.appendChild(table);
+  }
+  var googleExtensionsList = [
+    {name:'recommended_screen_capture',
+        description: 'recommended_screen_capture_desc',
+        icon: 'images/icon_capture_32.png',
+        href: 'https://chrome.google.com/extensions/detail/cpngackimfmofbokmjmljamhdncknpmg' },
+    {name:'recommended_download_helper',
+        description: 'recommended_download_helper_desc',
+        icon: 'images/icon_download_32.png',
+        href: 'https://chrome.google.com/extensions/detail/mfjkgbjaikamkkojmakjclmkianficch' },
+    {name:'recommended_google_translate',
+        description: 'recommended_google_translate_desc',
+        icon: 'images/icon_translate_32.gif',
+        href: 'https://chrome.google.com/extensions/detail/aapbdbdomjkkjkaonfhkkikfgjllcleb' }
+  ];
+  var thirdPartyExtensionsList = [
+    {name:'recommended_proxy_switch',
+        description: 'recommended_proxy_switch_desc',
+        icon: 'images/icon_proxy_32.png',
+        href: 'https://chrome.google.com/extensions/detail/caehdcpeofiiigpdhbabniblemipncjj' },
+    {name:'recommended_drag_and_go',
+        description: 'recommended_drag_and_go_desc',
+        icon: 'images/icon_dragandgo_32.png',
+        href: 'https://chrome.google.com/extensions/detail/jaikcnhlohebodlpkmjepipngegjbfpg' },
+    {name:'recommended_smooth_gestures',
+        description: 'recommended_smooth_gestures_desc',
+        icon: 'images/icon_gestures_32.png',
+        href: 'https://chrome.google.com/extensions/detail/lfkgmnnajiljnolcgolmmgnecgldgeld' },
+    {name:'recommended_tab_menu',
+        description: 'recommended_tab_menu_desc',
+        icon: 'images/icon_tab_menu_35.png', 
+        href: 'https://chrome.google.com/extensions/detail/galfofdpepkcahkfobimileafiobdplb' }
+  ];
+  createTable(googleExtensionsList, googleExtensionsRecommended);
+  createTable(thirdPartyExtensionsList, thirdPartyExtensionsRecommended);
 }
 
 function init() {

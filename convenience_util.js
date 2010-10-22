@@ -18,3 +18,7 @@ function getDate() {
 function isFunction(handler) {
     return Object.prototype.toString.call(handler) === "[object Function]";
 }
+
+function isWindowsPlatform() {
+  return navigator.userAgent.toLowerCase().indexOf('windows') > -1;
+}

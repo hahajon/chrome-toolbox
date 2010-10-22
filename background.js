@@ -37,7 +37,6 @@
     var isCloseWindow = eval(localStorage['closeLastTab']) && true;
     if (isCloseWindow) {
       chrome.tabs.getAllInWindow(null, function(tabs) {
-        console.log(tabs.length);
         if (tabs.length > 1) {
           plugin.convenience.IsOnlyOneTab(false);
         } else if (tabs.length == 1) {
@@ -122,27 +121,28 @@
 
   function init() {
     localStorage['imageBar'] = localStorage['imageBar'] || 'true';
-    localStorage['videoBar'] = localStorage['videoBar'] || 'true';
-    localStorage['closeLastTab'] = localStorage['closeLastTab'] || 'true';
     localStorage['openInNewTab'] = localStorage['openInNewTab'] || 'false';
-    localStorage['dbclickCloseTab'] = localStorage['dbclickCloseTab'] || 'true';
-    localStorage['quicklyVisitMenu'] = localStorage['quicklyVisitMenu'] || '5,15';
-    localStorage['browserMute'] = localStorage['browserMute'] || 'false';
-    plugin.browserMute.MuteBrowser(eval(localStorage['browserMute']));
-    setCloseLastOneTabStatus();
-    dbClickCloseTab();
-  }
 
-  chrome.tabs.onCreated.addListener(function(tab) {
-    setCloseLastOneTabStatus();
-  });
-  chrome.tabs.onRemoved.addListener(function(tabId) {
-    setCloseLastOneTabStatus();
-  });
-  chrome.windows.onFocusChanged.addListener(function(windowId) {
-    console.log('foucused');
-    setCloseLastOneTabStatus();
-  });
+    if (isWindowsPlatform()) {
+      localStorage['closeLastTab'] = localStorage['closeLastTab'] || 'true';
+      localStorage['videoBar'] = localStorage['videoBar'] || 'true';
+      localStorage['browserMute'] = localStorage['browserMute'] || 'false';
+      plugin.browserMute.MuteBrowser(eval(localStorage['browserMute']));
+      localStorage['dbclickCloseTab'] = localStorage['dbclickCloseTab'] || 'true';
+      localStorage['quicklyVisitMenu'] = localStorage['quicklyVisitMenu'] || '5,15';
+      setCloseLastOneTabStatus();
+      dbClickCloseTab();
+      chrome.tabs.onCreated.addListener(function(tab) {
+        setCloseLastOneTabStatus();
+      });
+      chrome.tabs.onRemoved.addListener(function(tabId) {
+        setCloseLastOneTabStatus();
+      });
+      chrome.windows.onFocusChanged.addListener(function(windowId) {
+        setCloseLastOneTabStatus();
+      });
+    }
+  }
 
   chrome.tabs.onSelectionChanged.addListener(function(tabId) {
     chrome.tabs.sendRequest(tabId, {msg: 'status',
