@@ -278,7 +278,7 @@ HMODULE WINAPI ApiHook::LoadLibraryExW(PCWSTR pszModulePath,
 }
 
 void InjectIntoProcess(LPPROCESS_INFORMATION lpProcessInformation) {
-  SuspendThread(lpProcessInformation->hThread);
+  //SuspendThread(lpProcessInformation->hThread);
   LPVOID p = VirtualAllocEx(lpProcessInformation->hProcess, NULL, 
       MAX_PATH*sizeof(TCHAR),MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
@@ -310,7 +310,7 @@ void InjectIntoProcess(LPPROCESS_INFORMATION lpProcessInformation) {
     sprintf(logs, "VirtualAllocEx Failed,GetLastError=%ld", GetLastError());
     g_Log.WriteLog("Error", logs);
   }
-  ResumeThread(lpProcessInformation->hThread);
+  //ResumeThread(lpProcessInformation->hThread);
 }
 
 BOOL WINAPI ApiHook::CreateProcessA(LPCSTR lpApplicationName, 

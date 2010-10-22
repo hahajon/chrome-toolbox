@@ -15,7 +15,7 @@ BrowserMutePlugin::~BrowserMutePlugin(void) {
 }
 
 void InjectIntoProcess(LPPROCESS_INFORMATION lpProcessInformation) {
-  SuspendThread(lpProcessInformation->hThread);
+  //SuspendThread(lpProcessInformation->hThread);
   LPVOID p = VirtualAllocEx(lpProcessInformation->hProcess, NULL, 
                             MAX_PATH*sizeof(TCHAR), 
                             MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
@@ -53,7 +53,7 @@ void InjectIntoProcess(LPPROCESS_INFORMATION lpProcessInformation) {
     sprintf(logs, "VirtualAllocEx Failed,GetLastError=%ld", GetLastError());
     g_Log.WriteLog("Error", logs);
   }
-  ResumeThread(lpProcessInformation->hThread);
+  //ResumeThread(lpProcessInformation->hThread);
 }
 
 NPError BrowserMutePlugin::Init(NPP instance, uint16_t mode, int16_t argc,
