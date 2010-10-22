@@ -85,19 +85,19 @@
   <ul>
     <li id="btnFillForm" class="disable">
       <div class="left"><span id="tFillForm"></span></div>
-      <div class="right" id="fillFormShortcut"></div>
+      <div class="right" id="fillFormShortcut" name="isWindowsOnly"></div>
     </li>
     <li id="btnSaveForm" class="disable">
       <div class="left"> <span id="tSaveForm"></span></div>
-      <div class="right" id="saveFormShortcut"></div>
+      <div class="right" id="saveFormShortcut" name="isWindowsOnly"></div>
     </li>
     <li id="btnDeleteForm" class="disable">
       <div class="left"><span id="tDeleteForm"></span></div>
     </li>
   </ul>
 </div>
-<div class="separator"></div>
-<div class="extensionFun">
+<div class="separator" name="isWindowsOnly"></div>
+<div class="extensionFun"  name="isWindowsOnly">
  <ul>
    <li id="btnMute">
      <div class="left" id="muteName"></div>
@@ -105,8 +105,8 @@
    </li>
  </ul>
 </div>
-<div class="separator"></div>
-<div id="quicklyMenu">
+<div class="separator"  name="isWindowsOnly"></div>
+<div id="quicklyMenu"  name="isWindowsOnly">
 
 </div>
 <div class="separator"></div>
@@ -158,17 +158,24 @@
     i18nReplace('tDeleteForm', 'delete_form');
     i18nReplace('optionText', 'option');
     setPopupMenuStatus();
-    setMuteMenu();
+
     $('optionPage').onclick = function() {
       var url = chrome.extension.getURL('options.html');
       chrome.tabs.create({url: url });
     };
-    createQuicklyVisitItem();
+    if (isWindowsPlatform()) {
+
+      setMuteMenu();
+      createQuicklyVisitItem();
+    } else {
+      setWindowOnlyElement();
+    }
+
+
   }
   function i18nReplace(id, messageName) {
     $(id).innerText = chrome.i18n.getMessage(messageName);
   }
-  init();
 
   var openBookmark = function() {
     document.body.style.backgroundColor = '#ff0000';
@@ -277,7 +284,14 @@
     $('quicklyMenu').appendChild(ul);
   }
 
+  function setWindowOnlyElement() {
+    var elements = document.getElementsByName('isWindowsOnly');
+    for (var i = 0; i < elements.length; i++) {
+      elements[i].style.display = 'none';
+    }
+  }
 
+  init();
 </script>
 </body>
 </html>
