@@ -235,6 +235,7 @@ function setWindowOnlyElement() {
     for (var i = 0; i < elements.length; i++) {
       elements[i].style.display = 'none';
     }
+    i18nReplace('item_imageBar', 'item_image_bar_not_windows');
   }
 }
 
@@ -242,23 +243,25 @@ function createRecommendedContext(googleExtensionsRecommended,
                                   thirdPartyExtensionsRecommended) {
   var createTable = function(list, parent) {
     var table = document.createElement('TABLE');
-    table.className = 'recommendedTable'
+    table.className = 'recommendedTable';
     for(var i = 0; i < list.length; i++) {
-      var tr = document.createElement('TR');
-      var td1 = document.createElement('TD');
-      td1.className = 'description';
-      td1.innerText = chrome.i18n.getMessage(list[i].description);
-      tr.appendChild(td1);
-      var td2 = document.createElement('TD');
-      td2.className = 'image';
-      td2.innerHTML = '<img src="' +
-          chrome.extension.getURL(list[i].icon) + '" alt="">';
-      tr.appendChild(td2);
-      var td3 = document.createElement('TD');
-      td3.innerHTML = '<a href="' + list[i].href + '" target="_blank">' +
-          chrome.i18n.getMessage(list[i].name) + '</a>';
-      tr.appendChild(td3);
-      table.appendChild(tr);
+      if (isWindowsPlatform() || !list[i].isWindowsOnly) {
+        var tr = document.createElement('TR');
+        var td1 = document.createElement('TD');
+        td1.className = 'description';
+        td1.innerText = chrome.i18n.getMessage(list[i].description);
+        tr.appendChild(td1);
+        var td2 = document.createElement('TD');
+        td2.className = 'image';
+        td2.innerHTML = '<img src="' +
+            chrome.extension.getURL(list[i].icon) + '" alt="">';
+        tr.appendChild(td2);
+        var td3 = document.createElement('TD');
+        td3.innerHTML = '<a href="' + list[i].href + '" target="_blank">' +
+            chrome.i18n.getMessage(list[i].name) + '</a>';
+        tr.appendChild(td3);
+        table.appendChild(tr);
+      }
     }
     parent.appendChild(table);
   }
@@ -266,32 +269,39 @@ function createRecommendedContext(googleExtensionsRecommended,
     {name:'recommended_screen_capture',
         description: 'recommended_screen_capture_desc',
         icon: 'images/icon_capture_32.png',
+        isWindowsOnly: false,
         href: 'https://chrome.google.com/extensions/detail/cpngackimfmofbokmjmljamhdncknpmg' },
     {name:'recommended_download_helper',
         description: 'recommended_download_helper_desc',
         icon: 'images/icon_download_32.png',
+        isWindowsOnly: true,
         href: 'https://chrome.google.com/extensions/detail/mfjkgbjaikamkkojmakjclmkianficch' },
     {name:'recommended_google_translate',
         description: 'recommended_google_translate_desc',
         icon: 'images/icon_translate_32.gif',
+        isWindowsOnly: false,
         href: 'https://chrome.google.com/extensions/detail/aapbdbdomjkkjkaonfhkkikfgjllcleb' }
   ];
   var thirdPartyExtensionsList = [
     {name:'recommended_proxy_switch',
         description: 'recommended_proxy_switch_desc',
         icon: 'images/icon_proxy_32.png',
+        isWindowsOnly: false,
         href: 'https://chrome.google.com/extensions/detail/caehdcpeofiiigpdhbabniblemipncjj' },
     {name:'recommended_drag_and_go',
         description: 'recommended_drag_and_go_desc',
         icon: 'images/icon_dragandgo_32.png',
+        isWindowsOnly: false,
         href: 'https://chrome.google.com/extensions/detail/jaikcnhlohebodlpkmjepipngegjbfpg' },
     {name:'recommended_smooth_gestures',
         description: 'recommended_smooth_gestures_desc',
         icon: 'images/icon_gestures_32.png',
+        isWindowsOnly: false,
         href: 'https://chrome.google.com/extensions/detail/lfkgmnnajiljnolcgolmmgnecgldgeld' },
     {name:'recommended_tab_menu',
         description: 'recommended_tab_menu_desc',
-        icon: 'images/icon_tab_menu_35.png', 
+        icon: 'images/icon_tab_menu_35.png',
+        isWindowsOnly: false,
         href: 'https://chrome.google.com/extensions/detail/galfofdpepkcahkfobimileafiobdplb' }
   ];
   createTable(googleExtensionsList, googleExtensionsRecommended);
