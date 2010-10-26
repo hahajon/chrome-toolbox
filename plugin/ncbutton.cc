@@ -252,12 +252,24 @@ void NCButton::OnMouseUp(POINT pt) {
 void NCButton::GetButtonRect() {
   RECT rt;
 
+  static OSVERSIONINFO versionInfo = { 0 };
+  if (versionInfo.dwMajorVersion == 0) {
+    versionInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+    GetVersionEx(&versionInfo);
+  }
+
   GetWindowRect(parent_hwnd_, &rt);
   if (IsMaximized(parent_hwnd_)) {
-    rect_.right = rt.right - OFFSET_LEN - 2*CONST_FRAME_BORDER;
+    if (versionInfo.dwMajorVersion >= 6)
+      rect_.right = rt.right - VISTA_OFFSET_LEN - 2*CONST_FRAME_BORDER;
+    else
+      rect_.right = rt.right - OFFSET_LEN - 2*CONST_FRAME_BORDER;
     rt.top = 0;
   } else {
-    rect_.right = rt.right - OFFSET_LEN; 
+    if (versionInfo.dwMajorVersion >= 6)
+      rect_.right = rt.right - VISTA_OFFSET_LEN; 
+    else
+      rect_.right = rt.right - OFFSET_LEN; 
     rt.top++;
   }
   rect_.top = rt.top;
