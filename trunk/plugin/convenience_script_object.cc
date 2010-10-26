@@ -163,15 +163,22 @@ bool ConvenienceScriptObject::UpdateShortCutList(const NPVariant *args,
       }
     }
     key_map_old->clear();
+    static bool errorflag = false;
     for (iter = key_map_new->begin(); iter != key_map_new->end(); iter++) {
       if (iter->second.ishotkey) {
         ATOM atom = GlobalAddAtomA(iter->second.shortcuts_key);
         UINT vk = 0, modify = 0;
         GetShortCutsKey(iter->second.shortcuts_key, modify, vk);
-        if (!RegisterHotKey(plugin_->get_hwnd(), atom, modify, vk))
+        BOOL register_ret = RegisterHotKey(plugin_->get_hwnd(), 
+                                           atom, modify, vk);
+        if (!register_ret && !errorflag) {
+          errorflag = true;
           MessageBox(NULL, 
-              L"Hotkey is register by other application, please redefine it",
+              L"Boss key is register by other application, please redefine it",
               L"Error", MB_OK);
+        } else if (register_ret) {
+          errorflag = false;
+        }
       }
     }
     shortcuts_used_flag_ = shortcuts_used_flag_ == 2 ? 1 : 2;
@@ -530,6 +537,16 @@ void ConvenienceScriptObject::OnKeyDown(bool contrl, bool alt, bool shift,
     NPVariant prop_value;
     if (!id)
       return;
+
+    if (wParam == VK_ESCAPE) {
+      NPObject* window;
+      NPN_GetValue(plugin_->get_npp(), NPNVWindowNPObject, &window);
+      id = NPN_GetStringIdentifier("cancelListener");
+      g_Log.WriteLog("msg", "NPN_Invoke cancelListener Start");
+      NPN_Invoke(plugin_->get_npp(), window, id, NULL, 0, &prop_value);
+      g_Log.WriteLog("msg", "NPN_Invoke cancelListener End");
+      return;
+    }
 
     string keys;
 

@@ -21,6 +21,7 @@
 #define EVENTID_FRESH   3456
 
 #define OFFSET_LEN    97
+#define VISTA_OFFSET_LEN    111
 #define TIP_BUTTON_WIDTH  26
 #define TIP_BUTTON_HEIGHT 18
 #define CONST_FRAME_BORDER  4

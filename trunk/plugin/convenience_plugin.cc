@@ -36,10 +36,30 @@ int map_current_used_flag = 2;
 ConvenienceScriptObject::ShortCutKeyMap g_mapOne;
 ConvenienceScriptObject::ShortCutKeyMap g_mapTwo;
 
+int ReadPluginProcessId() {
+  TCHAR current_path[MAX_PATH];
+  GetCurrentDirectory(MAX_PATH, current_path);
+  TCHAR file_name[MAX_PATH];
+  wsprintf(file_name, L"%s\\convenience.ini", current_path);
+  return GetPrivateProfileInt(L"CFG", L"PID", 0, file_name);
+}
+
+void WritePluginProcessId() {
+  TCHAR current_path[MAX_PATH];
+  GetCurrentDirectory(MAX_PATH, current_path);
+  TCHAR file_name[MAX_PATH];
+  wsprintf(file_name, L"%s\\convenience.ini", current_path);
+  TCHAR value[32];
+  wsprintf(value, L"%ld", GetCurrentProcessId());
+  WritePrivateProfileString(L"CFG", L"PID", value, file_name);
+}
+
 void UpdateShortcutsFromMemory() {
   g_Log.WriteLog("msg", "UpdateShortcutsFromMemory");
+  TCHAR filemap_name[MAX_PATH];
+  wsprintf(filemap_name, L"%s_%ld", kFileMappingName, ReadPluginProcessId());
   HANDLE memory_file_handle = OpenFileMapping(FILE_MAP_READ, FALSE,
-                                              kFileMappingName);
+                                              filemap_name);
   if (memory_file_handle) {
     LPVOID p = MapViewOfFile(memory_file_handle, FILE_MAP_READ, 0, 0, 0);
     if (p) {
@@ -82,9 +102,11 @@ DWORD WINAPI Client_Thread(void* param) {
   HANDLE event_handle = (HANDLE)param;
   OVERLAPPED ol = { 0 };
   ol.hEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+  TCHAR pipe_name[MAX_PATH];
+  wsprintf(pipe_name, L"%s_%ld", kPipeName, ReadPluginProcessId());
 
   while(true) {
-    client_pipe_handle = CreateFile(kPipeName, GENERIC_READ | GENERIC_WRITE,
+    client_pipe_handle = CreateFile(pipe_name, GENERIC_READ | GENERIC_WRITE,
                                     0, NULL, OPEN_EXISTING, 
                                     FILE_FLAG_OVERLAPPED, NULL);
 
@@ -174,8 +196,10 @@ DWORD ConveniencePlugin::Server_Thread(void* param) {
   Cmd_Msg_Item cmd;
 
   ConveniencePlugin* pPlugin = (ConveniencePlugin*)param;
+  TCHAR pipe_name[MAX_PATH];
+  wsprintf(pipe_name, L"%s_%ld", kPipeName, ReadPluginProcessId());
 
-  pPlugin->server_pipe_handle_ = CreateNamedPipe(kPipeName,
+  pPlugin->server_pipe_handle_ = CreateNamedPipe(pipe_name,
       PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
       PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT,
       1, MAX_BUFFER_LEN, MAX_BUFFER_LEN, 0, NULL);
@@ -500,6 +524,7 @@ NPError ConveniencePlugin::Init(NPP instance, uint16_t mode, int16_t argc,
                                 NPSavedData *saved) {
    scriptobject_ = NULL;
    instance->pdata = this;
+   WritePluginProcessId();
    server_thread_handle_ = CreateThread(NULL, 0, Server_Thread, this, 0, NULL);
    HWND chrome_hwnd = FindWindowEx(NULL, NULL, kChromeClassName, NULL);
    if (!chrome_hwnd) {
@@ -577,10 +602,12 @@ void ConveniencePlugin::SetShortcutsToMemory(ShortCut_Item* list, int count) {
     CloseHandle(memory_file_handle_);
 
   int num = sizeof(ShortCut_Item)*count + sizeof(int);
+  TCHAR filemap_name[MAX_PATH];
+  wsprintf(filemap_name, L"%s_%ld", kFileMappingName, ReadPluginProcessId());
 
   memory_file_handle_ = CreateFileMapping(NULL, NULL,
                                           PAGE_READWRITE|SEC_COMMIT,
-                                          0, num, kFileMappingName);
+                                          0, num, filemap_name);
   if (memory_file_handle_) {
     LPVOID p = MapViewOfFile(memory_file_handle_,
                              FILE_MAP_WRITE, 0, 0, sizeof(hwnd_));
