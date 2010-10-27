@@ -168,5 +168,16 @@
     }
   }
 
+  function resetQuickLunch() {
+    var shortcut = new Shortcut();
+    shortcut.updateRelationId(null, quickLaunchShortcutId);
+    var inputId = 'input_' + quickLaunchShortcutId;
+    selectedBookmarkNodeId = 0;
+    quickLaunchShortcutId = 0;
+    showSavingSucceedTip();
+    $(inputId).value = '';
+    $('bookmarkBox').style.display = 'none';
+  }
+
 
 

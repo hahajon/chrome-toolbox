@@ -8,7 +8,56 @@
     convenience: document.getElementById('plugin_convenience'),
     videoAlone: document.getElementById('plugin_videoAlone'),
     wallpaper: document.getElementById('plugin_wallpaper'),
-    browserMute: document.getElementById('plugin_mute')
+    browserMute: document.getElementById('plugin_mute'),
+    addKeyboardListener: function(input) {
+      this.convenience.AddListener(input);
+    },
+    removeKeyboardListener: function() {
+      this.convenience.RemoveListener();
+    },
+    isOnlyOneTab: function(onlyOneFlag) {
+      this.convenience.IsOnlyOneTab(onlyOneFlag);
+    },
+    setDBClickCloseTab: function(dbClickFlag) {
+      this.convenience.SetDBClickCloseTab(dbClickFlag);
+    },
+    pressBossKey : function() {
+      this.convenience.PressBossKey();
+    },
+    triggerChromeShortcuts: function(virtualKey) {
+      this.convenience.TriggerChromeShortcuts(virtualKey)
+    },
+    addKeyboardListener: function(input) {
+      this.convenience.AddListener(input);
+    },
+    removeKeyboardListener: function() {
+      this.convenience.RemoveListener();
+    },
+    updateShortCutList: function(shortcutList) {
+      this.convenience.UpdateShortCutList(shortcutList);
+    },
+    showVideoAlone: function(title, orgTitle, parentWindowId, curWindowId,
+                              tabId) {
+      this.videoAlone.ShowVideoAlone(title, orgTitle, parentWindowId,
+          curWindowId, tabId);
+    },
+    applyWallpaper: function(data, mode) {
+      this.wallpaper.ApplyWallPaper(data, mode);
+    },
+    restoreWallpaper: function() {
+      this.wallpaper.RestoreWallPaper();
+    },
+    setWallpaper: function() {
+      this.wallpaper.SetWallPaper();
+    },
+    muteBrowser: function(muteFlag) {
+      this.browserMute.MuteBrowser
+    },
+    muteBrowser: function(muteFlag) {
+      this.browserMute.MuteBrowser(muteFlag);
+    }
+
+
   }
   chrome.extension.onRequest.addListener(function(request, sender, sendResponse) {
     switch(request.msg) {
@@ -38,13 +87,13 @@
     if (isCloseWindow) {
       chrome.tabs.getAllInWindow(null, function(tabs) {
         if (tabs.length > 1) {
-          plugin.convenience.IsOnlyOneTab(false);
+          plugin.isOnlyOneTab(false);
         } else if (tabs.length == 1) {
-          plugin.convenience.IsOnlyOneTab(true);
+          plugin.isOnlyOneTab(true);
         }
       });
     } else {
-      plugin.convenience.IsOnlyOneTab(false);
+      plugin.isOnlyOneTab(false);
     }
   }
 
@@ -62,8 +111,8 @@
   }
 
   function dbClickCloseTab() {
-    var parameter = eval(localStorage['dbclickCloseTab']) && true;
-    plugin.convenience.SetDBClickCloseTab(parameter);
+    var flag = eval(localStorage['dbclickCloseTab']) && true;
+    plugin.setDBClickCloseTab(flag);
   }
 
   function closeLastTabNotCloseWindow() {
@@ -116,7 +165,7 @@
   }
 
   function bossKeyExecute() {
-    plugin.convenience.PressBossKey();
+    plugin.pressBossKey();
   }
 
   function init() {
@@ -127,9 +176,11 @@
       localStorage['closeLastTab'] = localStorage['closeLastTab'] || 'true';
       localStorage['videoBar'] = localStorage['videoBar'] || 'true';
       localStorage['browserMute'] = localStorage['browserMute'] || 'false';
-      plugin.browserMute.MuteBrowser(eval(localStorage['browserMute']));
-      localStorage['dbclickCloseTab'] = localStorage['dbclickCloseTab'] || 'true';
-      localStorage['quicklyVisitMenu'] = localStorage['quicklyVisitMenu'] || '5,15';
+      plugin.muteBrowser(eval(localStorage['browserMute']));
+      localStorage['dbclickCloseTab'] =
+          localStorage['dbclickCloseTab'] || 'true';
+      localStorage['quicklyVisitMenu'] =
+          localStorage['quicklyVisitMenu'] || '5,15';
       setCloseLastOneTabStatus();
       dbClickCloseTab();
       chrome.tabs.onCreated.addListener(function(tab) {
@@ -165,15 +216,6 @@
   var wallpaper = {
     orgImage: {data: '', width:0, height: 0},
     compressiveImage: {data: '', width:0, height: 0},
-    applyWallpaper: function(data, mode) {
-      plugin.wallpaper.ApplyWallPaper(data, mode);
-    },
-    restoreWallpaper: function() {
-      plugin.wallpaper.RestoreWallPaper();
-    },
-    setWallpaper: function() {
-      plugin.wallpaper.SetWallPaper();
-    },
 
     openPreviewWindow: function(imageSrc) {
       var imageToData = function(image, width, height) {
@@ -195,13 +237,13 @@
         wallpaper.orgImage.data = imageToData(image, image.width, image.height);
         wallpaper.orgImage.width = image.width;
         wallpaper.orgImage.height = image.height;
-        wallpaper.compressiveImage.data =
-            imageToData(image, Math.round(image.width / zoom), Math.round(image.height / zoom));
+        wallpaper.compressiveImage.data =  imageToData(image,
+            Math.round(image.width / zoom), Math.round(image.height / zoom));
         wallpaper.compressiveImage.width = Math.round(image.width / zoom);
         wallpaper.compressiveImage.height = Math.round(image.height / zoom);
         chrome.windows.create({width: width, height: height,
           url: url, type: 'popup'}, function(window) {
-          wallpaper.setWallpaper()
+          plugin.setWallpaper();
         });
       }
       image.src = imageSrc;
@@ -219,8 +261,8 @@
                                          index:1}, function(){
           chrome.tabs.getAllInWindow(window.id, function(tabs) {
             chrome.tabs.remove(tabs[0].id);
-            plugin.videoAlone.ShowVideoAlone(sender.tab.title,
-                request.orgTitle, parentWindowId, window.id, sender.tab.id);
+            plugin.showVideoAlone(sender.tab.title, request.orgTitle,
+                parentWindowId, window.id, sender.tab.id);
             chrome.tabs.sendRequest(sender.tab.id,
                 {msg: 'restoreTabTitle', orgTitle: request.orgTitle});
           });
@@ -304,7 +346,7 @@
 
   function browserMute() {
     var muteFlag = eval(localStorage['browserMute']);
-    plugin.browserMute.MuteBrowser(!muteFlag);
+    plugin.muteBrowser(!muteFlag);
     localStorage['browserMute'] = !muteFlag;
   }
   

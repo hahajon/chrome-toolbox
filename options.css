@@ -391,11 +391,11 @@ vertical-align: text-bottom;
 }
 
 #mFillForm {
-  background: url(images/icon_fillForm.png) no-repeat 9px 7px;
+  background: url(images/icon_form.png) no-repeat 9px 7px;
 }
 
 #mQuicklyVisit {
-  background: url(images/icon_quicklyVisit.png) no-repeat 9px 7px;
+  background: url(images/icon_quick_launch.png) no-repeat 9px 7px;
 }
 
 #mShortcut {
@@ -539,8 +539,9 @@ vertical-align: text-bottom;
 .disclaimer {
   margin-top: 30px;
   border-top: 1px #cccccc solid;
-  text-align: center;
+  text-align: left;
   line-height: 30px;
+  color: #cccccc;
 }
 
 .clear {

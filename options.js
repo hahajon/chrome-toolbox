@@ -34,9 +34,10 @@ function setMessage() {
     {id: 'fillForm_date', message: 'fill_form_date'},
     {id: 'fillFrom_delAll', message: 'fill_from_delete_all'},
     {id: 'shortcut_compare', message: 'shortcut_compare'},
-    {id: 'quicklyVisit_selectedFolder', message: 'quick_launch_select_folder'},
-    {id: 'quicklyVisit_manageBookmark', message: 'quick_launch_manage_bookmark'},
-    {id: 'quicklyVisit_close', message: 'quick_launch_close'},
+    {id: 'quick_launch_selected_folder', message: 'quick_launch_select_folder'},
+    {id: 'quick_launch_manage_bookmark', message: 'quick_launch_manage_bookmark'},
+    {id: 'quick_launch_close', message: 'quick_launch_close'},
+    {id: 'quick_launch_reset', message: 'quick_launch_reset'},
     {id: 'bookmark_tip', message: 'bookmark_tip'},
     {id: 'shortcut_tip', message: 'tab_shortcut_description'},
     {id: 'fillForm_tip', message: 'tab_fill_form_description'},
@@ -193,7 +194,7 @@ Option.prototype.setGeneralTabOption = function() {
   });
   this.closeLastTab.addEventListener('change', function() {
     localStorage['closeLastTab'] = $('closeLastTab').checked;
-    bg.setCloseLastOneTabStatus()
+    bg.setCloseLastOneTabStatus();
     showSavingSucceedTip();
   });
   this.openInNewTab.addEventListener('change', function() {
@@ -236,6 +237,7 @@ function setWindowOnlyElement() {
       elements[i].style.display = 'none';
     }
     i18nReplace('item_imageBar', 'item_image_bar_not_windows');
+    i18nReplace('description', 'description_linux_and_mac');
   }
 }
 

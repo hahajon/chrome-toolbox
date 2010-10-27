@@ -70,10 +70,14 @@ var preview = {
     var size = preview.getPreviewAreaSize();
     preview.setTileMode(previewArea, preview.compressiveImage);
     previewArea.style.width = size.previewWidth + 'px';
-    previewArea.style.height = previewArea.style.lineHeight = size.previewHeight + 'px';
-    document.getElementById('apply').addEventListener('click', preview.apply, false);
-    document.getElementById('restore').addEventListener('click', preview.restore, false);
-    document.getElementById('close').addEventListener('click', preview.close, false);
+    previewArea.style.height =
+        previewArea.style.lineHeight = size.previewHeight + 'px';
+    document.getElementById('apply').addEventListener('click',
+        preview.apply, false);
+    document.getElementById('restore').addEventListener('click',
+        preview.restore, false);
+    document.getElementById('close').addEventListener('click',
+        preview.close, false);
     document.addEventListener('change', function(){
       var center = document.getElementById('center');
       var tile = document.getElementById('tile');
@@ -97,11 +101,11 @@ var preview = {
     } else if (document.getElementById('stretch').checked) {
       mode = document.getElementById('stretch').value;
     }
-    bg.wallpaper.applyWallpaper(preview.orgImage.data, mode);
+    bg.plugin.applyWallpaper(preview.orgImage.data, mode);
   },
 
   restore: function() {
-    bg.wallpaper.restoreWallpaper();
+    bg.plugin.restoreWallpaper();
   },
 
   close: function() {
