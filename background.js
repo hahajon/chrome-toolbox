@@ -99,7 +99,10 @@
 
   function beforeLastTabClose() {
     chrome.tabs.getSelected(null, function(tab) {
-      chrome.tabs.update(tab.id, {url: 'chrome://newtab/'});
+      if (tab.url != 'chrome://newtab/') {
+        chrome.tabs.create({url: 'chrome://newtab/'});
+      }
+      chrome.tabs.remove(tab.id);
     });
   }
 
