@@ -39,7 +39,7 @@ Shortcut.prototype.selectAllToNP = function() {
       shortcutList.push(record);
     }
     var bg = chrome.extension.getBackgroundPage();
-    bg.plugin.convenience.UpdateShortCutList(shortcutList);
+    bg.plugin.updateShortCutList(shortcutList);
   });
 }
 
@@ -119,6 +119,7 @@ Shortcut.prototype.showTable = function(categorySelect, browserSelect, isCompare
       if (isCompare) {
         field2 = document.createElement('td');
         field2.style.minWidth = '150px';
+        field2.style.color = '#5F759A';
         field2.innerHTML = row[browserSelect.value];
         tr.appendChild(field2);
       }
@@ -181,22 +182,10 @@ Shortcut.prototype.canEditable = function(element, id) {
     div.id = 'keyboardInput';
     div.style.width = parentElement.clientWidth + 'px';
     div.style.height = parentElement.clientHeight - 2 + 'px';
-    div.style.marginTop = -(element.clientHeight - 1) + 'px';
+    div.style.marginTop = -(parentElement.clientHeight - 1) + 'px';
     return div;
-
   }
   var bg = chrome.extension.getBackgroundPage();
-  var addKeyboardListener = function(input) {
-    bg.plugin.convenience.AddListener(input);
-  }
-  var removeKeyboardListener = function() {
-    bg.plugin.convenience.RemoveListener();
-  }
-  var removeInputBox = function(element) {
-    if (element) {
-      element.parentNode.removeChild(element);
-    }
-  }
   this.selectById(id, function(tx, results) {
     if (results.rows.length > 0) {
       element.className = 'font_black';
@@ -219,7 +208,7 @@ Shortcut.prototype.canEditable = function(element, id) {
               if (isRepetitive) {
                 inputText = chrome.i18n.getMessage('tip_failed3');
                 showSavingFailedTip('tip_failed3');
-                removeKeyboardListener();
+                bg.plugin.removeKeyboardListener();
                 removeInputBox(inputBox);
               } else {
                 self.selectAllExceptId(id, function(tx, results) {
@@ -234,10 +223,10 @@ Shortcut.prototype.canEditable = function(element, id) {
                   if (inputBox.innerText != inputText) {
                     span.innerText = inputBox.innerText;
                     self.updateShortcut(inputBox.innerText, id);
-                    showSavingSucceedTip('tip_succeed');
+                    showSavingSucceedTip();
                   }
                   document.body.onkeydown = onKeyDown;
-                  removeKeyboardListener();
+                  bg.plugin.removeKeyboardListener();
                   removeInputBox(inputBox);
                   
                 });
@@ -245,7 +234,7 @@ Shortcut.prototype.canEditable = function(element, id) {
             }
           }
         }, false);
-        addKeyboardListener(inputBox);
+        bg.plugin.addKeyboardListener(inputBox);
         document.body.onkeydown = function() {
           event.returnValue = false;
         }
@@ -293,4 +282,15 @@ function delQuicklyVisitMenu(id) {
     localStorage['quicklyVisitMenu'] = menuList.join(',');
   }
   showSavingSucceedTip();
+}
+function removeInputBox (element) {
+  if (element) {
+    element.parentNode.removeChild(element);
+  }
+}
+
+function cancelListener() {
+  var bg = chrome.extension.getBackgroundPage();
+  bg.plugin.removeKeyboardListener();
+  removeInputBox($('keyboardInput'));
 }

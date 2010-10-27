@@ -116,10 +116,11 @@
         <div class="clear"></div>
       </div>
       <div id="bookmarkMenuDiv">
+        <a href="javascript:void(0)" style='float:left; line-height: 26px;' onclick="openBookmarkTab()" id="quick_launch_manage_bookmark"></a>
         <input type="hidden" id="openHitKey">
-        <button id="quicklyVisit_selectedFolder" onclick="setSelectedBookmarkFolder()"></button>
-        <button id="quicklyVisit_manageBookmark" onclick="openBookmarkTab()"></button>
-        <button id="quicklyVisit_close" onclick="closeBox('bookmarkBox')"></button>
+        <button id="quick_launch_selected_folder" onclick="setSelectedBookmarkFolder()"></button>
+        <button id="quick_launch_close" onclick="closeBox('bookmarkBox')"></button>
+        <button id="quick_launch_reset" onclick="resetQuickLunch()"></button>
       </div>
     </div>
     </div>
@@ -154,7 +155,7 @@
            <div id="recommended_fromThird"></div>
          </div>
          <div id="thirdPartyExtensionsRecommended"></div>
-         <div class="disclaimer"><a href="#" id="disclaimer"></a> </div>
+         <div class="disclaimer" id="disclaimer"></div>
          
      </div>
     </div>

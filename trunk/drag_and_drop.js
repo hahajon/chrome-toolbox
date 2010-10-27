@@ -68,6 +68,7 @@ var dragAndDrop = {
     dragAndDrop.startY = event.clientY;
     dragAndDrop.curElement = this;
     this.style.zIndex = 100;
+    event.preventDefault();
   },
 
   drag: function(event) {
@@ -121,7 +122,7 @@ var dragAndDrop = {
   onClick: function(shortcut) {
     if (!dragAndDrop.isMouseMove) {
       var virtualKey = key_util.getVirtualKey(shortcut);
-      bg.plugin.convenience.TriggerChromeShortcuts(virtualKey);
+      bg.plugin.triggerChromeShortcuts(virtualKey);
       window.close();
     }
     dragAndDrop.isMouseMove = false;
