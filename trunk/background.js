@@ -51,9 +51,6 @@
       this.wallpaper.SetWallPaper();
     },
     muteBrowser: function(muteFlag) {
-      this.browserMute.MuteBrowser
-    },
-    muteBrowser: function(muteFlag) {
       this.browserMute.MuteBrowser(muteFlag);
     }
 
@@ -351,6 +348,21 @@
     var muteFlag = eval(localStorage['browserMute']);
     plugin.muteBrowser(!muteFlag);
     localStorage['browserMute'] = !muteFlag;
+  }
+
+  function getNPMessage(messageId) {
+    var npMessages = [{messageId: 1000, message: 'np_message_1000'}];
+    for (var i = 0; i < npMessages.length; i++) {
+      var message = npMessages[i];
+      if (messageId == message.messageId) {
+        return chrome.i18n.getMessage(message.message);
+      }
+    }
+  }
+
+  function redefineBosskey() {
+    shortcut.updateShortcut(' ', 48);
+    chrome.tabs.create({url: 'options.html#bossKey', selected: true});
   }
   
   init();

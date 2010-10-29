@@ -1,11 +1,12 @@
   var selectedBookmarkNodeId = 0;
   var quickLaunchShortcutId = 0;
   function openMyBookmarkManager(id) {
-    createBookmarkFolder();
+    createBookmarkFolder(id);
     quickLaunchShortcutId = id;
+    $('bookmarkList').innerHTML = '';
   }
 
-  function createBookmarkFolder() {
+  function createBookmarkFolder(selectedId) {
     chrome.bookmarks.getTree(function(bookmarkTreeNode) {
       $('bookmarkTree').innerHTML = '';
       var ul = document.createElement('UL');
@@ -19,20 +20,20 @@
             var url = chrome.extension.getURL('images/folder_close.png');
             if (node.id != 0) {
               li.innerHTML = '<img src ="' + url + '" alt="">' +  node.title;
-            (function(id) {
-              li.onclick = function() {
-                createSelectedBookmarkFolderLinks(id);
-                setSelectedFolderClass(id);
-              }
-            })(node.id);
-            parent.appendChild(li);
+              (function(id) {
+                li.onclick = function() {
+                  createSelectedBookmarkFolderLinks(id);
+                  setSelectedFolderClass(id);
+                }
+              })(node.id);
+              parent.appendChild(li);
             }
-
             getBookmarkFolder(parent, node.children);
           }
         }
       };
       getBookmarkFolder(ul, bookmarkTreeNode);
+      selectedFolderById(selectedId);
       $('bookmarkTree').appendChild(ul);
       $('bookmarkBox').style.display = 'block';
       var left = (document.body.clientWidth - $('bookmarkBox').clientWidth) / 2;
@@ -44,38 +45,56 @@
 
   function createQuickLaunchTab() {
     var quickLaunchIds = [51, 52, 53, 54, 55, 56, 57, 58, 59];
-    //var shortcut = new Shortcut();
     var table = document.createElement('TABLE');
     for (var i = 0; i < quickLaunchIds.length; i++) {
       shortcut.selectById(quickLaunchIds[i], function(tx, results) {
         if (results.rows.length > 0) {
           var tr = document.createElement('TR');
-          var td1 = document.createElement('td');
+          var td1 = document.createElement('TD');
           td1.innerText = results.rows.item(0).shortcut;
           tr.appendChild(td1);
-          var td2 = document.createElement('td');
-          var input = document.createElement('INPUT');
-          input.id = 'input_' + results.rows.item(0).id;
-          input.type = 'text';
-          input.size = '52';
-          input.readOnly = true;
+          var td2 = document.createElement('TD');
+          var input = document.createElement('DIV');
+          input.className = 'input';
+          //input.id = 'input_' + results.rows.item(0).id;
+          var span = document.createElement('SPAN');
+          span.id = 'input_' + results.rows.item(0).id;
+          var resetButton = document.createElement('IMG');
+          resetButton.src = chrome.extension.getURL('images/del.png');
+          resetButton.className = 'resetButton';
+          input.appendChild(span);
+          input.appendChild(resetButton);
           td2.appendChild(input);
           tr.appendChild(td2);
-          var td3 = document.createElement('td');
+          var td3 = document.createElement('TD');
           var img = document.createElement("IMG");
           img.src = chrome.extension.getURL('images/folder_open.png');
-          (function(id, selectedNodeId) {
+          (function(input, span, img, resetButton, id, selectedNodeId) {
+            var tip = chrome.i18n.getMessage('bookmark_tip3');
             input.onclick = function() {
-              if (!input.value) {
-                input.value = chrome.i18n.getMessage('bookmark_tip3');
-                input.style.color = '#d9d9d9';
+              if (!span.innerText) {
+                span.innerText = tip;
+                span.style.color = '#d9d9d9';
               }
             };
-            setSelectedBookmarkFolderName(input, selectedNodeId);
+            input.onmousemove = function() {
+              if (span.innerText && span.innerText != tip) {
+                resetButton.style.display = 'block';
+              }
+            };
+            input.onmouseout = function() {
+              resetButton.style.display = 'none';
+            };
+            resetButton.onclick = function() {
+              resetQuickLunch(id, span);
+              event.stopPropagation();
+            }
+            setSelectedBookmarkFolderName(span, selectedNodeId);
             img.onclick = function() {
               openMyBookmarkManager(id);
             };
-          })(results.rows.item(0).id, results.rows.item(0).relationId);
+          })(input, span, img, resetButton, results.rows.item(0).id,
+              results.rows.item(0).relationId);
           td3.appendChild(img);
           tr.appendChild(td3);
           table.appendChild(tr);
@@ -146,7 +165,7 @@
     if (nodeId) {
       chrome.bookmarks.get(nodeId.toString(), function(bookmarkTreeNode) {
         if (bookmarkTreeNode.length > 0) {
-          element.value = bookmarkTreeNode[0].title;
+          element.innerText = bookmarkTreeNode[0].title;
           element.style.color = '#333333';
         }
       });
@@ -157,7 +176,7 @@
     if (selectedBookmarkNodeId && quickLaunchShortcutId) {
       var inputId = 'input_' + quickLaunchShortcutId;
       setSelectedBookmarkFolderName($(inputId) ,selectedBookmarkNodeId);
-      var shortcut = new Shortcut();
+      //var shortcut = new Shortcut();
       shortcut.updateRelationId(selectedBookmarkNodeId, quickLaunchShortcutId);
       selectedBookmarkNodeId = 0;
       quickLaunchShortcutId = 0;
@@ -168,15 +187,20 @@
     }
   }
 
-  function resetQuickLunch() {
-    var shortcut = new Shortcut();
-    shortcut.updateRelationId(null, quickLaunchShortcutId);
-    var inputId = 'input_' + quickLaunchShortcutId;
-    selectedBookmarkNodeId = 0;
-    quickLaunchShortcutId = 0;
+  function selectedFolderById(id) {
+    shortcut.selectById(id, function(tx, results) {
+      if (results.rows.length > 0 && results.rows.item(0).relationId) {
+        var relationId = results.rows.item(0).relationId
+        $('bookmarkNode_' + relationId).className = 'selected';
+        createSelectedBookmarkFolderLinks(relationId);
+      }
+    });
+  }
+
+  function resetQuickLunch(shortcutId, input) {
+    shortcut.updateRelationId(null, shortcutId);
+    input.innerText = '';
     showSavingSucceedTip();
-    $(inputId).value = '';
-    $('bookmarkBox').style.display = 'none';
   }
 
 
