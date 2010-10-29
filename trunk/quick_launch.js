@@ -176,7 +176,6 @@
     if (selectedBookmarkNodeId && quickLaunchShortcutId) {
       var inputId = 'input_' + quickLaunchShortcutId;
       setSelectedBookmarkFolderName($(inputId) ,selectedBookmarkNodeId);
-      //var shortcut = new Shortcut();
       shortcut.updateRelationId(selectedBookmarkNodeId, quickLaunchShortcutId);
       selectedBookmarkNodeId = 0;
       quickLaunchShortcutId = 0;
@@ -190,7 +189,7 @@
   function selectedFolderById(id) {
     shortcut.selectById(id, function(tx, results) {
       if (results.rows.length > 0 && results.rows.item(0).relationId) {
-        var relationId = results.rows.item(0).relationId
+        var relationId = results.rows.item(0).relationId;
         $('bookmarkNode_' + relationId).className = 'selected';
         createSelectedBookmarkFolderLinks(relationId);
       }

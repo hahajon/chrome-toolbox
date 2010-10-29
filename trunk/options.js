@@ -88,6 +88,10 @@ function Option() {
 
   //a element
   this.gotoShortcutTab = $('gotoShortcutTab');
+  this.termsOfService = $('termsOfService');
+  this.privacyPolicy = $('privacyPolicy');
+  this.termsOfService.href = chrome.i18n.getMessage('terms_of_service_link');
+  this.privacyPolicy.href = chrome.i18n.getMessage('privacy_policy_link');
 
   //Recommended tab element
   this.googleExtensionsRecommended = $('googleExtensionsRecommended');
