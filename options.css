@@ -538,10 +538,23 @@ vertical-align: text-bottom;
 
 .disclaimer {
   margin-top: 30px;
+  padding-top:10px;
   border-top: 1px #cccccc solid;
   text-align: left;
-  line-height: 30px;
+  line-height: 20px;
   color: #cccccc;
+}
+
+.input {
+  width: 330px;
+  height: 20px;
+  line-height: 20px;
+  border: 1px solid #7f9db9;
+}
+.resetButton {
+  float: right;
+  margin-top: 2px;
+  display: none;
 }
 
 .clear {

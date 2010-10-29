@@ -288,9 +288,3 @@ function removeInputBox (element) {
     element.parentNode.removeChild(element);
   }
 }
-
-function cancelListener() {
-  var bg = chrome.extension.getBackgroundPage();
-  bg.plugin.removeKeyboardListener();
-  removeInputBox($('keyboardInput'));
-}

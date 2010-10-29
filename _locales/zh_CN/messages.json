@@ -1,7 +1,7 @@
 {
   "name": {"message": "快捷工具（由Google提供）"},
   "description": {"message": "支持自定义快速访问菜单，保存未提交表单数据，快捷键，网址一键通，原始图片查看，图片放大镜，设置图片为桌面背景，独立视频"},
-  "description_linux_and_mac": {"message": "支持保存未提交表单数据，原始图片查看，图片放大镜"},
+  "description_linux_and_mac": {"message": "支持保存未提交表单数据，原始图片查看，图片放大镜。"},
   "default_title": {"message": "快捷工具"},
   "option_title": {"message": "快捷工具扩展选项"},
   "save_and_close": {"message": "保存并关闭"},
@@ -204,5 +204,8 @@
   "ie6_key": {"message": "IE6浏览器"},
   "ie7_key": {"message": "IE7浏览器"},
   "ie8_key": {"message": "IE8浏览器"},
-  "disclaimer": {"message": "免责申明"}
+  "disclaimer": {"message": "免责申明：以上第三方扩展不是由Google提供，Google对于您安装和使用这些扩展不承担任何责任。"},
+  "np_message_1000": {"message": "老板键已经被其他应用程序占用，请重新定义。"},
+  "terms_of_service": {"message": "服务条款"},
+  "privacy_policy": {"message": "隐私权政策"}
 }

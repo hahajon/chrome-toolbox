@@ -37,7 +37,6 @@ function setMessage() {
     {id: 'quick_launch_selected_folder', message: 'quick_launch_select_folder'},
     {id: 'quick_launch_manage_bookmark', message: 'quick_launch_manage_bookmark'},
     {id: 'quick_launch_close', message: 'quick_launch_close'},
-    {id: 'quick_launch_reset', message: 'quick_launch_reset'},
     {id: 'bookmark_tip', message: 'bookmark_tip'},
     {id: 'shortcut_tip', message: 'tab_shortcut_description'},
     {id: 'fillForm_tip', message: 'tab_fill_form_description'},
@@ -46,7 +45,9 @@ function setMessage() {
     {id: 'more2', message: 'more'},
     {id: 'recommended_fromGoogle', message: 'recommended_from_google'},
     {id: 'recommended_fromThird', message: 'recommended_from_third_party'},
-    {id: 'disclaimer', message: 'disclaimer'}
+    {id: 'disclaimer', message: 'disclaimer'},
+    {id: 'termsOfService', message: 'terms_of_service'},
+    {id: 'privacyPolicy', message: 'privacy_policy'},
   ];
   document.title = chrome.i18n.getMessage('option_title');
   for (var i = 0; i < i18n_map.length; i++) {
@@ -151,6 +152,17 @@ function Option() {
                                   this.thirdPartyExtensionsRecommended);
   setMessage();
   setWindowOnlyElement();
+  var url = location.href;
+  if (url.indexOf('#') > -1) {
+    var parameter = url.substr(url.indexOf('#') + 1, url.length);
+    if (parameter == 'bossKey') {
+      categorySelect.value = key_util.category_table.CAT_BOSS_KEY;
+      this.table_shortcut.innerHTML = '';
+      this.table_shortcut.appendChild(shortcut.showTable(categorySelect,
+          browserSelect, this.isCompare.checked));
+      self.setNavigationBarStatus(this.nav_shortcut);
+    }
+  }
 }
 
 Option.prototype.setNavigationBarStatus = function(element) {
@@ -239,6 +251,17 @@ function setWindowOnlyElement() {
     i18nReplace('item_imageBar', 'item_image_bar_not_windows');
     i18nReplace('description', 'description_linux_and_mac');
   }
+}
+
+function redirectTabByUrlParameter() {
+  var url = document.href;
+  if (url.indexOf('#') > -1) {
+    var parameter = url.substr(url.indexOf('#'), url.length);
+    if (parameter == 'bosskey') {
+
+    }
+  }
+
 }
 
 function createRecommendedContext(googleExtensionsRecommended,
