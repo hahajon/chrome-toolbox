@@ -207,5 +207,7 @@
   "disclaimer": {"message": "Disclaimer: The above third party extensions are not provided by Google.  Google assumes no responsibility with regard to your installation or use of these extensions."},
   "np_message_1000": {"message": "Boss key is register by other application, please redefine it."},
   "terms_of_service": {"message": "Terms of Service"},
-  "privacy_policy": {"message": "Privacy Policy"}
+  "terms_of_service_link": {"message": "https://chrome.google.com/extensions/intl/en/gallery_tos.html"},
+  "privacy_policy": {"message": "Privacy Policy"},
+  "privacy_policy_link": {"message": "http://www.google.com/intl/en/privacy.html"}
 }

@@ -207,5 +207,7 @@
   "disclaimer": {"message": "免责申明：以上第三方扩展不是由Google提供，Google对于您安装和使用这些扩展不承担任何责任。"},
   "np_message_1000": {"message": "老板键已经被其他应用程序占用，请重新定义。"},
   "terms_of_service": {"message": "服务条款"},
-  "privacy_policy": {"message": "隐私权政策"}
+  "terms_of_service_link": {"message": "https://chrome.google.com/extensions/intl/zh-CN/gallery_tos.html"},
+  "privacy_policy": {"message": "隐私权政策"},
+  "privacy_policy_link": {"message": "http://www.google.com/intl/zh-CN/privacy.html"}  
 }
