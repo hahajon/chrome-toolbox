@@ -86,10 +86,8 @@ NPError BrowserMutePlugin::Init(NPP instance, uint16_t mode, int16_t argc,
       if (hmodule != INVALID_HANDLE_VALUE)
         CloseHandle(hmodule);
       if (flag) {
-        if (hprocess != INVALID_HANDLE_VALUE)
-          CloseHandle(hprocess);
-
-        return PluginBase::Init(instance, mode, argc, argn, argv, saved);
+        ret = Process32Next(hprocess, &process);
+        continue;
       }
       HANDLE hthread = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
       THREADENTRY32 thd = { sizeof(THREADENTRY32) };

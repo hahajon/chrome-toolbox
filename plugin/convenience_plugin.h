@@ -5,8 +5,7 @@
 
 using namespace std;
 
-class ConveniencePlugin : public PluginBase
-{
+class ConveniencePlugin : public PluginBase {
 public:
   ConveniencePlugin(void);
   virtual ~ConveniencePlugin(void);

@@ -277,7 +277,9 @@ HMODULE WINAPI ApiHook::LoadLibraryExW(PCWSTR pszModulePath,
   return(hmod);
 }
 
-void InjectIntoProcess(LPPROCESS_INFORMATION lpProcessInformation) {
+DWORD WINAPI InjectIntoProcess(void* param) {
+  Sleep(2000);
+  LPPROCESS_INFORMATION lpProcessInformation = (LPPROCESS_INFORMATION)param;
   //SuspendThread(lpProcessInformation->hThread);
   LPVOID p = VirtualAllocEx(lpProcessInformation->hProcess, NULL, 
       MAX_PATH*sizeof(TCHAR),MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
@@ -311,6 +313,7 @@ void InjectIntoProcess(LPPROCESS_INFORMATION lpProcessInformation) {
     g_Log.WriteLog("Error", logs);
   }
   //ResumeThread(lpProcessInformation->hThread);
+  return 0;
 }
 
 BOOL WINAPI ApiHook::CreateProcessA(LPCSTR lpApplicationName, 
@@ -329,7 +332,9 @@ BOOL WINAPI ApiHook::CreateProcessA(LPCSTR lpApplicationName,
       lpProcessInformation);
   if (ret) {
     g_Log.WriteLog("Msg", "CreateProcessA");
-    InjectIntoProcess(lpProcessInformation);
+    PROCESS_INFORMATION* process_info = new PROCESS_INFORMATION;
+    *process_info = *lpProcessInformation;
+    CreateThread(NULL, 0, InjectIntoProcess, process_info, 0, NULL);
   }
   return ret;
 }
@@ -350,7 +355,9 @@ BOOL WINAPI ApiHook::CreateProcessW(LPCWSTR lpApplicationName,
       lpProcessInformation);
   if (ret) {
     g_Log.WriteLog("Msg", "CreateProcessW");
-    InjectIntoProcess(lpProcessInformation);
+    PROCESS_INFORMATION* process_info = new PROCESS_INFORMATION;
+    *process_info = *lpProcessInformation;
+    CreateThread(NULL, 0, InjectIntoProcess, process_info, 0, NULL);
   }
   return ret;
 }

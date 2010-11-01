@@ -5,6 +5,7 @@
 
 extern Log g_Log;
 extern const TCHAR* kChromeClassName;
+extern DWORD g_ChromeMainThread;
 
 bool g_DBClickCloseTab = false;
 
@@ -173,9 +174,12 @@ bool ConvenienceScriptObject::UpdateShortCutList(const NPVariant *args,
                                            atom, modify, vk);
         if (!register_ret && !errorflag) {
           errorflag = true;
-          MessageBox(NULL, 
-              L"Boss key is register by other application, please redefine it",
-              L"Error", MB_OK);
+          TCHAR errormsg[256];
+          if (GetNPMessage(ERR_BOSSKEY_DEFINED, errormsg, 256)) {
+            if (MessageBox(NULL, errormsg, 0, MB_OK) == IDOK) {
+              RedefineBossKey();
+            }
+          }
         } else if (register_ret) {
           errorflag = false;
         }
@@ -244,6 +248,39 @@ void ConvenienceScriptObject::GetShortCutsKey(char* shortcuts, UINT& modify,
       default:
         vk = temp_key;
         break;
+  }
+}
+
+bool ConvenienceScriptObject::GetNPMessage(int index, TCHAR* msg, int msglen) {
+  NPObject* window;
+  NPN_GetValue(plugin_->get_npp(), NPNVWindowNPObject, &window);
+  NPIdentifier id;
+  id = NPN_GetStringIdentifier("getNPMessage");
+  NPVariant result;
+  if (id) {
+    NPVariant param;
+    INT32_TO_NPVARIANT(index, param);
+    if (NPN_Invoke(plugin_->get_npp(), window, id, &param, 1, &result)) {
+      if (MultiByteToWideChar(CP_UTF8, 0, 
+          NPVARIANT_TO_STRING(result).UTF8Characters, -1, msg, msglen)) {
+      }
+      NPN_ReleaseVariantValue(&result);
+      return true;
+    }
+  }
+
+  return false;
+}
+
+void ConvenienceScriptObject::RedefineBossKey() {
+  NPObject* window;
+  NPN_GetValue(plugin_->get_npp(), NPNVWindowNPObject, &window);
+  NPIdentifier id;
+  id = NPN_GetStringIdentifier("redefineBossKey");
+  NPVariant result;
+  if (id) {
+    if (NPN_Invoke(plugin_->get_npp(), window, id, NULL, 0, &result))
+      NPN_ReleaseVariantValue(&result);
   }
 }
 
@@ -403,7 +440,8 @@ bool ConvenienceScriptObject::PressBossKey(const NPVariant *args,
     bosskey_state = FALSE;
     chrome_hwnd = FindWindowEx(NULL, NULL, kChromeClassName, NULL);
     while(chrome_hwnd) {
-      if (IsWindowVisible(chrome_hwnd)) {
+      if (IsWindowVisible(chrome_hwnd) && 
+          GetWindowThreadProcessId(chrome_hwnd, NULL) == g_ChromeMainThread) {
         window_list.insert(window_list.begin(), chrome_hwnd);
         bosskey_state = TRUE;
       }
@@ -426,7 +464,8 @@ bool ConvenienceScriptObject::PressBossKey(const NPVariant *args,
     bosskey_state = TRUE;
     chrome_hwnd = FindWindowEx(NULL, NULL, kChromeClassName, NULL);
     while(chrome_hwnd) {
-      if (IsWindowVisible(chrome_hwnd)) {
+      if (IsWindowVisible(chrome_hwnd) && 
+          GetWindowThreadProcessId(chrome_hwnd, NULL) == g_ChromeMainThread) {
         window_list.insert(window_list.begin(), chrome_hwnd);
       }
       chrome_hwnd = FindWindowEx(NULL,chrome_hwnd,kChromeClassName,NULL);
@@ -538,7 +577,7 @@ void ConvenienceScriptObject::OnKeyDown(bool contrl, bool alt, bool shift,
     if (!id)
       return;
 
-    if (wParam == VK_ESCAPE) {
+    if (wParam == VK_ESCAPE && !(contrl || alt || shift)) {
       NPObject* window;
       NPN_GetValue(plugin_->get_npp(), NPNVWindowNPObject, &window);
       id = NPN_GetStringIdentifier("cancelListener");
