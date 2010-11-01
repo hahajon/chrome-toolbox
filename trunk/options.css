@@ -472,10 +472,10 @@ vertical-align: text-bottom;
   border: 1px solid #b9d6f0;
   border-radius: 6px;
   -webkit-box-shadow: #a9ccec 0px 0px 3px 2px;
-  background: -webkit-gradient(linear, 0% -41%, 0% 103%, from(#dbdfe3), to(#fdfdfd));
-  margin-left: -4px;
+  background: -webkit-gradient(linear, 0% -41%, 0% 103%, from(#dbdfe3), to(#fdfdfd));  
   text-indent:5px;
   color:#a5a5a5;
+  outline: 0;
 }
 
 .font_gray {
@@ -537,9 +537,6 @@ vertical-align: text-bottom;
 }
 
 .disclaimer {
-  margin-top: 30px;
-  padding-top:10px;
-  border-top: 1px #cccccc solid;
   text-align: left;
   line-height: 20px;
   color: #cccccc;

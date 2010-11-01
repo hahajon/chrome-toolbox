@@ -177,13 +177,23 @@ Shortcut.prototype.canEditable = function(element, id) {
     if ($('keyboardInput')) {
       $('keyboardInput').parentNode.removeChild($('keyboardInput'));
     }
-    var div = document.createElement('DIV');
-    div.className = 'shortcutPad';
-    div.id = 'keyboardInput';
-    div.style.width = parentElement.clientWidth + 'px';
-    div.style.height = parentElement.clientHeight - 2 + 'px';
-    div.style.marginTop = -(parentElement.clientHeight - 1) + 'px';
-    return div;
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.readOnly = true;
+    input.className = 'shortcutPad';
+    input.id = 'keyboardInput';
+    input.style.width = parentElement.clientWidth + 'px';
+    input.style.height = parentElement.clientHeight - 2 + 'px';
+    var top = 0;
+    var left = 0;
+    while(parentElement && parentElement != document.body) {
+      top += parentElement.offsetTop;
+      left += parentElement.offsetLeft;
+      parentElement = parentElement.offsetParent;
+    }
+    input.style.left = left + 'px';
+    input.style.top = top + 'px';
+    return input;
   }
   var bg = chrome.extension.getBackgroundPage();
   this.selectById(id, function(tx, results) {
@@ -197,41 +207,41 @@ Shortcut.prototype.canEditable = function(element, id) {
       a.onclick = function() {
         var inputText = chrome.i18n.getMessage('shortcut_please_input');
         var inputBox = addInputBox(element);
-        inputBox.innerText = inputText;
+        inputBox.value = inputText;
         element.appendChild(inputBox);
+        inputBox.focus();
         var onKeyDown = document.body.onkeydown;
+        inputBox.addEventListener('blur', function() {
+          bg.plugin.removeKeyboardListener();
+          removeInputBox(inputBox);
+        }, true);
         document.addEventListener('keyup', function() {
-          if ($(inputBox.id)) {
-            var curElement = event.target;
-            if (curElement != inputBox && curElement != a) {
-              var isRepetitive = checkRepetitiveShortcut(inputBox.innerText);
-              if (isRepetitive) {
-                inputText = chrome.i18n.getMessage('tip_failed3');
-                showSavingFailedTip('tip_failed3');
-                bg.plugin.removeKeyboardListener();
-                removeInputBox(inputBox);
-              } else {
-                self.selectAllExceptId(id, function(tx, results) {
-                  for (var i = 0; i < results.rows.length; i++) {
-                    if (inputBox.innerText == results.rows.item(i).shortcut) {
-                      inputText = chrome.i18n.getMessage('tip_failed3');
-                      showSavingFailedTip('tip_failed3');
-                      inputBox.innerText = inputText;
-                      break;
-                    }
-                  }
-                  if (inputBox.innerText != inputText) {
-                    span.innerText = inputBox.innerText;
-                    self.updateShortcut(inputBox.innerText, id);
-                    showSavingSucceedTip();
-                  }
-                  document.body.onkeydown = onKeyDown;
-                  bg.plugin.removeKeyboardListener();
-                  removeInputBox(inputBox);
-                  
-                });
+          var curElement = event.target;
+          var isRepetitive = checkRepetitiveShortcut(inputBox.value);
+          if (isRepetitive) {
+            inputText = chrome.i18n.getMessage('tip_failed3');
+            showSavingFailedTip('tip_failed3');
+            bg.plugin.removeKeyboardListener();
+            removeInputBox(inputBox);
+          } else {
+            self.selectAllExceptId(id, function(tx, results) {
+              for (var i = 0; i < results.rows.length; i++) {
+                if (inputBox.value == results.rows.item(i).shortcut) {
+                  inputText = chrome.i18n.getMessage('tip_failed3');
+                  showSavingFailedTip('tip_failed3');
+                  inputBox.value = inputText;
+                  break;
+                }
               }
-            }
+              if (inputBox.value != inputText) {
+                span.innerText = inputBox.value;
+                self.updateShortcut(inputBox.value, id);
+                showSavingSucceedTip();
+              }
+              document.body.onkeydown = onKeyDown;
+              bg.plugin.removeKeyboardListener();
+              removeInputBox(inputBox);
+            });
           }
         }, false);
         bg.plugin.addKeyboardListener(inputBox);
@@ -283,8 +293,10 @@ function delQuicklyVisitMenu(id) {
   }
   showSavingSucceedTip();
 }
+
 function removeInputBox (element) {
   if (element) {
     element.parentNode.removeChild(element);
+    element = null;
   }
 }

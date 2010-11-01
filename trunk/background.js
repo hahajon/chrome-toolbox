@@ -27,12 +27,6 @@
     triggerChromeShortcuts: function(virtualKey) {
       this.convenience.TriggerChromeShortcuts(virtualKey)
     },
-    addKeyboardListener: function(input) {
-      this.convenience.AddListener(input);
-    },
-    removeKeyboardListener: function() {
-      this.convenience.RemoveListener();
-    },
     updateShortCutList: function(shortcutList) {
       this.convenience.UpdateShortCutList(shortcutList);
     },
@@ -360,7 +354,7 @@
     }
   }
 
-  function redefineBosskey() {
+  function redefineBossKey() {
     shortcut.updateShortcut(' ', 48);
     chrome.tabs.create({url: 'options.html#bossKey', selected: true});
   }
