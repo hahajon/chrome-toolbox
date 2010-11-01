@@ -5,6 +5,8 @@
 
 using namespace std;
 
+#define ERR_BOSSKEY_DEFINED   1000
+
 class ConvenienceScriptObject : public ScriptObjectBase
 {
 public:
@@ -54,6 +56,8 @@ public:
 
 private:
   void GetShortCutsKey(char* shortcuts, UINT& modify, UINT& vk);
+  bool GetNPMessage(int index, TCHAR* msg, int msglen);
+  void RedefineBossKey();
   
 private:
   int shortcuts_used_flag_; //flag = 1,flag = 2

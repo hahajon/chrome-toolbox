@@ -14,9 +14,12 @@ extern bool g_DBClickCloseTab;
 bool g_IsListening = false;
 bool g_IsOnlyOneTab = false;
 
+DWORD g_ChromeMainThread = 0;
+
 WNDPROC ConveniencePlugin::old_proc_ = NULL;
 HHOOK g_KeyboardHook = NULL;
 HHOOK g_GetMsgHook = NULL;
+HHOOK g_CallProcHook = NULL;
 HANDLE client_pipe_handle = INVALID_HANDLE_VALUE;
 
 const TCHAR* kFileMappingName = L"Convenience_File";
@@ -24,13 +27,13 @@ const TCHAR* kChromeClassName = L"Chrome_WidgetWin_0";
 const TCHAR* kChromeAddressBar = L"Chrome_AutocompleteEditView";
 const TCHAR* kPipeName = L"\\\\.\\pipe\\convenience";
 
-const int kCloseTabButtonLeftOffset = 188;
-const int kCloseTabButtonTopOffset = 20;
-const int kCloseTabButtonLeftOffset_MaxState = 183;
+const int kCloseTabButtonLeftOffset = 186;
+const int kCloseTabButtonTopOffset = 18;
+const int kCloseTabButtonLeftOffset_MaxState = 182;
 const int kCloseTabButtonTopOffset_MaxState = 5;
 const int kChromeWindowMinChangeSize = 343;
-const int kCloseTabButtonWidth = 16;
-const int kCloseTabButtonHeight = 16;
+const int kCloseTabButtonWidth = 20;
+const int kCloseTabButtonHeight = 20;
 
 int map_current_used_flag = 2;
 ConvenienceScriptObject::ShortCutKeyMap g_mapOne;
@@ -375,6 +378,30 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
   return CallNextHookEx(g_KeyboardHook, nCode, wParam, lParam);
 }
 
+LRESULT CALLBACK CallWndProc_ShortCuts(int nCode, WPARAM wParam, LPARAM lParam) {
+  CWPSTRUCT* msg = (CWPSTRUCT*)lParam;
+  if (msg->message != WM_KILLFOCUS)
+    return CallNextHookEx(g_CallProcHook, nCode, wParam, lParam);
+
+  TCHAR class_name[256];
+  GetClassName(msg->hwnd, class_name, 256);
+  if (wcscmp(class_name, kChromeClassName) == 0 && g_IsListening) {
+    Cmd_Msg_Item item;
+    DWORD writelen;
+    item.cmd = Cmd_KeyDown;
+    item.value.key_down.wparam = VK_ESCAPE;
+    item.value.key_down.lparam = 0;
+    if (WriteFile(client_pipe_handle, &item, sizeof(item), &writelen, 
+      NULL)) {
+        g_Log.WriteLog("msg", "write msg to server");
+    } else {
+      g_Log.WriteLog("error", "write msg to server failed");
+    }
+  }
+  return CallNextHookEx(g_CallProcHook, nCode, wParam, lParam);
+}
+
+
 LRESULT CALLBACK GetMsgProc(int code, WPARAM wParam, LPARAM lParam){
   if (client_thread_handle == INVALID_HANDLE_VALUE) {
     HANDLE hevent = CreateEvent(NULL, FALSE, FALSE, NULL);
@@ -486,6 +513,7 @@ bottom=%ld,g_IsOnlyOneTab=%d",
       Cmd_Msg_Item item;
       DWORD writelen;
       if (g_IsOnlyOneTab) {
+        msg->message = WM_NULL;
         item.cmd = Cmd_TabClose;
         if (WriteFile(client_pipe_handle, &item, sizeof(item), &writelen, 
                       NULL)) {
@@ -532,11 +560,13 @@ NPError ConveniencePlugin::Init(NPP instance, uint16_t mode, int16_t argc,
      return NPERR_GENERIC_ERROR;
    } else {
      g_Log.WriteLog("Msg", "Plugin Init");
-     DWORD thread_id = GetWindowThreadProcessId(chrome_hwnd, NULL);
+     g_ChromeMainThread = GetWindowThreadProcessId(chrome_hwnd, NULL);
      g_KeyboardHook = SetWindowsHookEx(WH_KEYBOARD, KeyboardProc, g_hMod, 
-                                       thread_id);
+                                       g_ChromeMainThread);
      g_GetMsgHook = SetWindowsHookEx(WH_GETMESSAGE, GetMsgProc, g_hMod, 
-                                     thread_id);
+                                     g_ChromeMainThread);
+     g_CallProcHook = SetWindowsHookEx(WH_CALLWNDPROC, CallWndProc_ShortCuts, g_hMod,
+                                       g_ChromeMainThread);
      if (!g_KeyboardHook || !g_GetMsgHook)
        return NPERR_GENERIC_ERROR;
      else

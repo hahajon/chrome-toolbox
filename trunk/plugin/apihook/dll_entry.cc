@@ -88,7 +88,7 @@ BOOL WINAPI DllMain(HMODULE hModule, DWORD reason, LPVOID lpReserved) {
   switch(reason) {
     case DLL_PROCESS_ATTACH:
       InitializeCriticalSection(&g_CS);
-      g_Log.OpenLog("APIHOOK");
+      //g_Log.OpenLog("APIHOOK");
       versionInfo.dwOSVersionInfoSize = sizeof (OSVERSIONINFO);
       GetVersionEx(&versionInfo);
       if (versionInfo.dwMajorVersion >= 6) 
