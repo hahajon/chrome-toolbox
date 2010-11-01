@@ -76,7 +76,7 @@
   "recommended_smooth_gestures": {"message": "Smooth Gestures"},
   "recommended_smooth_gestures_desc": {"message": "Mouse Gestures (others)"},
   "recommended_tab_menu": {"message": "Tab Menu"},
-  "recommended_tab_menu_desc": {"message": "Tabs Manager"},
+  "recommended_tab_menu_desc": {"message": "Tab Manager"},
   "more": {"message": "more"},
   "new_window": {"message": "Opens a new window"},
   "new_window_short": {"message": "New Window"},
