@@ -413,7 +413,7 @@ void ConvenienceScriptObject::TriggerShortcuts(UINT modify, UINT vk) {
   }
   inputs[keycount].type = INPUT_KEYBOARD;
   inputs[keycount].ki.wVk = vk;
-  if ((vk >= VK_NEXT && vk <= VK_DELETE) || (vk >= VK_LWIN && vk <= VK_APPS) ||
+  if ((vk >= VK_PRIOR && vk <= VK_DELETE) || (vk >= VK_LWIN && vk <= VK_APPS) ||
       vk == VK_NUMLOCK || vk == VK_DIVIDE)
     inputs[keycount].ki.dwFlags = KEYEVENTF_EXTENDEDKEY;
   inputs[keycount].ki.wScan = MapVirtualKey(vk, MAPVK_VK_TO_VSC);
