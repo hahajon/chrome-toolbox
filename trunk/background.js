@@ -171,6 +171,7 @@
       localStorage['videoBar'] = localStorage['videoBar'] || 'true';
       localStorage['browserMute'] = localStorage['browserMute'] || 'false';
       plugin.muteBrowser(eval(localStorage['browserMute']));
+      setBadgeTextByMute();
       localStorage['dbclickCloseTab'] =
           localStorage['dbclickCloseTab'] || 'true';
       localStorage['quicklyVisitMenu'] =
@@ -342,6 +343,13 @@
     var muteFlag = eval(localStorage['browserMute']);
     plugin.muteBrowser(!muteFlag);
     localStorage['browserMute'] = !muteFlag;
+    setBadgeTextByMute();
+  }
+
+  function setBadgeTextByMute() {
+    var text = '';
+    text = eval(localStorage['browserMute']) ? 'M' : '';
+    chrome.browserAction.setBadgeText({text: text});
   }
 
   function getNPMessage(messageId) {
