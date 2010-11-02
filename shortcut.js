@@ -216,32 +216,36 @@ Shortcut.prototype.canEditable = function(element, id) {
           removeInputBox(inputBox);
         }, true);
         document.addEventListener('keyup', function() {
-          var curElement = event.target;
-          var isRepetitive = checkRepetitiveShortcut(inputBox.value);
-          if (isRepetitive) {
-            inputText = chrome.i18n.getMessage('tip_failed3');
-            showSavingFailedTip('tip_failed3');
-            bg.plugin.removeKeyboardListener();
-            removeInputBox(inputBox);
-          } else {
-            self.selectAllExceptId(id, function(tx, results) {
-              for (var i = 0; i < results.rows.length; i++) {
-                if (inputBox.value == results.rows.item(i).shortcut) {
-                  inputText = chrome.i18n.getMessage('tip_failed3');
-                  showSavingFailedTip('tip_failed3');
-                  inputBox.value = inputText;
-                  break;
-                }
+          if ($(inputBox.id)) {
+            var curElement = event.target;
+            if (curElement == inputBox) {
+              var isRepetitive = checkRepetitiveShortcut(inputBox.value);
+              if (isRepetitive) {
+                inputText = chrome.i18n.getMessage('tip_failed3');
+                showSavingFailedTip('tip_failed3');
+                bg.plugin.removeKeyboardListener();
+                removeInputBox(inputBox);
+              } else {
+                self.selectAllExceptId(id, function(tx, results) {
+                  for (var i = 0; i < results.rows.length; i++) {
+                    if (inputBox.value == results.rows.item(i).shortcut) {
+                      inputText = chrome.i18n.getMessage('tip_failed3');
+                      showSavingFailedTip('tip_failed3');
+                      inputBox.value = inputText;
+                      break;
+                    }
+                  }
+                  if (inputBox.value != inputText) {
+                    span.innerText = inputBox.value;
+                    self.updateShortcut(inputBox.value, id);
+                    showSavingSucceedTip();
+                  }
+                  document.body.onkeydown = onKeyDown;
+                  bg.plugin.removeKeyboardListener();
+                  removeInputBox(inputBox);
+                });
               }
-              if (inputBox.value != inputText) {
-                span.innerText = inputBox.value;
-                self.updateShortcut(inputBox.value, id);
-                showSavingSucceedTip();
-              }
-              document.body.onkeydown = onKeyDown;
-              bg.plugin.removeKeyboardListener();
-              removeInputBox(inputBox);
-            });
+            }
           }
         }, false);
         bg.plugin.addKeyboardListener(inputBox);
