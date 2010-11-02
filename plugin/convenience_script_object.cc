@@ -572,7 +572,7 @@ void ConvenienceScriptObject::OnKeyDown(bool contrl, bool alt, bool shift,
   g_Log.WriteLog("msg", "OnKeyDown");
   if (is_listened_) {
     NPIdentifier id;
-    id = NPN_GetStringIdentifier("innerText");
+    id = NPN_GetStringIdentifier("value");
     NPVariant prop_value;
     if (!id)
       return;
