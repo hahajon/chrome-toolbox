@@ -413,7 +413,9 @@ void ConvenienceScriptObject::TriggerShortcuts(UINT modify, UINT vk) {
   }
   inputs[keycount].type = INPUT_KEYBOARD;
   inputs[keycount].ki.wVk = vk;
-  inputs[keycount].ki.dwFlags = 0;
+  if ((vk >= VK_NEXT && vk <= VK_DELETE) || (vk >= VK_LWIN && vk <= VK_APPS) ||
+      vk == VK_NUMLOCK || vk == VK_DIVIDE)
+    inputs[keycount].ki.dwFlags = KEYEVENTF_EXTENDEDKEY;
   inputs[keycount].ki.wScan = MapVirtualKey(vk, MAPVK_VK_TO_VSC);
   inputs[keycount].ki.time = GetTickCount();
   keycount++;
@@ -423,7 +425,7 @@ void ConvenienceScriptObject::TriggerShortcuts(UINT modify, UINT vk) {
   SendInput(keycount, inputs, sizeof(INPUT));
 
   for (int i = 0; i < keycount; i++) {
-    inputs[i].ki.dwFlags = KEYEVENTF_KEYUP;
+    inputs[i].ki.dwFlags |= KEYEVENTF_KEYUP;
   }
   SendInput(keycount, inputs, sizeof(INPUT));
   sprintf(logs, "keycount=%d", keycount);
