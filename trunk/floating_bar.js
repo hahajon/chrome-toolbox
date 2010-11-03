@@ -73,17 +73,17 @@ chrome.extension.sendRequest({msg: 'getStatus'}, function(response) {
 function initFloatingBarMenu() {
   floatingBarMenus = [
       {menuID: '001', menuName: chrome.i18n.getMessage('view_original_image'),
-          imageURL: 'images/floatingBar_orl.png', status: imageBarStatus,
+          imageURL: 'images/floating_bar_orl.png', status: imageBarStatus,
           operate: 'showOriginalPicture',
           specialCondition: 'checkCurPictureSize', isWindowsOnly: false},
       {menuID: '002', menuName: chrome.i18n.getMessage('magnifier'),
-          imageURL: 'images/floatingBar_zoom.png', status: imageBarStatus,
+          imageURL: 'images/floating_bar_zoom.png', status: imageBarStatus,
           operate: 'magnifier', isWindowsOnly: false},
       {menuID: '003', menuName: chrome.i18n.getMessage('set_wallpaper'),
-          imageURL: 'images/floatingBar_bg.png', status: imageBarStatus,
+          imageURL: 'images/floating_bar_bg.png', status: imageBarStatus,
            isWindowsOnly: true},
       {menuID: '004', menuName: chrome.i18n.getMessage('video_standalone'),
-          imageURL: 'images/floatingBar_video.png', status: videoBarStatus,
+          imageURL: 'images/floating_bar_video.png', status: videoBarStatus,
            isWindowsOnly: true}
     ];
     floatingBarClass = {

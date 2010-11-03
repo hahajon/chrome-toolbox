@@ -68,6 +68,7 @@ var dragAndDrop = {
     dragAndDrop.startY = event.clientY;
     dragAndDrop.curElement = this;
     this.style.zIndex = 100;
+    this.style.cursor = 'move';
     event.preventDefault();
   },
 
@@ -108,6 +109,7 @@ var dragAndDrop = {
   dragEnd: function() {
     this.style.top = 0;
     this.style.zIndex = 10;
+    this.style.cursor = 'pointer';
     dragAndDrop.isMouseDown = false;
     if (dragAndDrop.isMouseMove) {
       var nodes = this.parentNode.childNodes;
