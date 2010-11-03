@@ -58,7 +58,7 @@
   "tip_failed": {"message": "You have selected 10 shortcuts. Please unselect some shortcuts and try again."},
   "tip_failed2": {"message": "Please select a folder."},
   "tip_failed3": {"message": "This shortcut is used by another action."},
-  "bookmark_tip": {"message": "Use the following shortcuts to open all links in a specified folder from the Bookmark Manager at once. Each link will open in its own tab."},
+  "bookmark_tip": {"message": "You can use the following shortcuts to open all links in a specified folder from the Bookmark Manager at once. Each link will open in its own tab."},
   "bookmark_tip2": {"message": "Redefine shortcuts"},
   "bookmark_tip3": {"message": "Click on the Folder icon to select a folder"},
   "recommended_from_google": {"message": "You can also try these extensions from Google"},
