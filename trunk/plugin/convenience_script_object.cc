@@ -366,31 +366,14 @@ void ConvenienceScriptObject::TriggerCloseCurrentTab() {
 }
 
 void ConvenienceScriptObject::TriggerShortcuts(UINT modify, UINT vk) {
-  INPUT inputs[4] = {0};
+  INPUT inputs[4] = { 0 };
   int keycount = 0;
-
-  //inputs[0].type = INPUT_KEYBOARD;
-  //inputs[0].ki.wVk = VK_CONTROL;
-  //inputs[0].ki.dwFlags = 0;
-  //inputs[0].ki.wScan = MapVirtualKey(VK_CONTROL, MAPVK_VK_TO_VSC);
-  //inputs[0].ki.time = GetTickCount();
-  //inputs[1].type = INPUT_KEYBOARD;
-  //inputs[1].ki.wVk = 'L';
-  //inputs[1].ki.dwFlags = 0;
-  //inputs[1].ki.wScan = MapVirtualKey('L', MAPVK_VK_TO_VSC);
-  //inputs[1].ki.time = GetTickCount();
-  //SendInput(2, inputs, sizeof(INPUT));
-  //for (int i = 0; i < 2; i++) {
-  //  inputs[i].ki.dwFlags = KEYEVENTF_KEYUP;
-  //}
-  //SendInput(2, inputs, sizeof(INPUT));
 
   Sleep(100);
 
   if (modify & MOD_CONTROL) {
     inputs[keycount].type = INPUT_KEYBOARD;
     inputs[keycount].ki.wVk = VK_CONTROL;
-    inputs[keycount].ki.dwFlags = 0;
     inputs[keycount].ki.wScan = MapVirtualKey(VK_CONTROL, MAPVK_VK_TO_VSC);
     inputs[keycount].ki.time = GetTickCount();
     keycount++;
@@ -398,7 +381,6 @@ void ConvenienceScriptObject::TriggerShortcuts(UINT modify, UINT vk) {
   if (modify & MOD_SHIFT) {
     inputs[keycount].type = INPUT_KEYBOARD;
     inputs[keycount].ki.wVk = VK_SHIFT;
-    inputs[keycount].ki.dwFlags = 0;
     inputs[keycount].ki.wScan = MapVirtualKey(VK_SHIFT, MAPVK_VK_TO_VSC);
     inputs[keycount].ki.time = GetTickCount();
     keycount++;
@@ -406,7 +388,6 @@ void ConvenienceScriptObject::TriggerShortcuts(UINT modify, UINT vk) {
   if (modify & MOD_ALT) {
     inputs[keycount].type = INPUT_KEYBOARD;
     inputs[keycount].ki.wVk = VK_MENU;
-    inputs[keycount].ki.dwFlags = 0;
     inputs[keycount].ki.wScan = MapVirtualKey(VK_MENU, MAPVK_VK_TO_VSC);
     inputs[keycount].ki.time = GetTickCount();
     keycount++;
@@ -579,29 +560,18 @@ void ConvenienceScriptObject::OnKeyDown(bool contrl, bool alt, bool shift,
     id = NPN_GetStringIdentifier("setShortcutsToInputBox");
     NPVariant result;
 
-    string keys;
-
+    string keys = "";
     if (contrl)
-      keys = "17+";
-    if (alt) {
-      if (!keys.empty()) {
-        keys += "18+";
-      } else
-        keys = "18+";
-    }
-    if (shift) {
-      if (!keys.empty()) {
-        keys += "16+";
-      } else
-        keys = "16+";
-    }
+      keys += "17+";
+    if (alt)
+      keys += "18+";
+    if (shift)
+      keys += "16+";
+
     if (wParam != VK_CONTROL && wParam != VK_MENU && wParam != VK_SHIFT) {
       char key[MAX_KEY_LEN];
       _itoa(wParam, key, 10);
-      if (!keys.empty()) {
-        keys += key;
-      } else
-        keys = key;
+      keys += key;
     }
 
     g_Log.WriteLog("keyvalue", keys.c_str());
