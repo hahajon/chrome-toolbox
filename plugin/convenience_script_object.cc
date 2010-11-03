@@ -573,41 +573,31 @@ void ConvenienceScriptObject::OnKeyDown(bool contrl, bool alt, bool shift,
                                         WPARAM wParam, LPARAM lParam) {
   g_Log.WriteLog("msg", "OnKeyDown");
   if (is_listened_) {
+    NPObject* window;
+    NPN_GetValue(plugin_->get_npp(), NPNVWindowNPObject, &window);
     NPIdentifier id;
-    id = NPN_GetStringIdentifier("value");
-    NPVariant prop_value;
-    if (!id)
-      return;
-
-    if (wParam == VK_ESCAPE && !(contrl || alt || shift)) {
-      NPObject* window;
-      NPN_GetValue(plugin_->get_npp(), NPNVWindowNPObject, &window);
-      id = NPN_GetStringIdentifier("cancelListener");
-      g_Log.WriteLog("msg", "NPN_Invoke cancelListener Start");
-      NPN_Invoke(plugin_->get_npp(), window, id, NULL, 0, &prop_value);
-      g_Log.WriteLog("msg", "NPN_Invoke cancelListener End");
-      return;
-    }
+    id = NPN_GetStringIdentifier("setShortcutsToInputBox");
+    NPVariant result;
 
     string keys;
 
     if (contrl)
-      keys = "Ctrl+";
+      keys = "17+";
     if (alt) {
       if (!keys.empty()) {
-        keys += "Alt+";
+        keys += "18+";
       } else
-        keys = "Alt+";
+        keys = "18+";
     }
     if (shift) {
       if (!keys.empty()) {
-        keys += "Shift+";
+        keys += "16+";
       } else
-        keys = "Shift+";
+        keys = "16+";
     }
     if (wParam != VK_CONTROL && wParam != VK_MENU && wParam != VK_SHIFT) {
       char key[MAX_KEY_LEN];
-      GetKeyNameTextA(lParam, key, MAX_KEY_LEN);
+      _itoa(wParam, key, 10);
       if (!keys.empty()) {
         keys += key;
       } else
@@ -615,11 +605,14 @@ void ConvenienceScriptObject::OnKeyDown(bool contrl, bool alt, bool shift,
     }
 
     g_Log.WriteLog("keyvalue", keys.c_str());
+    NPVariant params[2];
+    OBJECT_TO_NPVARIANT(input_object_, params[0]);
+    STRINGZ_TO_NPVARIANT(keys.c_str(), params[1]);
 
-    STRINGZ_TO_NPVARIANT(keys.c_str(), prop_value);
-
-    g_Log.WriteLog("msg", "NPN_SetProperty Start");
-    NPN_SetProperty(plugin_->get_npp(), input_object_, id, &prop_value);
-    g_Log.WriteLog("msg", "NPN_SetProperty End");
+    g_Log.WriteLog("msg", "NPN_Invoke Start");
+    if (id)
+      NPN_Invoke(plugin_->get_npp(), window, id, params, 2, &result);
+    NPN_ReleaseVariantValue(&result);
+    g_Log.WriteLog("msg", "NPN_Invoke End");
   }
 }
