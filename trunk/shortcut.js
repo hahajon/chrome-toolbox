@@ -304,3 +304,13 @@ function removeInputBox (element) {
     element = null;
   }
 }
+
+function setShortcutsToInputBox(inputBox, virtualKey) {
+  var keys = virtualKey.split('+');
+  for (var i = 0; i < keys.length; i++) {
+    if (keys[i]) {
+      keys[i] = key_util.key_code_map[keys[i]].name;
+    } 
+  }
+  inputBox.value = keys.join('+');
+}
