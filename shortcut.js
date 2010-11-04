@@ -31,6 +31,7 @@ Shortcut.prototype.selectAllToNP = function() {
       var record = {id: '', shortcut: '', relationId: '', operation: '', type: '', extensionId: ''};
       record.id = results.rows.item(i).id;
       record.shortcut = key_util.getVirtualKey(results.rows.item(i).shortcut);
+      record.shortcutName = results.rows.item(i).shortcut;
       record.relationId = results.rows.item(i).relationId;
       record.operation = results.rows.item(i).operation;
       record.type = eval(results.rows.item(i).type);
@@ -40,6 +41,7 @@ Shortcut.prototype.selectAllToNP = function() {
     }
     var bg = chrome.extension.getBackgroundPage();
     bg.plugin.updateShortCutList(shortcutList);
+    bg.custom_shortcut_list = shortcutList;
   });
 }
 
@@ -57,7 +59,7 @@ Shortcut.prototype.insert = function(obj) {
 
 Shortcut.prototype.selectById = function(id, resultsCallback) {
   var sql = 'select * from shortcut_table where id = ?';
-  this.executeSqlCommand(sql, [id], resultsCallback);
+  db.executeSqlCommand(sql, [id], resultsCallback);
 };
 
 Shortcut.prototype.updateShortcut = function(shortcut, id) {
@@ -81,6 +83,8 @@ Shortcut.prototype.insertRecord = function(table, row) {
       row++;
       self.insertRecord(table, row);
     });
+  } else {
+    self.selectAllToNP();
   }
 }
 

@@ -3,6 +3,7 @@
   var shortcut = new Shortcut();
   shortcut.createTable();
   shortcut.insertRecord(key_util.extension_support_shortcut_map, 0);
+  var custom_shortcut_list = [];
   var isCloseWindow = false;
   var plugin = {
     convenience: document.getElementById('plugin_convenience'),
@@ -363,7 +364,7 @@
   }
 
   function redefineBossKey() {
-    shortcut.updateShortcut(' ', 48);
+    shortcut.updateShortcut(null, 48);
     chrome.tabs.create({url: 'options.html#bossKey', selected: true});
   }
   
