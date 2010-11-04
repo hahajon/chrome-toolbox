@@ -421,6 +421,8 @@ key_util.extension_support_shortcut_map = [
     {id: 60, shortcut: 'Alt+W', type: false, relationId: '', operation: 'browserMute', extensionId: ''}
 ];
 
+key_util.custom_shortcut_id_list = [48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60];
+
 key_util.key_code_map = [];
 for (var i = 0; i < 222; i++) {
   key_util.key_code_map[i] = { keyCode: '', name: '' };
@@ -522,16 +524,21 @@ key_util.keyCodeToShowName = function(keyCodes) {
 }
 
 key_util.getVirtualKey = function(shortcut) {
-  var virtualKey = shortcut.split('+');
-  for (var i = 0; i < virtualKey.length; i++) {
-    for (var m = 0; m < key_util.key_code_map.length; m++) {
-      if (virtualKey[i] == key_util.key_code_map[m].name) {
-        virtualKey[i] = key_util.key_code_map[m].keyCode;
-        break;
+  var returnKey = '';
+  if (shortcut) {
+    var virtualKey = shortcut.split('+');
+    for (var i = 0; i < virtualKey.length; i++) {
+      for (var m = 0; m < key_util.key_code_map.length; m++) {
+        if (virtualKey[i] == key_util.key_code_map[m].name) {
+          virtualKey[i] = key_util.key_code_map[m].keyCode;
+          break;
+        }
       }
     }
+    returnKey = virtualKey.join('+');
   }
-  return virtualKey.join('+');
+  return returnKey;
+
 }
 
 
@@ -547,7 +554,6 @@ key_util.getObject = function(array, name, value) {
 key_util.getAllChromeShortcut = function() {
   var chromeShortcutsList = [];
   for (var i = 1; i < key_util.function_table.length; i++) {
-    console.log(key_util.function_table[i]);
     if (key_util.function_table[i].chrome_key) {
       chromeShortcutsList.push(key_util.function_table[i].chrome_key);
     }
@@ -555,5 +561,17 @@ key_util.getAllChromeShortcut = function() {
   return chromeShortcutsList.join(',').split(',');
 }
 
+key_util.getCustomShortcutItemById = function(customShortcutList, id) {
+  var shortcutItem = '';
+  for (var i = 0; i < customShortcutList.length; i++) {
+    if (customShortcutList[i].id == id) {
+      shortcutItem = customShortcutList[i];
+      break;
+    }
+  }
+  return shortcutItem;
+}
+
 key_util.chrome_shortcuts = key_util.getAllChromeShortcut();
+
 

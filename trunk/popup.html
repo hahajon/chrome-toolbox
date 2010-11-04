@@ -126,35 +126,33 @@
 
 <script type="text/javascript">
   var bg = chrome.extension.getBackgroundPage();
-  var shortcut = new Shortcut();
   var fillForm = new FillForm();
 
   function setMuteMenu() {
     var muteMenuId = 60;
-    shortcut.selectById(muteMenuId, function(tx, results) {
-      if (results.rows.length > 0) {
-        var muteMenu = $('btnMute');
-        var muteName = $('muteName');
-        var muteShortcut = $('muteShortcut');
+    var item = key_util.getCustomShortcutItemById(
+            bg.custom_shortcut_list, muteMenuId);
+    var muteMenu = $('btnMute');
+    var muteName = $('muteName');
+    var muteShortcut = $('muteShortcut');
 
-        var name = eval(localStorage['browserMute'])?
-            'unmute_all_tabs' : 'mute_all_tabs';
-        var imageUrl = eval(localStorage['browserMute'])?
-            'images/mute_19.png' : 'images/speaker_19.png';
-        i18nReplace('muteName', name);
-        muteName.style.background = 'url(' + imageUrl + ') no-repeat 1px 2px';
-        muteShortcut.innerText = results.rows.item(0).shortcut;
-        muteMenu.onclick = function() {
-          bg.browserMute();
-          name = eval(localStorage['browserMute'])?
-            'unmute_all_tabs' : 'mute_all_tabs';
-          imageUrl = eval(localStorage['browserMute'])?
-            'images/mute_19.png' : 'images/speaker_19.png';
-          i18nReplace('muteName', name);
-          muteName.style.background = 'url(' + imageUrl + ') no-repeat 1px 2px';
-        }
-      }
-    });
+    var name = eval(localStorage['browserMute'])?
+        'unmute_all_tabs' : 'mute_all_tabs';
+    var imageUrl = eval(localStorage['browserMute'])?
+        'images/mute_19.png' : 'images/speaker_19.png';
+    i18nReplace('muteName', name);
+    muteName.style.background = 'url(' + imageUrl + ') no-repeat 1px 2px';
+    muteShortcut.innerText = item.shortcutName;
+    muteMenu.onclick = function() {
+      bg.browserMute();
+      name = eval(localStorage['browserMute'])?
+        'unmute_all_tabs' : 'mute_all_tabs';
+      imageUrl = eval(localStorage['browserMute'])?
+        'images/mute_19.png' : 'images/speaker_19.png';
+      i18nReplace('muteName', name);
+      muteName.style.background = 'url(' + imageUrl + ') no-repeat 1px 2px';
+    }
+
 
   }
 
@@ -194,20 +192,14 @@
       {menuId: 50, name: 'saveFormShortcut'}
     ];
 
-    var setFillFormMenuShortcut = function(element) {
-      shortcut.selectById(id, function(tx, results) {
-        if (results.rows.length > 0) {
-          var shortcutStr = results.rows.item(0).shortcut;
-          element.innerText = shortcutStr;
-        }
-      });
-    }
     for (var i = 0; i < fillFormMenu.length; i++) {
       var id = fillFormMenu[i].menuId;
       var element = $(fillFormMenu[i].name);
-      (function(element) {
-        setFillFormMenuShortcut(element);
-      })(element);
+      (function(element, id) {
+        var item = key_util.getCustomShortcutItemById(
+            bg.custom_shortcut_list, id);
+        element.innerText = item.shortcutName;
+      })(element, id);
     }
 
     chrome.tabs.getSelected(null, function(tab) {
@@ -253,40 +245,26 @@
     var items = quickAccessMenu.split(',');
     var ul = document.createElement('ul');
     ul.id = 'quicklyCommand';
-    var count = 0;
-    var createItem = function(items, count) {
-      var id = parseInt(items[count]);
-      var item = key_util.function_table[id];
-      shortcut.selectById(item.id, function(tx, results) {
-        var shortcutStr = '';
-        if (results.rows.length > 0) {
-          shortcutStr = results.rows.item(0).shortcut;
-        } else {
-          shortcutStr = item.chrome_key;
-        }
-        shortcutStr = shortcutStr.indexOf(',') < 0 ?
-          shortcutStr : shortcutStr.substring(0, shortcutStr.indexOf(','));
-        var li = document.createElement('li');
-        var name = chrome.i18n.getMessage(item.function_name);
-        li.value = item.id;
-        li.innerHTML = '<div class="left">' + name +
-            '</div><div class="right">' + shortcutStr + '</div>';
-        (function(element, shortcut) {
-//          element.onclick = function() {
-//            var virtualKey = key_util.getVirtualKey(shortcut);
-////            bg.plugin.convenience.TriggerChromeShortcuts(virtualKey);
-////            window.close();
-//          }
-          dragAndDrop.makeElementSortable(element, shortcut);
-        })(li, shortcutStr);
-        ul.appendChild(li);
-        count++
-        if (items.length > count) {
-          createItem(items, count)
-        }
-      });
+    for (var i = 0; i < items.length; i++) {
+      var item = key_util.function_table[items[i]];
+      var id = item.id;
+      var name = chrome.i18n.getMessage(item.function_name);
+      var shortcut = item.chrome_key;
+      if (key_util.custom_shortcut_id_list.indexOf(item.id) > -1) {
+        item = key_util.getCustomShortcutItemById(bg.custom_shortcut_list, id);
+        shortcut = item.shortcutName;
+      }
+      shortcut = shortcut.indexOf(',') < 0 ?
+           shortcut : shortcut.substring(0, shortcut.indexOf(','))
+      var li = document.createElement('li');
+      li.value = id;
+      li.innerHTML = '<div class="left">' + name +
+          '</div><div class="right">' + shortcut + '</div>';
+      (function(element, shortcut) {
+        dragAndDrop.makeElementSortable(element, shortcut);
+      })(li, shortcut);
+      ul.appendChild(li);
     }
-    createItem(items, 0);
     $('quicklyMenu').appendChild(ul);
   }
 
