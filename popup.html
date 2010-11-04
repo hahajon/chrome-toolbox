@@ -11,12 +11,11 @@
     text-align: center;
     margin: 0;
     padding: 5px 3px;
-    font-family: arial, sans-serif; 
+    font-family: arial, sans-serif;
   }
   #hit {
     display: none;
   }
-
   .disable {
     color: #bbbbbb;
     cursor: default;
@@ -79,12 +78,13 @@
 
 
 </style>
+<script type="text/javascript" src="drag_and_drop.js"></script>
 <script type="text/javascript" src="convenience_util.js"></script>
 <script type="text/javascript" src="database_operator.js"></script>
 <script type="text/javascript" src="fill_form.js"></script>
 <script type="text/javascript" src="shortcut.js"></script>
 <script type="text/javascript" src="key_util.js"></script>
-<script language="JavaScript" type="text/javascript" src="drag_and_drop.js"></script>
+
 </head>
 <body>
 <div class="extensionFun">
@@ -121,7 +121,6 @@
     <li id="optionPage"><div class="left" id="optionText"></div> </li>
   </ul>
 </div>
-
 
 
 <script type="text/javascript">
@@ -168,7 +167,6 @@
       chrome.tabs.create({url: url });
     };
     if (isWindowsPlatform()) {
-
       setMuteMenu();
       createQuicklyVisitItem();
     } else {
@@ -274,8 +272,8 @@
       elements[i].style.display = 'none';
     }
   }
-
   init();
+
 </script>
 </body>
 </html>
