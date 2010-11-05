@@ -149,7 +149,6 @@ var floatingBar = {
 
         if (!isWindowsMenu && checkedElements[i].menu.status &&
             curElementData.minSizeChecked) {
-          console.log('232343:' + checkedElements[i].menu.status)
           var specialConditionReturnValue =  floatingBar.specialCondition(
               checkedElements[i].specialCondition,curElement)
           if (!checkedElements[i].specialCondition ||

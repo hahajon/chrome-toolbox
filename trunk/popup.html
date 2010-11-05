@@ -201,7 +201,6 @@
 
     chrome.tabs.getSelected(null, function(tab) {
       chrome.tabs.sendRequest(tab.id, {msg: 'checkForm'}, function(response) {
-        console.log(response.msg)
         if (response.msg == 'existForm') {
           $('btnSaveForm').className = 'menu';
           $('btnSaveForm').addEventListener('click', function(){
@@ -216,7 +215,6 @@
         if (results.rows.length > 0) {
           var formInfo = results.rows.item(0).formInfo;
           var id = results.rows.item(0).id;
-          console.log('formInfo:' + typeof formInfo);
           $('btnFillForm').className = 'menu';
           $('btnFillForm').addEventListener('click',
               function(){
