@@ -15,11 +15,14 @@ public:
   bool Construct(const NPVariant *args, uint32_t argCount,
                  NPVariant *result);
 
+  // Mute browser interface for frontend.
   bool MuteBrowser(const NPVariant *args, uint32_t argCount,
                    NPVariant *result);
 
 private:
+  // apihook.dll module hanlde.
   HMODULE api_hook_module_;
+  // The function address of SetBrowseMute function in apihook.dll
   Pfn_SetBrowserMute set_browser_mute_;
 
 };

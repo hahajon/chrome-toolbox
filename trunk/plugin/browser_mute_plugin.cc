@@ -62,30 +62,40 @@ NPError BrowserMutePlugin::Init(NPP instance, uint16_t mode, int16_t argc,
   script_object_ = NULL;
   g_Log.WriteLog("Msg", "BrowserMutePlugin Init");
   instance->pdata = this;
+
   HANDLE hprocess = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
   PROCESSENTRY32 process = { sizeof(PROCESSENTRY32) };
+  WCHAR chrome_exe_path[MAX_PATH];
+  GetModuleFileName(GetModuleHandle(NULL), chrome_exe_path, MAX_PATH);
+  BOOL find_same_chrome_version = FALSE;
   BOOL ret = Process32First(hprocess, &process);
   while (ret) {
-    if (_wcsicmp(process.szExeFile, L"chrome.exe") == 0 
-        && process.th32ProcessID != GetCurrentProcessId()) {
+    if (_wcsicmp(process.szExeFile, L"chrome.exe") == 0) {
       HANDLE hmodule = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, 
                                                 process.th32ProcessID);
       MODULEENTRY32 mod = { sizeof(MODULEENTRY32) };
-      BOOL flag = FALSE;
+      BOOL find_apihook_flag = FALSE;
       if (Module32First(hmodule, &mod)) {
-        if (_wcsicmp(mod.szModule, L"apihook.dll") == 0) {
-          flag = TRUE;          
+        if (_wcsicmp(mod.szExePath, chrome_exe_path) != 0) {
+          CloseHandle(hmodule);
+          ret = Process32Next(hprocess, &process);
+          continue;
+        } else {
+          find_same_chrome_version = TRUE;
         }
         while(Module32Next(hmodule, &mod)) {
           if (_wcsicmp(mod.szModule, L"apihook.dll") == 0) {
-            flag = TRUE;
+            find_apihook_flag = TRUE;
             break;
           }
-        }        
+        }
       }
       if (hmodule != INVALID_HANDLE_VALUE)
         CloseHandle(hmodule);
-      if (flag) {
+      if (find_apihook_flag) {
+        if (find_same_chrome_version)
+          break;
+
         ret = Process32Next(hprocess, &process);
         continue;
       }
@@ -105,13 +115,13 @@ NPError BrowserMutePlugin::Init(NPP instance, uint16_t mode, int16_t argc,
           PROCESS_VM_READ, FALSE, process.th32ProcessID);
       char logs[256];
       if (!info.hProcess) {
-        sprintf(logs, "GetLastError=%ld", GetLastError());
+        sprintf(logs, "OpenProcess GetLastError=%ld", GetLastError());
         g_Log.WriteLog("Error", logs);
       }
       info.hThread = OpenThread(THREAD_SUSPEND_RESUME, FALSE, 
                                 thd.th32ThreadID);
       if (!info.hThread) {
-        sprintf(logs, "GetLastError=%ld", GetLastError());
+        sprintf(logs, "OpenThread GetLastError=%ld", GetLastError());
         g_Log.WriteLog("Error", logs);
       }
       InjectIntoProcess(&info);

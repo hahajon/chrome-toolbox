@@ -7,6 +7,7 @@
 
 extern Log g_Log;
 extern HMODULE g_hMod;
+extern CRITICAL_SECTION g_CS;
 
 // When an application runs on Windows 98 under a debugger, the debugger
 // makes the module's import section point to a stub that calls the desired 
@@ -26,9 +27,13 @@ const BYTE cPushOpCode = 0x68;   // The PUSH opcode on x86 platforms
 ApiHook* ApiHook::head_pointer_ = NULL;
 
 ///////////////////////////////////////////////////////////////////////////////
+BOOL g_IsInited = FALSE;
 
 ApiHook::ApiHook(PSTR calleemodname, PSTR funcname, PROC pfnhook, BOOL flag) {
-
+  if (!g_IsInited) {
+    g_IsInited = TRUE;
+    InitializeCriticalSection(&g_CS);
+  }
   if (max_app_addr_ == NULL) {
     // Functions with address above lpMaximumApplicationAddress require
     // special processing (Windows 98 only)
@@ -177,15 +182,24 @@ void ApiHook::ReplaceIATEntryInOneMod(PCSTR calleemodulename, PROC pfnorig,
     if (fFound) {
       // The addresses match, change the import section address
       DWORD oldAccess, newAccess;
-      VirtualProtect(ppfn, sizeof(pfnhook), PAGE_READWRITE, &oldAccess);
-      if (!WriteProcessMemory(GetCurrentProcess(), ppfn, &pfnhook, 
-        sizeof(pfnhook), NULL)) {
+      if (VirtualProtect(ppfn, sizeof(pfnhook), PAGE_READWRITE, &oldAccess)) {
+        if (!WriteProcessMemory(GetCurrentProcess(), ppfn, &pfnhook, 
+          sizeof(pfnhook), NULL)) {
+          char logs[256];
+          sprintf(logs, "WriteProcessMemory Failed,GetLastError=%ld, ppfn=%ld",
+              GetLastError(),ppfn);
+          g_Log.WriteLog("ReplaceIATError", logs);
+        }
+        if (!VirtualProtect(ppfn, sizeof(pfnhook), oldAccess, &newAccess)) {
+          char logs[256];
+          sprintf(logs, "VirtualProtect Failed 1, GetLastError=%ld", GetLastError());
+          g_Log.WriteLog("Error", logs);
+        }
+      } else {
         char logs[256];
-        sprintf(logs, "WriteProcessMemory Failed,GetLastError=%ld, ppfn=%ld",
-          GetLastError(),ppfn);
-        g_Log.WriteLog("ReplaceIATError", logs);
+        sprintf(logs, "VirtualProtect Failed 2, GetLastError=%ld", GetLastError());
+        g_Log.WriteLog("Error", logs);
       }
-      VirtualProtect(ppfn, sizeof(pfnhook), oldAccess, &newAccess);
       return;  // We did it, get out
     }
   }
@@ -213,7 +227,6 @@ ApiHook ApiHook::sm_CreateProcessA("Kernel32.dll", "CreateProcessA",
 ApiHook ApiHook::sm_CreateProcessW("Kernel32.dll", "CreateProcessW", 
                                    (PROC) ApiHook::CreateProcessW, TRUE);
 
-extern CRITICAL_SECTION g_CS;
 void ApiHook::FixupNewlyLoadedModule(HMODULE hmod, DWORD dwFlags) {
 
   // If a new module is loaded, hook the hooked functions
@@ -235,50 +248,33 @@ void ApiHook::FixupNewlyLoadedModule(HMODULE hmod, DWORD dwFlags) {
 
 HMODULE WINAPI ApiHook::LoadLibraryA(PCSTR pszModulePath) {
 
-  g_Log.WriteLog("Msg", "Before LoadLibraryA");
   HMODULE hmod = ::LoadLibraryA(pszModulePath);
-  g_Log.WriteLog("Msg", "After LoadLibraryA");
-  g_Log.WriteLog("Msg", "Before FixupNewlyLoadedModule");
   FixupNewlyLoadedModule(hmod, 0);
-  g_Log.WriteLog("Msg", "After FixupNewlyLoadedModule");
   return(hmod);
 }
 
 HMODULE WINAPI ApiHook::LoadLibraryW(PCWSTR pszModulePath) {
 
-  g_Log.WriteLog("Msg", "Before LoadLibraryW");
   HMODULE hmod = ::LoadLibraryW(pszModulePath);
-  g_Log.WriteLog("Msg", "After LoadLibraryW");
-  g_Log.WriteLog("Msg", "Before FixupNewlyLoadedModule");
   FixupNewlyLoadedModule(hmod, 0);
-  g_Log.WriteLog("Msg", "After FixupNewlyLoadedModule");
   return(hmod);
 }
 
 HMODULE WINAPI ApiHook::LoadLibraryExA(PCSTR pszModulePath, 
                                        HANDLE hFile, DWORD dwFlags) {
-  g_Log.WriteLog("Msg", "Before LoadLibraryExA");
   HMODULE hmod = ::LoadLibraryExA(pszModulePath, hFile, dwFlags);
-  g_Log.WriteLog("Msg", "After LoadLibraryExA");
-  g_Log.WriteLog("Msg", "Before FixupNewlyLoadedModule");
   FixupNewlyLoadedModule(hmod, dwFlags);
-  g_Log.WriteLog("Msg", "After FixupNewlyLoadedModule");
   return(hmod);
 }
 
 HMODULE WINAPI ApiHook::LoadLibraryExW(PCWSTR pszModulePath, 
                                        HANDLE hFile, DWORD dwFlags) {
-  g_Log.WriteLog("Msg", "Before LoadLibraryExW");
   HMODULE hmod = ::LoadLibraryExW(pszModulePath, hFile, dwFlags);
-  g_Log.WriteLog("Msg", "After LoadLibraryExW");
-  g_Log.WriteLog("Msg", "Before FixupNewlyLoadedModule");
   FixupNewlyLoadedModule(hmod, dwFlags);
-  g_Log.WriteLog("Msg", "After FixupNewlyLoadedModule");
   return(hmod);
 }
 
 DWORD WINAPI InjectIntoProcess(void* param) {
-  Sleep(2000);
   LPPROCESS_INFORMATION lpProcessInformation = (LPPROCESS_INFORMATION)param;
   //SuspendThread(lpProcessInformation->hThread);
   LPVOID p = VirtualAllocEx(lpProcessInformation->hProcess, NULL, 

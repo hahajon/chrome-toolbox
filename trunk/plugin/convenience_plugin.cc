@@ -20,6 +20,12 @@ WNDPROC ConveniencePlugin::old_proc_ = NULL;
 HHOOK g_KeyboardHook = NULL;
 HHOOK g_GetMsgHook = NULL;
 HANDLE client_pipe_handle = INVALID_HANDLE_VALUE;
+HANDLE client_thread_handle = INVALID_HANDLE_VALUE;
+
+DWORD WINAPI Client_Thread(void* param);
+LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam);
+LRESULT CALLBACK GetMsgProc(int code, WPARAM wParam, LPARAM lParam);
+void WriteToServer(Cmd_Msg_Item& item);
 
 const TCHAR* kFileMappingName = L"Convenience_File";
 const TCHAR* kChromeClassName = L"Chrome_WidgetWin_0";
@@ -90,18 +96,14 @@ void UpdateShortcutsFromMemory() {
   }
 }
 
-static HANDLE client_thread_handle = INVALID_HANDLE_VALUE;
-
 DWORD WINAPI Client_Thread(void* param) {
   char szLog[256];
   char buffer[MAX_BUFFER_LEN];
   DWORD outlen;
   int offset = 0;
   int readlen = sizeof(Cmd_Msg_Item);
-  DWORD writelen;
   Cmd_Msg_Item cmd;
 
-  HANDLE event_handle = (HANDLE)param;
   OVERLAPPED ol = { 0 };
   ol.hEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
   TCHAR pipe_name[MAX_PATH];
@@ -122,19 +124,15 @@ DWORD WINAPI Client_Thread(void* param) {
       } else {
         sprintf(szLog, "CreateFile Failed,GetLastError=%ld", errorcode);
         g_Log.WriteLog("Error", szLog);
-        client_thread_handle = INVALID_HANDLE_VALUE;
-        SetEvent(event_handle);
-        return -1;
+        Sleep(1000);
+        continue;
       }
     } else {
       g_Log.WriteLog("Msg", "CreateFile success, start client thread");
     }
 
     cmd.cmd = Cmd_Request_Update;
-    if (WriteFile(client_pipe_handle, &cmd, sizeof(cmd), &writelen, NULL))
-      g_Log.WriteLog("msg", "write to server");
-    else
-      g_Log.WriteLog("msg", "write to server failed");
+    WriteToServer(cmd);
 
     BOOL result;
     while (true) {
@@ -150,28 +148,32 @@ DWORD WINAPI Client_Thread(void* param) {
         break;
       }
       if (outlen == readlen) {
-        g_Log.WriteLog("ReadFile", "recv from server");
         memcpy(&cmd, buffer, sizeof(cmd));
+        sprintf(szLog, "recv from server,cmd=%ld",cmd.cmd);
+        g_Log.WriteLog("ReadFile", szLog);
         switch(cmd.cmd) {
         case Cmd_Update_Shortcuts:
           UpdateShortcutsFromMemory();
-          SetEvent(event_handle);
           break;
         case Cmd_Response_Update:
-          SetEvent(event_handle);
           break;
         case Cmd_Update_DBClick_CloseTab:
-          g_Log.WriteLog("recv from server", "Cmd_Update_DBClick_CloseTab");
           g_DBClickCloseTab = cmd.value.double_click_closetab;
           break;
         case Cmd_Update_Is_Listening:
-          g_Log.WriteLog("recv from server", "Cmd_Update_Is_Listening");
           g_IsListening = cmd.value.is_listening;
           break;
         case Cmd_Update_Is_Only_One_Tab:
-          g_Log.WriteLog("recv from server", "Cmd_Update_Is_Only_One_Tab");
           g_IsOnlyOneTab = cmd.value.is_only_on_tab;
           break;
+        case Cmd_ServerShutDown:
+          {
+            Cmd_Msg_Item item;
+            item.cmd = Cmd_ClientShutDown;
+            WriteToServer(item);
+            CloseHandle(client_pipe_handle);
+          }
+          return 0;
         }
         readlen = sizeof(Cmd_Msg_Item);
         offset = 0;
@@ -210,6 +212,7 @@ DWORD ConveniencePlugin::Server_Thread(void* param) {
     g_Log.WriteLog("Error", szLog);
     return -1;
   }
+  g_Log.WriteLog("Msg", "Start Server_Thread");
 
   OVERLAPPED ol = {0};
   ol.hEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
@@ -247,16 +250,12 @@ DWORD ConveniencePlugin::Server_Thread(void* param) {
         case Cmd_Request_Update:
           if (pPlugin->memory_file_handle_) {
             Cmd_Msg_Item item;
-            DWORD writelen;
             item.cmd = Cmd_Update_Shortcuts;
-            WriteFile(pPlugin->server_pipe_handle_, &item, sizeof(item),
-                      &writelen, NULL);
+            pPlugin->WriteToClient(item);
           } else {
             Cmd_Msg_Item item;
-            DWORD writelen;
             item.cmd = Cmd_Response_Update;
-            WriteFile(pPlugin->server_pipe_handle_, &item, sizeof(item),
-                      &writelen, NULL);
+            pPlugin->WriteToClient(item);
           }
           break;
         case Cmd_Event:
@@ -281,6 +280,12 @@ DWORD ConveniencePlugin::Server_Thread(void* param) {
           PostMessage(pPlugin->hwnd_, WM_KEYUP, cmd.value.key_down.wparam,
                       cmd.value.key_down.lparam);
           break;
+        case Cmd_ClientShutDown:
+          if (pPlugin->memory_file_handle_)
+            CloseHandle(pPlugin->memory_file_handle_);
+          if (pPlugin->server_pipe_handle_)
+            CloseHandle(pPlugin->server_pipe_handle_);
+          return 0;
         }
         readlen = sizeof(Cmd_Msg_Item);
         offset = 0;
@@ -333,44 +338,26 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
         find(shortcuts);
 
     Cmd_Msg_Item item;
-    DWORD writelen;
     if (g_IsListening) {
       item.cmd = Cmd_KeyDown;
       item.value.key_down.wparam = wParam;
       item.value.key_down.lparam = lParam;
-      if (WriteFile(client_pipe_handle, &item, sizeof(item), &writelen, 
-                    NULL)) {
-        g_Log.WriteLog("msg", "write msg to server");
-      } else {
-        g_Log.WriteLog("error", "write msg to server failed");
-      }
+      WriteToServer(item);
     } else {
       item.cmd = Cmd_Event;
       if (iter != shortcut_map->end() && client_pipe_handle) {
         item.value.shortcuts_Id = iter->second.index;
-        g_Log.WriteLog("msg", "before writefile");
-        if (WriteFile(client_pipe_handle, &item, sizeof(item), &writelen, 
-                      NULL)) {
-          g_Log.WriteLog("msg", "write msg to server");
-        } else {
-          g_Log.WriteLog("error", "write msg to server failed");
-        }
+        WriteToServer(item);
       }
     }
   }
   else if (HIWORD(lParam) & KF_UP) {
     if (g_IsListening) {
       Cmd_Msg_Item item;
-      DWORD writelen;
       item.cmd = Cmd_KeyUp;
       item.value.key_down.wparam = wParam;
       item.value.key_down.lparam = lParam;
-      if (WriteFile(client_pipe_handle, &item, sizeof(item), &writelen, 
-                    NULL)) {
-        g_Log.WriteLog("msg", "write msg to server");
-      } else {
-        g_Log.WriteLog("error", "write msg to server failed");
-      }
+      WriteToServer(item);
     }
   }
 
@@ -379,12 +366,8 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
 
 LRESULT CALLBACK GetMsgProc(int code, WPARAM wParam, LPARAM lParam){
   if (client_thread_handle == INVALID_HANDLE_VALUE) {
-    HANDLE hevent = CreateEvent(NULL, FALSE, FALSE, NULL);
-    client_thread_handle = CreateThread(NULL, 0, Client_Thread, hevent, 0, 
+    client_thread_handle = CreateThread(NULL, 0, Client_Thread, NULL, 0, 
                                         NULL);
-    WaitForSingleObject(hevent, 1000);
-    CloseHandle(hevent);
-    CloseHandle(client_thread_handle);
   }
   MSG* msg = (MSG*)lParam;
 
@@ -421,42 +404,12 @@ LRESULT CALLBACK GetMsgProc(int code, WPARAM wParam, LPARAM lParam){
       if (PtInRect(&rt, pt)) {
         msg->message = WM_NULL;
         Cmd_Msg_Item item;
-        DWORD writelen;
         item.cmd = Cmd_TabClose;
-        if (WriteFile(client_pipe_handle, &item, sizeof(item), &writelen, 
-            NULL)) {
-            g_Log.WriteLog("msg", "write msg to server Cmd_TabClose");
-        } else {
-          g_Log.WriteLog("error", "write msg to server failed Cmd_TabClose");
-        }
+        WriteToServer(item);
       }
     }
   }
   
-//////////////////////////////////////////////////////////////////////////
-/*  if (msg->message == WM_NCLBUTTONDOWN && wParam == PM_REMOVE 
-      && msg->wParam == HTCLOSE) {
-    TCHAR class_name[256];
-    GetClassName(msg->hwnd, class_name, 256);
-    HWND address_hwnd = FindWindowEx(msg->hwnd, NULL, kChromeAddressBar, NULL);
-    if (wcscmp(class_name, kChromeClassName) == 0 && 
-        address_hwnd && 
-        (GetWindowLong(address_hwnd, GWL_STYLE) & WS_VISIBLE)) {
-      msg->message = WM_NULL;
-      Cmd_Msg_Item item;
-      DWORD writelen;
-      item.cmd = Cmd_ChromeClose;
-      if (WriteFile(client_pipe_handle, &item, sizeof(item), &writelen, 
-        NULL)) {
-        g_Log.WriteLog("msg","write msg to server ChromeClose");
-      } else {
-        g_Log.WriteLog("error","write msg to server failed ChromeClose");
-      }
-    }
-  }
-*/
-//////////////////////////////////////////////////////////////////////////
-
   if (msg->message == WM_LBUTTONDBLCLK && wParam == PM_REMOVE 
       && g_DBClickCloseTab) {
     POINT pt;
@@ -486,27 +439,15 @@ bottom=%ld,g_IsOnlyOneTab=%d",
     GetClassName(msg->hwnd, class_name, 256);
     if (wcscmp(class_name, kChromeClassName) == 0) {
       Cmd_Msg_Item item;
-      DWORD writelen;
       if (g_IsOnlyOneTab) {
         msg->message = WM_NULL;
         item.cmd = Cmd_TabClose;
-        if (WriteFile(client_pipe_handle, &item, sizeof(item), &writelen, 
-                      NULL)) {
-          g_Log.WriteLog("msg", "write msg to server Cmd_TabClose");
-        } else {
-          g_Log.WriteLog("error", "write msg to server failed Cmd_TabClose");
-        }
+        WriteToServer(item);
         return CallNextHookEx(g_GetMsgHook, code, wParam, lParam);
       }
 
       item.cmd = Cmd_DBClick_CloseTab;
-      if (WriteFile(client_pipe_handle, &item, sizeof(item), &writelen, 
-                    NULL)) {
-        g_Log.WriteLog("msg", "write msg to server Cmd_DBClick_CloseTab");
-      } else {
-        g_Log.WriteLog("error", 
-                       "write msg to server failed Cmd_DBClick_CloseTab");
-      }
+      WriteToServer(item);
     }
   }
   return CallNextHookEx(g_GetMsgHook, code, wParam, lParam);
@@ -551,12 +492,13 @@ NPError ConveniencePlugin::Init(NPP instance, uint16_t mode, int16_t argc,
 NPError ConveniencePlugin::UnInit(NPSavedData **save) {
   PluginBase::UnInit(save);
   scriptobject_ = NULL;
-  if (memory_file_handle_)
-    CloseHandle(memory_file_handle_);
-  if (server_thread_handle_)
-    TerminateThread(server_thread_handle_, 0);
-  if (server_pipe_handle_)
-    CloseHandle(server_pipe_handle_);
+
+  Cmd_Msg_Item item;
+  item.cmd = Cmd_ServerShutDown;
+  WriteToClient(item);
+
+  UnhookWindowsHookEx(g_KeyboardHook);
+  UnhookWindowsHookEx(g_GetMsgHook);
 
   return NPERR_NO_ERROR;
 }
@@ -620,8 +562,7 @@ void ConveniencePlugin::SetShortcutsToMemory(ShortCut_Item* list, int count) {
       UnmapViewOfFile(p);
       Cmd_Msg_Item item;
       item.cmd = Cmd_Update_Shortcuts;
-      DWORD writelen;
-      WriteFile(server_pipe_handle_, &item, sizeof(item), &writelen, NULL);
+      WriteToClient(item);
     }
   } else {
     char szLog[256];
@@ -635,24 +576,21 @@ void ConveniencePlugin::UpdateDBClick_CloseTab(bool double_click_closetab) {
   item.cmd = Cmd_Update_DBClick_CloseTab;
   item.value.double_click_closetab = double_click_closetab;
   g_DBClickCloseTab = double_click_closetab;
-  DWORD writelen;
-  WriteFile(server_pipe_handle_, &item, sizeof(item), &writelen, NULL);
+  WriteToClient(item);
 }
 
 void ConveniencePlugin::UpdateIsListening(bool is_listening) {
   Cmd_Msg_Item item;
   item.cmd = Cmd_Update_Is_Listening;
   item.value.is_listening = is_listening;
-  DWORD writelen;
-  WriteFile(server_pipe_handle_, &item, sizeof(item), &writelen, NULL);
+  WriteToClient(item);
 }
 
 void ConveniencePlugin::UpdateIsOnlyOneTab(bool is_only_one_tab) {
   Cmd_Msg_Item item;
   item.cmd = Cmd_Update_Is_Only_One_Tab;
   item.value.is_listening = is_only_one_tab;
-  DWORD writelen;
-  WriteFile(server_pipe_handle_, &item, sizeof(item), &writelen, NULL);
+  WriteToClient(item);
 }
 
 LRESULT ConveniencePlugin::WndProc(HWND hWnd, UINT Msg, 
@@ -686,7 +624,7 @@ LRESULT ConveniencePlugin::WndProc(HWND hWnd, UINT Msg,
       pObject->TriggerTabClose();
       break;
     case WM_CLOSE_CURRENT_TAB:
-      Sleep(100);
+      Sleep(50);
       pObject->TriggerCloseCurrentTab();
       break;
     case WM_KEYDOWN:
@@ -724,4 +662,24 @@ LRESULT ConveniencePlugin::WndProc(HWND hWnd, UINT Msg,
       return CallWindowProc(old_proc_, hWnd, Msg, wParam, lParam);
   }
   return TRUE;
+}
+
+void ConveniencePlugin::WriteToClient(Cmd_Msg_Item& item) {
+  char logs[256];
+  sprintf(logs, "WriteToClient, cmd=%d", item.cmd);
+  DWORD writelen;
+  if (WriteFile(server_pipe_handle_, &item, sizeof(item), &writelen, NULL))
+    g_Log.WriteLog("Send", logs);
+  else
+    g_Log.WriteLog("Send Error", logs);
+}
+
+void WriteToServer(Cmd_Msg_Item& item) {
+  char logs[256];
+  sprintf(logs, "WriteToServer, cmd=%d", item.cmd);
+  DWORD writelen;
+  if (WriteFile(client_pipe_handle, &item, sizeof(item), &writelen, NULL))
+    g_Log.WriteLog("Send", logs);
+  else
+    g_Log.WriteLog("Send Error", logs);
 }

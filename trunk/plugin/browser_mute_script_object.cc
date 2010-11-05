@@ -33,8 +33,6 @@ void BrowserMuteScriptObject::Deallocate() {
   char logs[256];
   sprintf_s(logs, "BrowserMuteScriptObject this=%ld", this);
   g_Log.WriteLog("Deallocate", logs);
-  if (api_hook_module_)
-    FreeLibrary(api_hook_module_);
   delete this;
 }
 
@@ -65,15 +63,15 @@ bool BrowserMuteScriptObject::MuteBrowser(const NPVariant *args,
     MODULEENTRY32 mod = { sizeof(MODULEENTRY32) };
     BOOL flag = FALSE;
     if (Module32First(hmodule, &mod)) {
-      char logs[256];
-      sprintf(logs, "%S", mod.szModule);
-      g_Log.WriteLog("module", logs);
+      //char logs[256];
+      //sprintf(logs, "%S", mod.szModule);
+      //g_Log.WriteLog("module", logs);
       if (_wcsicmp(mod.szModule, L"apihook.dll") == 0) {
         flag = TRUE;          
       }
       while(Module32Next(hmodule, &mod)) {
-        sprintf(logs, "%S", mod.szModule);
-        g_Log.WriteLog("module", logs);
+        //sprintf(logs, "%S", mod.szModule);
+        //g_Log.WriteLog("module", logs);
         if (_wcsicmp(mod.szModule, L"apihook.dll") == 0) {
           flag = TRUE;
           api_hook_module_ = mod.hModule;
