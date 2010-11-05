@@ -241,9 +241,6 @@
         chrome.windows.create({width: width, height: height,
           url: url, type: 'popup'}, function(window) {
           plugin.setWallpaper();
-          var views;
-          views = chrome.extension.getViews({type: 'tab'});
-          console.log(views);
         });
       }
       image.src = imageSrc;
