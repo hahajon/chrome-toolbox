@@ -212,10 +212,18 @@ var floatingBar = {
         curElementData.height < floatingBar.minHeight) {
       curElementData.minSizeChecked = false;
     }
-    while(node && node != document.body) {
-      curElementData.top += node.offsetTop;
-      curElementData.left += node.offsetLeft;
-      node = node.offsetParent;
+//    while(node && node != document.body) {
+//      curElementData.top += node.offsetTop;
+//      curElementData.left += node.offsetLeft;
+//      node = node.offsetParent;
+//    }
+    var range = document.createRange();
+    range.setStartBefore(curElement);
+    range.setEndAfter(curElement);
+	var clientRects = range.getClientRects();
+    if (clientRects && clientRects.length == 1) {
+      curElementData.top = clientRects[0].top + document.body.scrollTop;
+      curElementData.left = clientRects[0].left + document.body.scrollLeft;
     }
     return curElementData;
   },

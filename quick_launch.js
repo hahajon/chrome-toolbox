@@ -51,7 +51,8 @@
         if (results.rows.length > 0) {
           var tr = document.createElement('TR');
           var td1 = document.createElement('TD');
-          td1.innerText = results.rows.item(0).shortcut;
+          td1.innerText =
+              key_util.keyCodeToShowName(results.rows.item(0).shortcut);
           tr.appendChild(td1);
           var td2 = document.createElement('TD');
           var input = document.createElement('DIV');

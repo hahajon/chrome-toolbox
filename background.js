@@ -166,7 +166,8 @@
   function init() {
     localStorage['imageBar'] = localStorage['imageBar'] || 'true';
     localStorage['openInNewTab'] = localStorage['openInNewTab'] || 'false';
-
+    localStorage['isFirstInstallThisVer'] =
+        localStorage['isFirstInstallThisVer'] || 'true';
     if (isWindowsPlatform()) {
       localStorage['closeLastTab'] = localStorage['closeLastTab'] || 'true';
       localStorage['videoBar'] = localStorage['videoBar'] || 'true';
@@ -240,6 +241,9 @@
         chrome.windows.create({width: width, height: height,
           url: url, type: 'popup'}, function(window) {
           plugin.setWallpaper();
+          var views;
+          views = chrome.extension.getViews({type: 'tab'});
+          console.log(views);
         });
       }
       image.src = imageSrc;
@@ -367,5 +371,5 @@
     shortcut.updateShortcut(null, 48);
     chrome.tabs.create({url: 'options.html#bossKey', selected: true});
   }
-  
+
   init();
