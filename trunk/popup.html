@@ -159,13 +159,13 @@
     i18nReplace('tSaveForm', 'save_form');
     i18nReplace('tDeleteForm', 'delete_form');
     i18nReplace('optionText', 'option');
-    setPopupMenuStatus();
 
     $('optionPage').onclick = function() {
       var url = chrome.extension.getURL('options.html');
       chrome.tabs.create({url: url });
     };
     if (isWindowsPlatform()) {
+      setPopupMenuStatus();
       setMuteMenu();
       createQuicklyVisitItem();
     } else {
