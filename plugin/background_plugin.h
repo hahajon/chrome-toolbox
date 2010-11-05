@@ -15,9 +15,11 @@ public:
   NPError UnInit(NPSavedData** save);
   NPError GetValue(NPPVariable variable, void *value);
 
+  //create set background plugin interface.
   static PluginBase* CreateObject() { return new BackgroundPlugin; }
 
 private:
+  //script object interface.
   ScriptObjectBase* script_object_;
 
 };

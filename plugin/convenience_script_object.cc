@@ -497,7 +497,6 @@ bool ConvenienceScriptObject::SetDBClickCloseTab(const NPVariant *args,
   if (argCount != 1 || !NPVARIANT_IS_BOOLEAN(args[0]))
     return true;
   
-  g_Log.WriteLog("Invoke", "SetDBClickCloseTab");
   g_DBClickCloseTab = NPVARIANT_TO_BOOLEAN(args[0]);
   ConveniencePlugin* plugin = (ConveniencePlugin*)plugin_;
   plugin->UpdateDBClick_CloseTab(g_DBClickCloseTab);

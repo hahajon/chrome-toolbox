@@ -22,7 +22,6 @@ CRITICAL_SECTION g_CS;
   continue;\
 }
 
-
 DWORD WINAPI Muter_Thread(void* param) {
   CoInitialize(NULL);
 
@@ -87,7 +86,6 @@ BOOL WINAPI DllMain(HMODULE hModule, DWORD reason, LPVOID lpReserved) {
 
   switch(reason) {
     case DLL_PROCESS_ATTACH:
-      InitializeCriticalSection(&g_CS);
       //g_Log.OpenLog("APIHOOK");
       versionInfo.dwOSVersionInfoSize = sizeof (OSVERSIONINFO);
       GetVersionEx(&versionInfo);
@@ -100,7 +98,6 @@ BOOL WINAPI DllMain(HMODULE hModule, DWORD reason, LPVOID lpReserved) {
     case DLL_THREAD_DETACH:
       break;
     case DLL_PROCESS_DETACH:
-      DeleteCriticalSection(&g_CS);
       g_exist = TRUE;
       g_Log.WriteLog("Msg", "DLL_PROCESS_DETACH");
       break;

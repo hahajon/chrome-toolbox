@@ -5,6 +5,7 @@
 
 HMODULE g_hMod;
 Log g_Log;
+extern HANDLE client_thread_handle;
 
 extern NPNetscapeFuncs* g_NpnFuncs;
 
@@ -20,6 +21,8 @@ BOOL OSCALL DllMain(HMODULE hModule, DWORD reason, LPVOID lpReserved) {
     case DLL_THREAD_DETACH:
       break;
     case DLL_PROCESS_DETACH:
+      if (client_thread_handle != INVALID_HANDLE_VALUE)
+        TerminateThread(client_thread_handle, 0);
       g_Log.WriteLog("Msg","DLL_PROCESS_DETACH");
       break;
   }
