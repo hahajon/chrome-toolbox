@@ -27,11 +27,9 @@ Shortcut.prototype.selectAllToNP = function() {
   db.executeSqlCommand(sql, null, function(tx, results) {
     var shortcutList = [];
     for (var i = 0; i < results.rows.length; i++) {
-
       var record = {id: '', shortcut: '', relationId: '', operation: '', type: '', extensionId: ''};
       record.id = results.rows.item(i).id;
-      record.shortcut = key_util.getVirtualKey(results.rows.item(i).shortcut);
-      record.shortcutName = results.rows.item(i).shortcut;
+      record.shortcut = results.rows.item(i).shortcut;
       record.relationId = results.rows.item(i).relationId;
       record.operation = results.rows.item(i).operation;
       record.type = eval(results.rows.item(i).type);
@@ -79,13 +77,25 @@ Shortcut.prototype.insertRecord = function(table, row) {
     this.selectById(shortcutObj.id, function(tx, results) {
       if (results.rows.length == 0) {
         self.insert(shortcutObj);
+      } else if (eval(localStorage['isFirstInstallThisVer']) &&
+          results.rows.length == 1) {
+        var id = results.rows.item(0).id;
+        var shortcut = results.rows.item(0).shortcut;
+        shortcut = key_util.getVirtualKey(shortcut);
+        self.updateShortcut(shortcut, id);
       }
       row++;
       self.insertRecord(table, row);
     });
   } else {
     self.selectAllToNP();
+    localStorage['isFirstInstallThisVer'] = 'false';
   }
+}
+
+Shortcut.prototype.updateShortcutToVirtualKey = function(id, shortcut) {
+  var spl =
+  this.executeSqlCommand()
 }
 
 Shortcut.prototype.showTable = function(categorySelect, browserSelect, isCompare) {
@@ -204,7 +214,8 @@ Shortcut.prototype.canEditable = function(element, id) {
     if (results.rows.length > 0) {
       element.className = 'font_black';
       var span = document.createElement('SPAN');
-      span.id = span.innerText = results.rows.item(0).shortcut;
+      var virtualKey = results.rows.item(0).shortcut;
+      span.id = span.innerText = key_util.keyCodeToShowName(virtualKey);
       var a = document.createElement('A');
       a.innerText = chrome.i18n.getMessage('shortcut_redefine');
       a.href = 'javascript:void(0)';
@@ -232,7 +243,7 @@ Shortcut.prototype.canEditable = function(element, id) {
               } else {
                 self.selectAllExceptId(id, function(tx, results) {
                   for (var i = 0; i < results.rows.length; i++) {
-                    if (inputBox.value == results.rows.item(i).shortcut) {
+                    if (inputBox.name == results.rows.item(i).shortcut) {
                       inputText = chrome.i18n.getMessage('tip_failed3');
                       showSavingFailedTip('tip_failed3');
                       inputBox.value = inputText;
@@ -241,7 +252,7 @@ Shortcut.prototype.canEditable = function(element, id) {
                   }
                   if (inputBox.value != inputText) {
                     span.innerText = inputBox.value;
-                    self.updateShortcut(inputBox.value, id);
+                    self.updateShortcut(inputBox.name, id);
                     showSavingSucceedTip();
                   }
                   document.body.onkeydown = onKeyDown;
@@ -316,5 +327,6 @@ function setShortcutsToInputBox(inputBox, virtualKey) {
       keys[i] = key_util.key_code_map[keys[i]].name;
     } 
   }
+  inputBox.name = virtualKey;
   inputBox.value = keys.join('+');
 }

@@ -82,7 +82,6 @@
 <script type="text/javascript" src="convenience_util.js"></script>
 <script type="text/javascript" src="database_operator.js"></script>
 <script type="text/javascript" src="fill_form.js"></script>
-<script type="text/javascript" src="shortcut.js"></script>
 <script type="text/javascript" src="key_util.js"></script>
 
 </head>
@@ -141,7 +140,7 @@
         'images/mute_19.png' : 'images/speaker_19.png';
     i18nReplace('muteName', name);
     muteName.style.background = 'url(' + imageUrl + ') no-repeat 1px 2px';
-    muteShortcut.innerText = item.shortcutName;
+    muteShortcut.innerText = key_util.keyCodeToShowName(item.shortcut);
     muteMenu.onclick = function() {
       bg.browserMute();
       name = eval(localStorage['browserMute'])?
@@ -196,7 +195,7 @@
       (function(element, id) {
         var item = key_util.getCustomShortcutItemById(
             bg.custom_shortcut_list, id);
-        element.innerText = item.shortcutName;
+        element.innerText = key_util.keyCodeToShowName(item.shortcut);
       })(element, id);
     }
 
@@ -248,19 +247,27 @@
       var id = item.id;
       var name = chrome.i18n.getMessage(item.function_name);
       var shortcut = item.chrome_key;
+      var virtualKey = '';
+      if (item.chrome_virtual_key) {
+        virtualKey = item.chrome_virtual_key;
+      }
       if (key_util.custom_shortcut_id_list.indexOf(item.id) > -1) {
         item = key_util.getCustomShortcutItemById(bg.custom_shortcut_list, id);
-        shortcut = item.shortcutName;
+        shortcut = key_util.keyCodeToShowName(item.shortcut);
+        virtualKey = item.shortcut;
       }
       shortcut = shortcut.indexOf(',') < 0 ?
-           shortcut : shortcut.substring(0, shortcut.indexOf(','))
+           shortcut : shortcut.substring(0, shortcut.indexOf(','));
+      virtualKey = virtualKey.indexOf(',') < 0 ?
+           virtualKey : virtualKey.substring(0, virtualKey.indexOf(','));
       var li = document.createElement('li');
       li.value = id;
       li.innerHTML = '<div class="left">' + name +
           '</div><div class="right">' + shortcut + '</div>';
-      (function(element, shortcut) {
-        dragAndDrop.makeElementSortable(element, shortcut);
-      })(li, shortcut);
+      (function(element, virtualKey) {
+        dragAndDrop.makeElementSortable(element, virtualKey);
+      })(li, virtualKey);
+      console.log('vk:' + virtualKey);
       ul.appendChild(li);
     }
     $('quicklyMenu').appendChild(ul);
