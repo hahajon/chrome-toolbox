@@ -101,15 +101,6 @@
     </li>
   </ul>
 </div>
-<div class="separator" name="isWindowsOnly"></div>
-<div class="extensionFun"  name="isWindowsOnly">
- <ul>
-   <li id="btnMute">
-     <div class="left" id="muteName"></div>
-     <div class="right" id="muteShortcut"></div>
-   </li>
- </ul>
-</div>
 <div class="separator"  name="isWindowsOnly"></div>
 <div id="quicklyMenu"  name="isWindowsOnly">
 
@@ -126,34 +117,6 @@
   var bg = chrome.extension.getBackgroundPage();
   var fillForm = new FillForm();
 
-  function setMuteMenu() {
-    var muteMenuId = 60;
-    var item = key_util.getCustomShortcutItemById(
-            bg.custom_shortcut_list, muteMenuId);
-    var muteMenu = $('btnMute');
-    var muteName = $('muteName');
-    var muteShortcut = $('muteShortcut');
-
-    var name = eval(localStorage['browserMute'])?
-        'unmute_all_tabs' : 'mute_all_tabs';
-    var imageUrl = eval(localStorage['browserMute'])?
-        'images/mute_19.png' : 'images/speaker_19.png';
-    i18nReplace('muteName', name);
-    muteName.style.background = 'url(' + imageUrl + ') no-repeat 1px 2px';
-    muteShortcut.innerText = key_util.keyCodeToShowName(item.shortcut);
-    muteMenu.onclick = function() {
-      bg.browserMute();
-      name = eval(localStorage['browserMute'])?
-        'unmute_all_tabs' : 'mute_all_tabs';
-      imageUrl = eval(localStorage['browserMute'])?
-        'images/mute_19.png' : 'images/speaker_19.png';
-      i18nReplace('muteName', name);
-      muteName.style.background = 'url(' + imageUrl + ') no-repeat 1px 2px';
-    }
-
-
-  }
-
   function init() {
     i18nReplace('tFillForm', 'fill_form');
     i18nReplace('tSaveForm', 'save_form');
@@ -166,7 +129,6 @@
     };
     if (isWindowsPlatform()) {
       setPopupMenuStatus();
-      setMuteMenu();
       createQuicklyVisitItem();
     } else {
       setWindowOnlyElement();
