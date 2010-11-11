@@ -45,8 +45,8 @@ public:
   virtual bool Construct(const NPVariant *args, uint32_t argCount,
                          NPVariant *result) = 0;
 
-  void AddProperty(Property_Item& item);
-  void AddFunction(Function_Item& item);
+  void AddProperty(const Property_Item& item);
+  void AddFunction(const Function_Item& item);
   
   void SetPlugin(PluginBase* p);
 

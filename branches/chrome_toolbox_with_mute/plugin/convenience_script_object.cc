@@ -11,6 +11,7 @@ bool g_DBClickCloseTab = false;
 
 ConvenienceScriptObject::ConvenienceScriptObject(void) {
   shortcuts_list_ = NULL;
+  shortcuts_object_ = NULL;
   is_listened_ = false;
 }
 
@@ -78,19 +79,18 @@ bool ConvenienceScriptObject::UpdateShortCutList(const NPVariant *args,
                                                  uint32_t argCount,
                                                  NPVariant *result) {
   NPObject* window;
-  static NPObject* shortcut_list = NULL;
   NPN_GetValue(plugin_->get_npp(), NPNVWindowNPObject, &window);
 
   if (argCount != 1 || !NPVARIANT_IS_OBJECT(args[0])) {
     NPN_SetException(this, "parameter is invalid");
     return false;
   }
-  if (shortcut_list != NULL) 
-    NPN_ReleaseObject(shortcut_list);
+  if (shortcuts_object_ != NULL) 
+    NPN_ReleaseObject(shortcuts_object_);
 
-  shortcut_list = NPVARIANT_TO_OBJECT(args[0]);
-  NPN_RetainObject(shortcut_list);
-  NPVariant r;
+  shortcuts_object_ = NPVARIANT_TO_OBJECT(args[0]);
+  NPN_RetainObject(shortcuts_object_);
+  NPVariant length;
 
   NPIdentifier id;
   id = NPN_GetStringIdentifier("length");
@@ -99,8 +99,8 @@ bool ConvenienceScriptObject::UpdateShortCutList(const NPVariant *args,
     return false;
   }
 
-  if (NPN_GetProperty(plugin_->get_npp(), shortcut_list, id, &r)) {
-    int len = NPVARIANT_TO_INT32(r);
+  if (NPN_GetProperty(plugin_->get_npp(), shortcuts_object_, id, &length)) {
+    int len = NPVARIANT_TO_INT32(length);
     NPVariant array_item;
     NPObject* array_object;
     NPVariant property_value;
@@ -114,8 +114,7 @@ bool ConvenienceScriptObject::UpdateShortCutList(const NPVariant *args,
       key_map_new = &map_two_;
       key_map_old = &map_one_;
     }
-
-    if (shortcuts_list_!=NULL)
+    if (shortcuts_list_ != NULL)
       delete[] shortcuts_list_;
 
     shortcuts_list_ = new ShortCut_Item[len];
@@ -124,14 +123,15 @@ bool ConvenienceScriptObject::UpdateShortCutList(const NPVariant *args,
       ShortCut_Item item = { 0 };
       item.index = i;
       id = NPN_GetIntIdentifier(i);
-      NPN_GetProperty(plugin_->get_npp(), shortcut_list, id, &array_item);
+      NPN_GetProperty(plugin_->get_npp(), shortcuts_object_, id, &array_item);
       array_object = NPVARIANT_TO_OBJECT(array_item);
       id = NPN_GetStringIdentifier("shortcut");
       if (id) {
         NPN_GetProperty(plugin_->get_npp(), array_object,
                         id, &property_value);
-        strcpy(item.shortcuts_key,
-               NPVARIANT_TO_STRING(property_value).UTF8Characters);
+        if (NPVARIANT_IS_STRING(property_value))
+          strcpy(item.shortcuts_key,
+                 NPVARIANT_TO_STRING(property_value).UTF8Characters);
       }
       id = NPN_GetStringIdentifier("operation");
       if (id) {
@@ -169,7 +169,7 @@ bool ConvenienceScriptObject::UpdateShortCutList(const NPVariant *args,
       if (iter->second.ishotkey) {
         ATOM atom = GlobalAddAtomA(iter->second.shortcuts_key);
         UINT vk = 0, modify = 0;
-        GetShortCutsKey(iter->second.shortcuts_key, modify, vk);
+        GetShortCutsKey(iter->second.shortcuts_key, &modify, &vk);
         BOOL register_ret = RegisterHotKey(plugin_->get_hwnd(), 
                                            atom, modify, vk);
         if (!register_ret && !errorflag) {
@@ -191,16 +191,16 @@ bool ConvenienceScriptObject::UpdateShortCutList(const NPVariant *args,
   return true;
 }
 
-void ConvenienceScriptObject::GetShortCutsKey(char* shortcuts, UINT& modify,
-                                              UINT& vk) {
+void ConvenienceScriptObject::GetShortCutsKey(char* shortcuts, UINT* modify,
+                                              UINT* vk) {
   char* pStart = shortcuts;
   char* pEnd = pStart;
   char temp_value[10];
   int temp_key;
-  modify = 0;
+  *modify = 0;
   pEnd = strstr(pStart, "+");
   if (!pEnd) {
-    vk = atoi(shortcuts);
+    *vk = atoi(shortcuts);
     return;
   }
 
@@ -211,20 +211,20 @@ void ConvenienceScriptObject::GetShortCutsKey(char* shortcuts, UINT& modify,
     temp_key = atoi(temp_value);
     switch(temp_key) {
       case VK_CONTROL:
-        modify |= MOD_CONTROL;
+        *modify |= MOD_CONTROL;
         break;
       case VK_SHIFT:
-        modify |= MOD_SHIFT;
+        *modify |= MOD_SHIFT;
         break;
       case VK_MENU:
-        modify |= MOD_ALT;
+        *modify |= MOD_ALT;
         break;
       case VK_LWIN:
       case VK_RWIN:
-        modify |= MOD_WIN;
+        *modify |= MOD_WIN;
         break;
       default:
-        vk = temp_key;
+        *vk = temp_key;
         break;
     }
   }
@@ -233,20 +233,20 @@ void ConvenienceScriptObject::GetShortCutsKey(char* shortcuts, UINT& modify,
   temp_key = atoi(temp_value);
   switch(temp_key) {
       case VK_CONTROL:
-        modify |= MOD_CONTROL;
+        *modify |= MOD_CONTROL;
         break;
       case VK_SHIFT:
-        modify |= MOD_SHIFT;
+        *modify |= MOD_SHIFT;
         break;
       case VK_MENU:
-        modify |= MOD_ALT;
+        *modify |= MOD_ALT;
         break;
       case VK_LWIN:
       case VK_RWIN:
-        modify |= MOD_WIN;
+        *modify |= MOD_WIN;
         break;
       default:
-        vk = temp_key;
+        *vk = temp_key;
         break;
   }
 }
@@ -257,6 +257,7 @@ bool ConvenienceScriptObject::GetNPMessage(int index, TCHAR* msg, int msglen) {
   NPIdentifier id;
   id = NPN_GetStringIdentifier("getNPMessage");
   NPVariant result;
+  VOID_TO_NPVARIANT(result);
   if (id) {
     NPVariant param;
     INT32_TO_NPVARIANT(index, param);
@@ -278,6 +279,7 @@ void ConvenienceScriptObject::RedefineBossKey() {
   NPIdentifier id;
   id = NPN_GetStringIdentifier("redefineBossKey");
   NPVariant result;
+  VOID_TO_NPVARIANT(result);
   if (id) {
     if (NPN_Invoke(plugin_->get_npp(), window, id, NULL, 0, &result))
       NPN_ReleaseVariantValue(&result);
@@ -299,6 +301,7 @@ void ConvenienceScriptObject::TriggerEvent(const char* shortcuts) {
     NPIdentifier id;
     id = NPN_GetStringIdentifier("executeShortcut");
     NPVariant result;
+    VOID_TO_NPVARIANT(result);
     if (id) {
       NPVariant param;
       OBJECT_TO_NPVARIANT((NPObject*)iter->second.object, param);
@@ -318,6 +321,7 @@ void ConvenienceScriptObject::TriggerEvent(int index) {
   NPIdentifier id;
   id = NPN_GetStringIdentifier("executeShortcut");
   NPVariant result;
+  VOID_TO_NPVARIANT(result);
   if (id) {
     NPVariant param;
     OBJECT_TO_NPVARIANT((NPObject*)shortcuts_list_[index].object, param);
@@ -334,6 +338,7 @@ void ConvenienceScriptObject::TriggerChromeClose() {
   NPIdentifier id;
   id = NPN_GetStringIdentifier("chromeBeforeClose");
   NPVariant result;
+  VOID_TO_NPVARIANT(result);
   if (id)
     NPN_Invoke(plugin_->get_npp(), window, id, NULL, 0, &result);
   NPN_ReleaseVariantValue(&result);
@@ -347,6 +352,7 @@ void ConvenienceScriptObject::TriggerTabClose() {
   NPIdentifier id;
   id = NPN_GetStringIdentifier("beforeLastTabClose");
   NPVariant result;
+  VOID_TO_NPVARIANT(result);
   if (id)
     NPN_Invoke(plugin_->get_npp(), window, id, NULL, 0, &result);
   NPN_ReleaseVariantValue(&result);
@@ -360,6 +366,7 @@ void ConvenienceScriptObject::TriggerCloseCurrentTab() {
   NPIdentifier id;
   id = NPN_GetStringIdentifier("closeCurrentTab");
   NPVariant result;
+  VOID_TO_NPVARIANT(result);
   if (id)
     NPN_Invoke(plugin_->get_npp(), window, id, NULL, 0, &result);
   NPN_ReleaseVariantValue(&result);
@@ -473,7 +480,7 @@ bool ConvenienceScriptObject::TriggerChromeShortcuts(const NPVariant *args,
   g_Log.WriteLog("Shortcuts", shortcuts);
 
   UINT modify, vk, keycount = 0;
-  GetShortCutsKey(shortcuts, modify, vk);
+  GetShortCutsKey(shortcuts, &modify, &vk);
   INPUT inputs[4] = { 0 };
   inputs[0].type = INPUT_KEYBOARD;
   inputs[0].ki.wVk = VK_ESCAPE;
@@ -558,6 +565,7 @@ void ConvenienceScriptObject::OnKeyDown(bool contrl, bool alt, bool shift,
     NPIdentifier id;
     id = NPN_GetStringIdentifier("setShortcutsToInputBox");
     NPVariant result;
+    VOID_TO_NPVARIANT(result);
 
     string keys = "";
     if (contrl)

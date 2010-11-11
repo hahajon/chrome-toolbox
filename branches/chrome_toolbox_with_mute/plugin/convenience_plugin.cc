@@ -5,6 +5,7 @@
 #include "log.h"
 #include <vector>
 #include "resource.h"
+#include <TlHelp32.h>
 
 using namespace std;
 
@@ -25,7 +26,7 @@ HANDLE client_thread_handle = INVALID_HANDLE_VALUE;
 DWORD WINAPI Client_Thread(void* param);
 LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam);
 LRESULT CALLBACK GetMsgProc(int code, WPARAM wParam, LPARAM lParam);
-void WriteToServer(Cmd_Msg_Item& item);
+void WriteToServer(const Cmd_Msg_Item& item);
 
 const TCHAR* kFileMappingName = L"Convenience_File";
 const TCHAR* kChromeClassName = L"Chrome_WidgetWin_0";
@@ -149,7 +150,7 @@ DWORD WINAPI Client_Thread(void* param) {
       }
       if (outlen == readlen) {
         memcpy(&cmd, buffer, sizeof(cmd));
-        sprintf(szLog, "recv from server,cmd=%ld",cmd.cmd);
+        sprintf(szLog, "recv from server, cmd=%ld",cmd.cmd);
         g_Log.WriteLog("ReadFile", szLog);
         switch(cmd.cmd) {
         case Cmd_Update_Shortcuts:
@@ -244,7 +245,7 @@ DWORD ConveniencePlugin::Server_Thread(void* param) {
 
       if (outlen == readlen) {
         memcpy(&cmd, buffer, sizeof(cmd));
-        sprintf(szLog, "recv from client,cmd=%ld", cmd.cmd);
+        sprintf(szLog, "recv from client, cmd=%ld", cmd.cmd);
         g_Log.WriteLog("ReadFile", szLog);
         switch(cmd.cmd) {
         case Cmd_Request_Update:
@@ -410,8 +411,8 @@ LRESULT CALLBACK GetMsgProc(int code, WPARAM wParam, LPARAM lParam){
     }
   }
   
-  if (msg->message == WM_LBUTTONDBLCLK && wParam == PM_REMOVE 
-      && g_DBClickCloseTab) {
+  if ((msg->message == WM_LBUTTONDBLCLK || msg->message == WM_MBUTTONDOWN) 
+      && wParam == PM_REMOVE && g_DBClickCloseTab) {
     POINT pt;
     pt.x = GET_X_LPARAM(msg->lParam);
     pt.y = GET_Y_LPARAM(msg->lParam);
@@ -466,27 +467,45 @@ ConveniencePlugin::~ConveniencePlugin(void) {
 NPError ConveniencePlugin::Init(NPP instance, uint16_t mode, int16_t argc,
                                 char *argn[], char *argv[],
                                 NPSavedData *saved) {
-   scriptobject_ = NULL;
-   instance->pdata = this;
-   WritePluginProcessId();
-   server_thread_handle_ = CreateThread(NULL, 0, Server_Thread, this, 0, NULL);
-   HWND chrome_hwnd = FindWindowEx(NULL, NULL, kChromeClassName, NULL);
-   if (!chrome_hwnd) {
-     MessageBox(NULL, L"No find chrome browser window", L"Error", MB_OK);
-     return NPERR_GENERIC_ERROR;
-   } else {
-     g_Log.WriteLog("Msg", "Plugin Init");
-     g_ChromeMainThread = GetWindowThreadProcessId(chrome_hwnd, NULL);
-     g_KeyboardHook = SetWindowsHookEx(WH_KEYBOARD, KeyboardProc, g_hMod, 
-                                       g_ChromeMainThread);
-     g_GetMsgHook = SetWindowsHookEx(WH_GETMESSAGE, GetMsgProc, g_hMod, 
-                                     g_ChromeMainThread);
-     if (!g_KeyboardHook || !g_GetMsgHook)
-       return NPERR_GENERIC_ERROR;
-     else
-       g_Log.WriteLog("Msg", "Plugin Init Success");
-   }
-   return PluginBase::Init(instance, mode, argc, argn, argv, saved);
+  scriptobject_ = NULL;
+  instance->pdata = this;
+  g_Log.WriteLog("Msg", "ConveniencePlugin Init");
+  WritePluginProcessId();
+  server_thread_handle_ = CreateThread(NULL, 0, Server_Thread, this, 0, NULL);
+  HANDLE hprocess = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+  PROCESSENTRY32 process = { sizeof(PROCESSENTRY32) };
+  DWORD parent_processid = 0;
+  BOOL ret = Process32First(hprocess, &process);
+  while (ret) {
+    if (_wcsicmp(process.szExeFile, L"chrome.exe") == 0 && 
+        process.th32ProcessID == GetCurrentProcessId()) {
+      parent_processid = process.th32ParentProcessID;
+      break;
+    }
+    ret = Process32Next(hprocess, &process);
+  }
+  if (hprocess != INVALID_HANDLE_VALUE)
+    CloseHandle(hprocess);
+  HWND chrome_hwnd = FindWindowEx(NULL, NULL, kChromeClassName, NULL);
+  while (chrome_hwnd) {
+    DWORD process_id;
+    g_ChromeMainThread = GetWindowThreadProcessId(chrome_hwnd, &process_id);
+    if (process_id == parent_processid) {
+      g_KeyboardHook = SetWindowsHookEx(WH_KEYBOARD, KeyboardProc, g_hMod, 
+                                        g_ChromeMainThread);
+      g_GetMsgHook = SetWindowsHookEx(WH_GETMESSAGE, GetMsgProc, g_hMod, 
+                                      g_ChromeMainThread);
+      if (!g_KeyboardHook || !g_GetMsgHook)
+        return NPERR_GENERIC_ERROR;
+      else {
+        g_Log.WriteLog("Msg", "ConveniencePlugin Init Success");
+        break;
+      }
+    } else {
+      chrome_hwnd = FindWindowEx(NULL, chrome_hwnd, kChromeClassName, NULL);
+    }
+  }
+  return PluginBase::Init(instance, mode, argc, argn, argv, saved);
 }
 
 NPError ConveniencePlugin::UnInit(NPSavedData **save) {
@@ -500,6 +519,14 @@ NPError ConveniencePlugin::UnInit(NPSavedData **save) {
   UnhookWindowsHookEx(g_KeyboardHook);
   UnhookWindowsHookEx(g_GetMsgHook);
 
+  if (WaitForSingleObject(server_thread_handle_, 10) == WAIT_TIMEOUT) {
+    TerminateThread(server_thread_handle_, 0);
+    if (memory_file_handle_)
+      CloseHandle(memory_file_handle_);
+    if (server_pipe_handle_)
+      CloseHandle(server_pipe_handle_);
+  }
+
   return NPERR_NO_ERROR;
 }
 
@@ -510,6 +537,7 @@ NPError ConveniencePlugin::GetValue(NPPVariable variable, void *value) {
         scriptobject_ = ScriptObjectFactory::CreateObject(npp_,
             ConvenienceScriptObject::Allocate);
         g_Log.WriteLog("GetValue", "GetValue");
+        NPN_RetainObject(scriptobject_);
       }
       if (scriptobject_ != NULL) {
         *(NPObject**)value = scriptobject_;
@@ -664,7 +692,7 @@ LRESULT ConveniencePlugin::WndProc(HWND hWnd, UINT Msg,
   return TRUE;
 }
 
-void ConveniencePlugin::WriteToClient(Cmd_Msg_Item& item) {
+void ConveniencePlugin::WriteToClient(const Cmd_Msg_Item& item) {
   char logs[256];
   sprintf(logs, "WriteToClient, cmd=%d", item.cmd);
   DWORD writelen;
@@ -674,7 +702,7 @@ void ConveniencePlugin::WriteToClient(Cmd_Msg_Item& item) {
     g_Log.WriteLog("Send Error", logs);
 }
 
-void WriteToServer(Cmd_Msg_Item& item) {
+void WriteToServer(const Cmd_Msg_Item& item) {
   char logs[256];
   sprintf(logs, "WriteToServer, cmd=%d", item.cmd);
   DWORD writelen;

@@ -145,15 +145,19 @@ bool BackgroundScriptObject::SetWallPaper(const NPVariant *args,
   hr = CoCreateInstance(CLSID_ActiveDesktop, NULL, CLSCTX_INPROC_SERVER,
       IID_IActiveDesktop, (void**)&active_desktop);
   if (FAILED(hr))
-    return false;
+    return true;
 
   hr = active_desktop->GetWallpaper(ori_wallpaper_, MAX_PATH, AD_GETWP_BMP);
-  if (FAILED(hr))
-    return false;
+  if (FAILED(hr)) {
+    active_desktop->Release();
+    return true;
+  }
   ori_opt_.dwSize = sizeof(ori_opt_);
   hr = active_desktop->GetWallpaperOptions(&ori_opt_, 0);
-  if (FAILED(hr))
-    return false;
+  if (FAILED(hr)) {
+    active_desktop->Release();
+    return true;
+  }
 
   active_desktop->Release();
   BOOLEAN_TO_NPVARIANT(TRUE, *result);
@@ -179,22 +183,28 @@ bool BackgroundScriptObject::ApplyWallPaper(const NPVariant *args,
   char* base64 = strstr((char*)NPVARIANT_TO_STRING(args[0]).UTF8Characters,
                         "base64,");
   if (!base64)
-    return false;
+    return true;
   base64 += 7;
   int base64size = NPVARIANT_TO_STRING(args[0]).UTF8Length - 7;
 
   int byteLength = Base64DecodeGetRequiredLength(base64size);
   HGLOBAL handle = GlobalAlloc(GMEM_MOVEABLE, byteLength);
   if (!handle)
-    return false;
+    return true;
   LPVOID bytes = GlobalLock(handle);
-  if (!bytes)
-    return false;
+  if (!bytes) {
+    GlobalFree(handle);
+    return true;
+  }
   Base64Decode(base64, base64size, (BYTE*)bytes, &byteLength);
   CreateStreamOnHGlobal(handle, FALSE, &stream_);
   image_ = new Image(stream_);
-  if (!image_)
-    return false;
+  if (!image_) {
+    stream_->Release();
+    GlobalUnlock(handle);
+    GlobalFree(handle);
+    return true;
+  }
   stream_->Release();
   GlobalUnlock(handle);
   GlobalFree(handle);
@@ -205,8 +215,10 @@ bool BackgroundScriptObject::ApplyWallPaper(const NPVariant *args,
   wsprintf(file_name, L"%s\\ExtensionWallPaper.bmp", current_path);
   CLSID bmp_clsid;
   GetEncoderClsid(L"image/bmp", &bmp_clsid);
-  if (image_->Save(file_name, &bmp_clsid) != Ok)
-    return false;
+  if (image_->Save(file_name, &bmp_clsid) != Ok) {
+    delete image_;
+    return true;
+  }
 
   delete image_;
 
@@ -215,12 +227,15 @@ bool BackgroundScriptObject::ApplyWallPaper(const NPVariant *args,
 
   hr = CoCreateInstance(CLSID_ActiveDesktop, NULL, CLSCTX_INPROC_SERVER,
                         IID_IActiveDesktop, (void**)&active_desktop);
-  if (FAILED(hr))
+  if (FAILED(hr)) {
     return false;
+  }
 
   hr = active_desktop->SetWallpaper(file_name, 0);
-  if (FAILED(hr))
-    return false;
+  if (FAILED(hr)) {
+    active_desktop->Release();
+    return true;
+  }
 
   WALLPAPEROPT opt;
   opt.dwSize = sizeof(WALLPAPEROPT);
@@ -236,8 +251,10 @@ bool BackgroundScriptObject::ApplyWallPaper(const NPVariant *args,
   }
 
   hr = active_desktop->ApplyChanges(AD_APPLY_ALL);
-  if (FAILED(hr))
-    return false;
+  if (FAILED(hr)) {
+    active_desktop->Release();
+    return true;
+  }
 
   active_desktop->Release();
   BOOLEAN_TO_NPVARIANT(TRUE, *result);
@@ -257,16 +274,22 @@ bool BackgroundScriptObject::RestoreWallPaper(const NPVariant *args,
     return false;
 
   hr = active_desktop->SetWallpaper(ori_wallpaper_, 0);
-  if (FAILED(hr))
-    return false;
+  if (FAILED(hr)) {
+    active_desktop->Release();
+    return true;
+  }
 
   hr = active_desktop->SetWallpaperOptions(&ori_opt_, 0);
-  if (FAILED(hr))
-    return false;
+  if (FAILED(hr)) {
+    active_desktop->Release();
+    return true;
+  }
 
   hr = active_desktop->ApplyChanges(AD_APPLY_ALL);
-  if (FAILED(hr))
-    return false;
+  if (FAILED(hr)) {
+    active_desktop->Release();
+    return true;
+  }
 
   active_desktop->Release();
 

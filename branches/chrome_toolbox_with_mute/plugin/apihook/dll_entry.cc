@@ -5,6 +5,14 @@
 #include "apihook.h"
 #include <Mmdeviceapi.h>
 #include <Audiopolicy.h>
+#include <map>
+#include <MMSystem.h>
+
+#pragma comment(lib, "Winmm.lib")
+
+using namespace std;
+
+typedef map<void*, DWORD> Hwo_Volume_Map;
 
 HMODULE g_hMod;
 Log g_Log;
@@ -21,6 +29,9 @@ CRITICAL_SECTION g_CS;
   Sleep(100);\
   continue;\
 }
+
+HANDLE muter_thread_handle = NULL;
+Hwo_Volume_Map hwo_volume_map;
 
 DWORD WINAPI Muter_Thread(void* param) {
   CoInitialize(NULL);
@@ -80,31 +91,6 @@ DWORD WINAPI Muter_Thread(void* param) {
   return 0;
 }
 
-BOOL WINAPI DllMain(HMODULE hModule, DWORD reason, LPVOID lpReserved) {
-  g_hMod = hModule;
-  OSVERSIONINFO versionInfo = {0};
-
-  switch(reason) {
-    case DLL_PROCESS_ATTACH:
-      //g_Log.OpenLog("APIHOOK");
-      versionInfo.dwOSVersionInfoSize = sizeof (OSVERSIONINFO);
-      GetVersionEx(&versionInfo);
-      if (versionInfo.dwMajorVersion >= 6) 
-        CreateThread(NULL, 0, Muter_Thread, 0, 0, NULL);
-      g_Log.WriteLog("Msg", "DLL_PROCESS_ATTACH");
-      break;
-    case DLL_THREAD_ATTACH:
-      break;
-    case DLL_THREAD_DETACH:
-      break;
-    case DLL_PROCESS_DETACH:
-      g_exist = TRUE;
-      g_Log.WriteLog("Msg", "DLL_PROCESS_DETACH");
-      break;
-  }
-  return TRUE;
-}
-
 typedef int (WINAPI* PfnWaveOutWrite)(HWAVEOUT hwo, LPWAVEHDR pwh, 
                                       UINT cbwh);
 typedef int (WINAPI* PfnMidiStreamOut)(HMIDISTRM hms, LPMIDIHDR pmh, 
@@ -116,17 +102,34 @@ typedef int (WINAPI* PfnDirectSoundCreate8)(LPCGUID pcGuidDevice,
                                             LPDIRECTSOUND8 *ppDS, 
                                             LPUNKNOWN pUnkOuter);
 
-extern ApiHook g_waveOutWrite;
-extern ApiHook g_DirectSoundCreate;
-extern ApiHook g_DirectSoundCreate8;
-extern ApiHook g_midiStreamOut;
+ApiHook* g_DirectSoundCreate;
+ApiHook* g_DirectSoundCreate8;
+ApiHook* g_waveOutWrite;
+ApiHook* g_midiStreamOut;
 
 MMRESULT WINAPI Hook_waveOutWrite(HWAVEOUT hwo, LPWAVEHDR pwh, UINT cbwh) {
   if (g_BrowserMute) {
-    memset(pwh->lpData, 0 , pwh->dwBufferLength);
+    Hwo_Volume_Map::iterator iter;
+    iter = hwo_volume_map.find(hwo);
+    if (iter == hwo_volume_map.end()) {
+      DWORD volume;
+      MMRESULT ret = waveOutGetVolume(hwo, &volume);
+      if (volume > 0) {
+        hwo_volume_map.insert(Hwo_Volume_Map::value_type(hwo, volume));
+        waveOutSetVolume(hwo, 0);
+      }
+    }
+    //memset(pwh->lpData, 0 , pwh->dwBufferLength);
+  } else {
+    Hwo_Volume_Map::iterator iter;
+    iter = hwo_volume_map.find(hwo);
+    if (iter != hwo_volume_map.end()) {
+      waveOutSetVolume(hwo, iter->second);
+      hwo_volume_map.erase(iter);
+    }
   }
 
-  MMRESULT result = ((PfnWaveOutWrite)(PROC)g_waveOutWrite)(hwo, pwh, cbwh);
+  MMRESULT result = ((PfnWaveOutWrite)(PROC)*g_waveOutWrite)(hwo, pwh, cbwh);
   return result;
 }
 
@@ -134,8 +137,9 @@ HRESULT WINAPI Hook_DirectSoundCreate(LPCGUID pcGuidDevice,
                                       LPDIRECTSOUND *ppDS, 
                                       LPUNKNOWN pUnkOuter) {
   g_Log.WriteLog("msg", "Hook_DirectSoundCreate");
-  HRESULT hr = ((PfnDirectSoundCreate)(PROC)g_DirectSoundCreate)
+  HRESULT hr = ((PfnDirectSoundCreate)(PROC)*g_DirectSoundCreate)
       (pcGuidDevice, ppDS, pUnkOuter);
+
   if (SUCCEEDED(hr)) {
     MyDirectSound* p = new MyDirectSound;
     p->direct_sound_ = *ppDS;
@@ -149,8 +153,9 @@ HRESULT WINAPI Hook_DirectSoundCreate8(LPCGUID pcGuidDevice,
                                        LPDIRECTSOUND8 *ppDS, 
                                        LPUNKNOWN pUnkOuter) {
   g_Log.WriteLog("msg", "Hook_DirectSoundCreate8");
-  HRESULT hr = ((PfnDirectSoundCreate8)(PROC)g_DirectSoundCreate8)
+  HRESULT hr = ((PfnDirectSoundCreate8)(PROC)*g_DirectSoundCreate8)
       (pcGuidDevice, ppDS, pUnkOuter);
+
   if (SUCCEEDED(hr)) {
     MyDirectSound8* p = new MyDirectSound8;
     p->direct_sound_ = *ppDS;
@@ -162,22 +167,83 @@ HRESULT WINAPI Hook_DirectSoundCreate8(LPCGUID pcGuidDevice,
 
 MMRESULT WINAPI Hook_midiStreamOut(HMIDISTRM hms, LPMIDIHDR pmh, UINT cbmh) {
   if (g_BrowserMute) {
-    memset(pmh->lpData, 0 , pmh->dwBufferLength);
+    Hwo_Volume_Map::iterator iter;
+    iter = hwo_volume_map.find(hms);
+    if (iter == hwo_volume_map.end()) {
+      DWORD volume;
+      MMRESULT ret = midiOutGetVolume((HMIDIOUT)hms, &volume);
+      if (volume > 0) {
+        hwo_volume_map.insert(Hwo_Volume_Map::value_type(hms, volume));
+        midiOutSetVolume((HMIDIOUT)hms, 0);
+      }
+    }
+    //memset(pmh->lpData, 0 , pmh->dwBufferLength);
+  } else {
+    Hwo_Volume_Map::iterator iter;
+    iter = hwo_volume_map.find(hms);
+    if (iter != hwo_volume_map.end()) {
+      midiOutSetVolume((HMIDIOUT)hms, iter->second);
+      hwo_volume_map.erase(iter);
+    }
   }
 
-  MMRESULT result = ((PfnMidiStreamOut)(PROC)g_midiStreamOut)(hms, pmh, cbmh);
+  MMRESULT result = ((PfnMidiStreamOut)(PROC)*g_midiStreamOut)(hms, pmh, cbmh);
   return result;
 }
 
-ApiHook g_DirectSoundCreate("dsound.dll", "DirectSoundCreate", 
-                            (PROC)Hook_DirectSoundCreate, TRUE);
-ApiHook g_DirectSoundCreate8("dsound.dll", "DirectSoundCreate8", 
-                             (PROC)Hook_DirectSoundCreate8, TRUE);
-ApiHook g_waveOutWrite("winmm.dll", "waveOutWrite", 
-                       (PROC) Hook_waveOutWrite, TRUE);
-ApiHook g_midiStreamOut("winmm.dll", "midiStreamOut", 
-                        (PROC)Hook_midiStreamOut, TRUE);
+void Init() {
+  OSVERSIONINFO versionInfo = {0};
+  versionInfo.dwOSVersionInfoSize = sizeof (OSVERSIONINFO);
+  GetVersionEx(&versionInfo);
+  if (versionInfo.dwMajorVersion >= 6) {
+    muter_thread_handle = CreateThread(NULL, 0, Muter_Thread, 0, 0, NULL);
+  }
+  g_DirectSoundCreate = new ApiHook("dsound.dll", "DirectSoundCreate", 
+                                    (PROC)Hook_DirectSoundCreate, TRUE);
+  g_DirectSoundCreate8 = new ApiHook("dsound.dll", "DirectSoundCreate8", 
+                                     (PROC)Hook_DirectSoundCreate8, TRUE);
+  g_waveOutWrite = new ApiHook("winmm.dll", "waveOutWrite", 
+                               (PROC) Hook_waveOutWrite, TRUE);
+  g_midiStreamOut = new ApiHook("winmm.dll", "midiStreamOut", 
+                                (PROC)Hook_midiStreamOut, TRUE);
+  
+}
 
+void UnInit() {
+  OSVERSIONINFO versionInfo = {0};
+  versionInfo.dwOSVersionInfoSize = sizeof (OSVERSIONINFO);
+  GetVersionEx(&versionInfo);
+  if (versionInfo.dwMajorVersion >= 6 && !muter_thread_handle) {
+    TerminateThread(muter_thread_handle, 0);
+  }
+  delete g_DirectSoundCreate;
+  delete g_DirectSoundCreate8;
+  delete g_waveOutWrite;
+  delete g_midiStreamOut;
+  
+  g_exist = TRUE;
+}
+
+BOOL WINAPI DllMain(HMODULE hModule, DWORD reason, LPVOID lpReserved) {
+  g_hMod = hModule;
+
+  switch(reason) {
+    case DLL_PROCESS_ATTACH:
+      //g_Log.OpenLog("APIHOOK");
+      Init();
+      g_Log.WriteLog("Msg", "DLL_PROCESS_ATTACH");
+      break;
+    case DLL_THREAD_ATTACH:
+      break;
+    case DLL_THREAD_DETACH:
+      break;
+    case DLL_PROCESS_DETACH:
+      UnInit();
+      g_Log.WriteLog("Msg", "DLL_PROCESS_DETACH");
+      break;
+  }
+  return TRUE;
+}
 
 void SetBrowserMute(BOOL flag) {
   g_BrowserMute = flag;

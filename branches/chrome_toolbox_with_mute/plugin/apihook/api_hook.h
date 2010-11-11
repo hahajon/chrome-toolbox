@@ -74,4 +74,4 @@ private:
 
 };
 
-void InjectIntoProcess(LPPROCESS_INFORMATION lpProcessInformation);
+void InjectIntoProcess(HANDLE hprocess);

@@ -36,6 +36,7 @@ NPError VideoAlonePlugin::GetValue(NPPVariable variable, void *value) {
       if (script_object_ == NULL) {
         script_object_ = ScriptObjectFactory::CreateObject(npp_,
             VideoAloneScriptObject::Allocate);
+        NPN_RetainObject(script_object_);
       }
       if (script_object_ != NULL) {
         *(NPObject**)value = script_object_;
