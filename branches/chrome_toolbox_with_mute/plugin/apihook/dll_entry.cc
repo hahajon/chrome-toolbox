@@ -5,14 +5,6 @@
 #include "apihook.h"
 #include <Mmdeviceapi.h>
 #include <Audiopolicy.h>
-#include <map>
-#include <MMSystem.h>
-
-#pragma comment(lib, "Winmm.lib")
-
-using namespace std;
-
-typedef map<void*, DWORD> Hwo_Volume_Map;
 
 HMODULE g_hMod;
 Log g_Log;
@@ -31,7 +23,6 @@ CRITICAL_SECTION g_CS;
 }
 
 HANDLE muter_thread_handle = NULL;
-Hwo_Volume_Map hwo_volume_map;
 
 DWORD WINAPI Muter_Thread(void* param) {
   CoInitialize(NULL);
@@ -109,24 +100,7 @@ ApiHook* g_midiStreamOut;
 
 MMRESULT WINAPI Hook_waveOutWrite(HWAVEOUT hwo, LPWAVEHDR pwh, UINT cbwh) {
   if (g_BrowserMute) {
-    Hwo_Volume_Map::iterator iter;
-    iter = hwo_volume_map.find(hwo);
-    if (iter == hwo_volume_map.end()) {
-      DWORD volume;
-      MMRESULT ret = waveOutGetVolume(hwo, &volume);
-      if (volume > 0) {
-        hwo_volume_map.insert(Hwo_Volume_Map::value_type(hwo, volume));
-        waveOutSetVolume(hwo, 0);
-      }
-    }
-    //memset(pwh->lpData, 0 , pwh->dwBufferLength);
-  } else {
-    Hwo_Volume_Map::iterator iter;
-    iter = hwo_volume_map.find(hwo);
-    if (iter != hwo_volume_map.end()) {
-      waveOutSetVolume(hwo, iter->second);
-      hwo_volume_map.erase(iter);
-    }
+    memset(pwh->lpData, 0 , pwh->dwBufferLength);
   }
 
   MMRESULT result = ((PfnWaveOutWrite)(PROC)*g_waveOutWrite)(hwo, pwh, cbwh);
@@ -167,24 +141,7 @@ HRESULT WINAPI Hook_DirectSoundCreate8(LPCGUID pcGuidDevice,
 
 MMRESULT WINAPI Hook_midiStreamOut(HMIDISTRM hms, LPMIDIHDR pmh, UINT cbmh) {
   if (g_BrowserMute) {
-    Hwo_Volume_Map::iterator iter;
-    iter = hwo_volume_map.find(hms);
-    if (iter == hwo_volume_map.end()) {
-      DWORD volume;
-      MMRESULT ret = midiOutGetVolume((HMIDIOUT)hms, &volume);
-      if (volume > 0) {
-        hwo_volume_map.insert(Hwo_Volume_Map::value_type(hms, volume));
-        midiOutSetVolume((HMIDIOUT)hms, 0);
-      }
-    }
-    //memset(pmh->lpData, 0 , pmh->dwBufferLength);
-  } else {
-    Hwo_Volume_Map::iterator iter;
-    iter = hwo_volume_map.find(hms);
-    if (iter != hwo_volume_map.end()) {
-      midiOutSetVolume((HMIDIOUT)hms, iter->second);
-      hwo_volume_map.erase(iter);
-    }
+    memset(pmh->lpData, 0 , pmh->dwBufferLength);
   }
 
   MMRESULT result = ((PfnMidiStreamOut)(PROC)*g_midiStreamOut)(hms, pmh, cbmh);

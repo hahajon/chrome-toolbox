@@ -5,10 +5,6 @@ extern BOOL g_BrowserMute;
 extern Log g_Log;
 
 class MyDirectSoundBuffer : public IDirectSoundBuffer {
-public:
-  MyDirectSoundBuffer() {
-    volume_ = DSBVOLUME_MIN;
-  }
   // IUnknown methods
   STDMETHOD(QueryInterface)       (THIS_ __in REFIID iid, __deref_out LPVOID* lpout) {
     return directsound_buffer_->QueryInterface(iid, lpout);
@@ -74,22 +70,11 @@ public:
   STDMETHOD(Unlock)               (THIS_ __in_bcount(dwAudioBytes1) LPVOID pvAudioPtr1, DWORD dwAudioBytes1,
     __in_bcount_opt(dwAudioBytes2) LPVOID pvAudioPtr2, DWORD dwAudioBytes2) {
       if (g_BrowserMute) {
-        //if (pvAudioPtr1) {
-        //  memset(pvAudioPtr1, 0, dwAudioBytes1);
-        //}
-        //if (pvAudioPtr2) {
-        //  memset(pvAudioPtr2, 0 ,dwAudioBytes2);
-        //}
-        if (volume_ == DSBVOLUME_MIN) {
-          directsound_buffer_->GetVolume(&volume_);
-          if (volume_ != DSBVOLUME_MIN) {
-            directsound_buffer_->SetVolume(DSBVOLUME_MIN);
-          }
+        if (pvAudioPtr1) {
+          memset(pvAudioPtr1, 0, dwAudioBytes1);
         }
-      } else {
-        if (volume_ != DSBVOLUME_MIN) {
-          directsound_buffer_->SetVolume(volume_);
-          volume_ = DSBVOLUME_MIN;
+        if (pvAudioPtr2) {
+          memset(pvAudioPtr2, 0 ,dwAudioBytes2);
         }
       }
       return directsound_buffer_->Unlock(pvAudioPtr1, dwAudioBytes1, pvAudioPtr2, dwAudioBytes2);
@@ -100,7 +85,6 @@ public:
 
 public:
   IDirectSoundBuffer* directsound_buffer_;
-  LONG volume_;
 };
 
 class MyDirectSound : public IDirectSound {
