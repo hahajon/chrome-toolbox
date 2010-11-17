@@ -376,7 +376,8 @@ LRESULT CALLBACK GetMsgProc(int code, WPARAM wParam, LPARAM lParam){
       && wParam == PM_REMOVE && msg->wParam == MK_LBUTTON && g_IsOnlyOneTab) {
     TCHAR class_name[256];
     GetClassName(msg->hwnd, class_name, 256);
-    if (wcscmp(class_name, kChromeClassName) == 0) { 
+    if (wcscmp(class_name, kChromeClassName) == 0 && 
+        GetParent(msg->hwnd) == NULL) { 
       RECT rt = {0};
       if (IsMaximized(msg->hwnd)) {
         rt.left = kCloseTabButtonLeftOffset_MaxState;
@@ -438,17 +439,17 @@ bottom=%ld,g_IsOnlyOneTab=%d",
 
     TCHAR class_name[256];
     GetClassName(msg->hwnd, class_name, 256);
-    if (wcscmp(class_name, kChromeClassName) == 0) {
+    if (wcscmp(class_name, kChromeClassName) == 0 && 
+        GetParent(msg->hwnd) == NULL) {
       Cmd_Msg_Item item;
+      msg->message = WM_NULL;
       if (g_IsOnlyOneTab) {
-        msg->message = WM_NULL;
         item.cmd = Cmd_TabClose;
         WriteToServer(item);
-        return CallNextHookEx(g_GetMsgHook, code, wParam, lParam);
+      } else {
+        item.cmd = Cmd_DBClick_CloseTab;
+        WriteToServer(item);
       }
-
-      item.cmd = Cmd_DBClick_CloseTab;
-      WriteToServer(item);
     }
   }
   return CallNextHookEx(g_GetMsgHook, code, wParam, lParam);
