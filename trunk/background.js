@@ -103,8 +103,7 @@
 
   function closeCurrentTab() {
     chrome.tabs.getSelected(null, function(tab) {
-      window.setTimeout(function() {chrome.tabs.remove(tab.id);}, 50)
-
+      chrome.tabs.remove(tab.id);
     });
   }
 
