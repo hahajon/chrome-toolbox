@@ -72,8 +72,8 @@
     margin: 3px 2px;
   }
 
-  #muteName {
-    padding-left:25px;
+  #muteShortcut {
+    padding-left: 25px;
   }
 
 
@@ -139,7 +139,7 @@
     var imageUrl = eval(localStorage['browserMute'])?
         'images/mute_19.png' : 'images/speaker_19.png';
     i18nReplace('muteName', name);
-    muteName.style.background = 'url(' + imageUrl + ') no-repeat 1px 2px';
+    muteShortcut.style.background = 'url(' + imageUrl + ') no-repeat 1px 5px';
     muteShortcut.innerText = key_util.keyCodeToShowName(item.shortcut);
     muteMenu.onclick = function() {
       bg.browserMute();
@@ -148,7 +148,7 @@
       imageUrl = eval(localStorage['browserMute'])?
         'images/mute_19.png' : 'images/speaker_19.png';
       i18nReplace('muteName', name);
-      muteName.style.background = 'url(' + imageUrl + ') no-repeat 1px 2px';
+      muteShortcut.style.background = 'url(' + imageUrl + ') no-repeat 1px 5px';
     }
 
 
