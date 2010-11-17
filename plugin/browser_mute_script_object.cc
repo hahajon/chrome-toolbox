@@ -51,7 +51,7 @@ bool BrowserMuteScriptObject::MuteBrowser(const NPVariant *args,
                                           NPVariant *result) {
   if (argCount != 1 || !NPVARIANT_IS_BOOLEAN(args[0]))
     return false;
-
+  
   g_Log.WriteLog("Msg", "SetBrowserMute");
 
   if (!api_hook_module_) {
@@ -63,16 +63,9 @@ bool BrowserMuteScriptObject::MuteBrowser(const NPVariant *args,
     MODULEENTRY32 mod = { sizeof(MODULEENTRY32) };
     BOOL flag = FALSE;
     if (Module32First(hmodule, &mod)) {
-      //char logs[256];
-      //sprintf(logs, "%S", mod.szModule);
-      //g_Log.WriteLog("module", logs);
-      if (_wcsicmp(mod.szModule, L"apihook.dll") == 0) {
-        flag = TRUE;          
-      }
       while(Module32Next(hmodule, &mod)) {
-        //sprintf(logs, "%S", mod.szModule);
-        //g_Log.WriteLog("module", logs);
-        if (_wcsicmp(mod.szModule, L"apihook.dll") == 0) {
+        if (_wcsicmp(mod.szModule, L"mutechrome.dll") == 0 ||
+            _wcsicmp(mod.szModule, L"apihook.dll") == 0) {
           flag = TRUE;
           api_hook_module_ = mod.hModule;
           break;
@@ -83,14 +76,16 @@ bool BrowserMuteScriptObject::MuteBrowser(const NPVariant *args,
       CloseHandle(hmodule);
 
     if (!flag) {
-      TCHAR dllpath[MAX_PATH];
+      TCHAR dllpath[MAX_PATH*2];
       GetModuleFileName(g_hMod, dllpath, MAX_PATH);
       wchar_t* postfix = wcsrchr(dllpath, '\\');
-      *(postfix+1) = 0;
-      wcscat(dllpath, L"apihook.dll");
-      g_Log.WriteLog("Msg", "Before LoadLibrary");
-      api_hook_module_ = LoadLibrary(dllpath);
-      g_Log.WriteLog("Msg", "After LoadLibrary");
+      if (postfix != NULL) {
+        *(postfix+1) = 0;
+        wcscat(dllpath, L"mutechrome.dll");
+        g_Log.WriteLog("Msg", "Before LoadLibrary");
+        api_hook_module_ = LoadLibrary(dllpath);
+        g_Log.WriteLog("Msg", "After LoadLibrary");
+      }
     }
     set_browser_mute_ = (Pfn_SetBrowserMute)GetProcAddress(api_hook_module_, 
                                                             "SetBrowserMute");

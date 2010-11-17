@@ -32,6 +32,7 @@ NPError BackgroundPlugin::GetValue(NPPVariable variable, void *value) {
       if (!script_object_) {
         script_object_ = ScriptObjectFactory::CreateObject(npp_,
             BackgroundScriptObject::Allocate);
+        NPN_RetainObject(script_object_);
         g_Log.WriteLog("GetValue", "GetValue");
       }
       if (script_object_ != NULL) {

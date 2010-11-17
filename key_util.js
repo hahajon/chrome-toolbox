@@ -517,11 +517,15 @@ key_util.key_code_map[222] = { keyCode: 222, name: '\'' };
 
 
 key_util.keyCodeToShowName = function(keyCode) {
-  var keyCodeList = keyCode.split('+');
-  for (var i = 0; i < keyCodeList.length; i++) {
-    keyCodeList[i] = key_util.key_code_map[keyCodeList[i]].name;
+  var keyCodeList = '';
+  if (keyCode) {
+    keyCodeList = keyCode.split('+');
+    for (var i = 0; i < keyCodeList.length; i++) {
+        keyCodeList[i] = key_util.key_code_map[keyCodeList[i]].name;
+    }
+    keyCodeList = keyCodeList.join('+');
   }
-  return keyCodeList.join('+');
+  return keyCodeList;
 }
 
 key_util.getVirtualKey = function(shortcut) {

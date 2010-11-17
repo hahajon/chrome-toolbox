@@ -32,7 +32,7 @@ private:
   static LRESULT WndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
   // Server thread, communicate with client use named pipe.
   static DWORD WINAPI Server_Thread(void* param);
-  void WriteToClient(Cmd_Msg_Item& item);
+  void WriteToClient(const Cmd_Msg_Item& item);
 
 private:
   // Script object interface.

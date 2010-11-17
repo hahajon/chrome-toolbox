@@ -129,7 +129,11 @@ void ApiHook::ReplaceIATEntryInAllMods(PCSTR calleemodulename, PROC pfnorig,
     // NOTE: We don't hook functions in our own module
     if (me.hModule != thismod) {
       // Hook this function in this module
+      if (wcsicmp(me.szModule, L"convenience.dll") == 0)
+        continue;
+      EnterCriticalSection(&g_CS);
       ReplaceIATEntryInOneMod(calleemodulename, pfnorig, pfnhook, me.hModule);
+      LeaveCriticalSection(&g_CS);
     }
   }
 }
@@ -182,9 +186,9 @@ void ApiHook::ReplaceIATEntryInOneMod(PCSTR calleemodulename, PROC pfnorig,
     if (fFound) {
       // The addresses match, change the import section address
       DWORD oldAccess, newAccess;
-      if (VirtualProtect(ppfn, sizeof(pfnhook), PAGE_READWRITE, &oldAccess)) {
+      if (VirtualProtect(ppfn, sizeof(pfnhook), PAGE_EXECUTE_READWRITE, &oldAccess)) {
         if (!WriteProcessMemory(GetCurrentProcess(), ppfn, &pfnhook, 
-          sizeof(pfnhook), NULL)) {
+            sizeof(pfnhook), NULL)) {
           char logs[256];
           sprintf(logs, "WriteProcessMemory Failed,GetLastError=%ld, ppfn=%ld",
               GetLastError(),ppfn);
@@ -247,38 +251,42 @@ void ApiHook::FixupNewlyLoadedModule(HMODULE hmod, DWORD dwFlags) {
 }
 
 HMODULE WINAPI ApiHook::LoadLibraryA(PCSTR pszModulePath) {
-
   HMODULE hmod = ::LoadLibraryA(pszModulePath);
-  FixupNewlyLoadedModule(hmod, 0);
+  if (strstr(pszModulePath, "convenience.dll") != NULL)
+    return hmod;
+  if (hmod != ModuleFromAddress(ReplaceIATEntryInAllMods))
+    FixupNewlyLoadedModule(hmod, 0);
   return(hmod);
 }
 
 HMODULE WINAPI ApiHook::LoadLibraryW(PCWSTR pszModulePath) {
-
   HMODULE hmod = ::LoadLibraryW(pszModulePath);
-  FixupNewlyLoadedModule(hmod, 0);
+  if (wcsstr(pszModulePath, L"convenience.dll") != NULL)
+    return hmod;
+  if (hmod != ModuleFromAddress(ReplaceIATEntryInAllMods))
+    FixupNewlyLoadedModule(hmod, 0);
   return(hmod);
 }
 
 HMODULE WINAPI ApiHook::LoadLibraryExA(PCSTR pszModulePath, 
                                        HANDLE hFile, DWORD dwFlags) {
   HMODULE hmod = ::LoadLibraryExA(pszModulePath, hFile, dwFlags);
-  FixupNewlyLoadedModule(hmod, dwFlags);
+  if (hmod != ModuleFromAddress(ReplaceIATEntryInAllMods))
+    FixupNewlyLoadedModule(hmod, dwFlags);
   return(hmod);
 }
 
 HMODULE WINAPI ApiHook::LoadLibraryExW(PCWSTR pszModulePath, 
                                        HANDLE hFile, DWORD dwFlags) {
   HMODULE hmod = ::LoadLibraryExW(pszModulePath, hFile, dwFlags);
-  FixupNewlyLoadedModule(hmod, dwFlags);
+  if (hmod != ModuleFromAddress(ReplaceIATEntryInAllMods))
+    FixupNewlyLoadedModule(hmod, dwFlags);
   return(hmod);
 }
 
-DWORD WINAPI InjectIntoProcess(void* param) {
-  LPPROCESS_INFORMATION lpProcessInformation = (LPPROCESS_INFORMATION)param;
-  //SuspendThread(lpProcessInformation->hThread);
-  LPVOID p = VirtualAllocEx(lpProcessInformation->hProcess, NULL, 
-      MAX_PATH*sizeof(TCHAR),MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+void InjectIntoProcess(HANDLE hprocess) {
+  LPVOID p = VirtualAllocEx(hprocess, NULL, 
+      MAX_PATH*sizeof(TCHAR), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
   char logs[256];
   if (p) {
@@ -287,7 +295,7 @@ DWORD WINAPI InjectIntoProcess(void* param) {
     GetModuleFileName(g_hMod, dllpath, MAX_PATH);
     SIZE_T n ;
     g_Log.WriteLog("Msg", "WriteProcessMemory");
-    BOOL ret = WriteProcessMemory(lpProcessInformation->hProcess, p, dllpath, 
+    BOOL ret = WriteProcessMemory(hprocess, p, dllpath, 
                                   MAX_PATH*sizeof(TCHAR), &n);
     if (!ret) {
       sprintf(logs, "WriteProcessMemory Failed,GetLastError=%ld", 
@@ -295,7 +303,7 @@ DWORD WINAPI InjectIntoProcess(void* param) {
       g_Log.WriteLog("Error", logs);
     }
     g_Log.WriteLog("Msg", "CreateRemoteThread");
-    HANDLE h = CreateRemoteThread(lpProcessInformation->hProcess, NULL, 0,
+    HANDLE h = CreateRemoteThread(hprocess, NULL, 0,
         (LPTHREAD_START_ROUTINE)LoadLibrary, p, 0, NULL);
     if (h) {
       g_Log.WriteLog("Msg", "CreateRemoteThread Success");
@@ -308,8 +316,6 @@ DWORD WINAPI InjectIntoProcess(void* param) {
     sprintf(logs, "VirtualAllocEx Failed,GetLastError=%ld", GetLastError());
     g_Log.WriteLog("Error", logs);
   }
-  //ResumeThread(lpProcessInformation->hThread);
-  return 0;
 }
 
 BOOL WINAPI ApiHook::CreateProcessA(LPCSTR lpApplicationName, 
@@ -327,10 +333,10 @@ BOOL WINAPI ApiHook::CreateProcessA(LPCSTR lpApplicationName,
       dwCreationFlags, lpEnvironment, lpCurrentDirectory, lpStartupInfo,
       lpProcessInformation);
   if (ret) {
-    g_Log.WriteLog("Msg", "CreateProcessA");
-    PROCESS_INFORMATION* process_info = new PROCESS_INFORMATION;
-    *process_info = *lpProcessInformation;
-    CreateThread(NULL, 0, InjectIntoProcess, process_info, 0, NULL);
+    char logs[256];
+    sprintf(logs, "CreateProcessA, ProcessID=%ld", lpProcessInformation->dwProcessId);
+    g_Log.WriteLog("Msg", logs);
+    InjectIntoProcess(lpProcessInformation->hProcess);
   }
   return ret;
 }
@@ -350,10 +356,10 @@ BOOL WINAPI ApiHook::CreateProcessW(LPCWSTR lpApplicationName,
       dwCreationFlags, lpEnvironment, lpCurrentDirectory, lpStartupInfo,
       lpProcessInformation);
   if (ret) {
-    g_Log.WriteLog("Msg", "CreateProcessW");
-    PROCESS_INFORMATION* process_info = new PROCESS_INFORMATION;
-    *process_info = *lpProcessInformation;
-    CreateThread(NULL, 0, InjectIntoProcess, process_info, 0, NULL);
+    char logs[256];
+    sprintf(logs, "CreateProcessW, ProcessID=%ld", lpProcessInformation->dwProcessId);
+    g_Log.WriteLog("Msg", logs);
+    InjectIntoProcess(lpProcessInformation->hProcess);
   }
   return ret;
 }

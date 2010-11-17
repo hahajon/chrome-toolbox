@@ -75,7 +75,7 @@ public:
 
 private:
   // According shortcuts string to generate modify flag and virtual key code.
-  void GetShortCutsKey(char* shortcuts, UINT& modify, UINT& vk);
+  void GetShortCutsKey(char* shortcuts, UINT* modify, UINT* vk);
   // Get message from frontend, the index is a code correspond to the message.
   bool GetNPMessage(int index, TCHAR* msg, int msglen);
   // Notify frontend should redefine boss key.
@@ -88,6 +88,8 @@ private:
   ShortCutKeyMap map_two_;
   // Shortcuts list store current shortcuts.
   ShortCut_Item* shortcuts_list_;
+  // Shortcuts array object from frontend.
+  NPObject* shortcuts_object_;
   // Indicate current state is or not set shortcuts.
   bool is_listened_;
   // Input box object.

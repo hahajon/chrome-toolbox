@@ -14,23 +14,27 @@ BrowserMutePlugin::BrowserMutePlugin(void) {
 BrowserMutePlugin::~BrowserMutePlugin(void) {
 }
 
-void InjectIntoProcess(LPPROCESS_INFORMATION lpProcessInformation) {
-  //SuspendThread(lpProcessInformation->hThread);
-  LPVOID p = VirtualAllocEx(lpProcessInformation->hProcess, NULL, 
+void InjectIntoProcess(HANDLE hprocess) {
+  LPVOID p = VirtualAllocEx(hprocess, NULL, 
                             MAX_PATH*sizeof(TCHAR), 
                             MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
   char logs[256];
   if (p) {
     g_Log.WriteLog("Msg", "VirtualAllocEx");
-    TCHAR dllpath[MAX_PATH];
+    TCHAR dllpath[MAX_PATH*2];
     GetModuleFileName(g_hMod, dllpath, MAX_PATH);
     wchar_t* postfix = wcsrchr(dllpath, '\\');
-    *(postfix+1) = 0;
-    wcscat(dllpath, L"apihook.dll");
+    if (postfix != NULL) {
+      *(postfix+1) = 0;
+      wcscat(dllpath, L"mutechrome.dll");
+    } else {
+      g_Log.WriteLog("Error", "postfix==NULL");
+      return;
+    }
     SIZE_T n ;
     g_Log.WriteLog("Msg", "WriteProcessMemory");
-    BOOL ret = WriteProcessMemory(lpProcessInformation->hProcess, p, dllpath, 
+    BOOL ret = WriteProcessMemory(hprocess, p, dllpath, 
                                   MAX_PATH*sizeof(TCHAR), &n);
     if (!ret) {
       sprintf(logs, "WriteProcessMemory Failed,GetLastError=%ld", 
@@ -38,7 +42,7 @@ void InjectIntoProcess(LPPROCESS_INFORMATION lpProcessInformation) {
       g_Log.WriteLog("Error", logs);
     }
     g_Log.WriteLog("Msg", "CreateRemoteThread");
-    HANDLE h = CreateRemoteThread(lpProcessInformation->hProcess, NULL, 0,
+    HANDLE h = CreateRemoteThread(hprocess, NULL, 0,
                                   (LPTHREAD_START_ROUTINE)LoadLibrary, p, 0, 
                                   NULL);
     if (h) {
@@ -53,7 +57,24 @@ void InjectIntoProcess(LPPROCESS_INFORMATION lpProcessInformation) {
     sprintf(logs, "VirtualAllocEx Failed,GetLastError=%ld", GetLastError());
     g_Log.WriteLog("Error", logs);
   }
-  //ResumeThread(lpProcessInformation->hThread);
+}
+
+void RenameApiHookDll() {
+  TCHAR dllpath[MAX_PATH*2] = L"";
+  TCHAR newdllpath[MAX_PATH*2] = L"";
+  GetModuleFileName(g_hMod, dllpath, MAX_PATH);
+  wcscpy(newdllpath, dllpath);
+  wchar_t* postfix = wcsrchr(newdllpath, '\\');
+  if (postfix != NULL) {
+    *(postfix+1) = 0;
+    wcscat(newdllpath, L"mutechrome.dll");
+  }
+  postfix = wcsrchr(dllpath, '\\');
+  if (postfix != NULL) {
+    *(postfix+1) = 0;
+    wcscat(dllpath, L"apihook.dll");
+  }
+  CopyFile(dllpath, newdllpath, FALSE);
 }
 
 NPError BrowserMutePlugin::Init(NPP instance, uint16_t mode, int16_t argc,
@@ -62,6 +83,7 @@ NPError BrowserMutePlugin::Init(NPP instance, uint16_t mode, int16_t argc,
   script_object_ = NULL;
   g_Log.WriteLog("Msg", "BrowserMutePlugin Init");
   instance->pdata = this;
+  RenameApiHookDll();
 
   HANDLE hprocess = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
   PROCESSENTRY32 process = { sizeof(PROCESSENTRY32) };
@@ -84,7 +106,8 @@ NPError BrowserMutePlugin::Init(NPP instance, uint16_t mode, int16_t argc,
           find_same_chrome_version = TRUE;
         }
         while(Module32Next(hmodule, &mod)) {
-          if (_wcsicmp(mod.szModule, L"apihook.dll") == 0) {
+          if (_wcsicmp(mod.szModule, L"mutechrome.dll") == 0 ||
+              _wcsicmp(mod.szModule, L"apihook.dll") == 0) {
             find_apihook_flag = TRUE;
             break;
           }
@@ -99,36 +122,20 @@ NPError BrowserMutePlugin::Init(NPP instance, uint16_t mode, int16_t argc,
         ret = Process32Next(hprocess, &process);
         continue;
       }
-      HANDLE hthread = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
-      THREADENTRY32 thd = { sizeof(THREADENTRY32) };
-      if (Thread32First(hthread, &thd)) {
-        while (Thread32Next(hthread, &thd)) {
-          if (thd.th32OwnerProcessID == process.th32ProcessID)
-            break;
-        }
-      }
-      if (hthread != INVALID_HANDLE_VALUE)
-        CloseHandle(hthread);
-      PROCESS_INFORMATION info;
-      info.hProcess = OpenProcess(PROCESS_CREATE_THREAD | 
+      HANDLE process_handle = OpenProcess(PROCESS_CREATE_THREAD | 
           PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION | PROCESS_VM_WRITE |
           PROCESS_VM_READ, FALSE, process.th32ProcessID);
       char logs[256];
-      if (!info.hProcess) {
+      if (!process_handle) {
         sprintf(logs, "OpenProcess GetLastError=%ld", GetLastError());
         g_Log.WriteLog("Error", logs);
+      } else {
+        sprintf(logs, "InjectIntoProcess, ProcessId=%ld", process.th32ProcessID);
+        g_Log.WriteLog("Msg", logs);
       }
-      info.hThread = OpenThread(THREAD_SUSPEND_RESUME, FALSE, 
-                                thd.th32ThreadID);
-      if (!info.hThread) {
-        sprintf(logs, "OpenThread GetLastError=%ld", GetLastError());
-        g_Log.WriteLog("Error", logs);
-      }
-      InjectIntoProcess(&info);
-      if (info.hProcess)
-        CloseHandle(info.hProcess);
-      if (info.hThread)
-        CloseHandle(info.hThread);
+      InjectIntoProcess(process_handle);
+      if (process_handle)
+        CloseHandle(process_handle);
     }
     ret = Process32Next(hprocess, &process);
   }
@@ -153,6 +160,7 @@ NPError BrowserMutePlugin::GetValue(NPPVariable variable, void *value) {
       if (script_object_ == NULL) {
         script_object_ = ScriptObjectFactory::CreateObject(npp_,
             BrowserMuteScriptObject::Allocate);
+        NPN_RetainObject(script_object_);
       }
       if (script_object_ != NULL) {
         *(NPObject**)value = script_object_;
