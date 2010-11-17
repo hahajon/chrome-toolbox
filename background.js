@@ -9,6 +9,7 @@
     convenience: document.getElementById('plugin_convenience'),
     videoAlone: document.getElementById('plugin_videoAlone'),
     wallpaper: document.getElementById('plugin_wallpaper'),
+    browserMute: document.getElementById('plugin_mute'),
     addKeyboardListener: function(input) {
       this.convenience.AddListener(input);
     },
@@ -43,7 +44,12 @@
     },
     setWallpaper: function() {
       this.wallpaper.SetWallPaper();
+    },
+    muteBrowser: function(muteFlag) {
+      this.browserMute.MuteBrowser(muteFlag);
     }
+
+
   }
   chrome.extension.onRequest.addListener(function(request, sender, sendResponse) {
     switch(request.msg) {
@@ -129,6 +135,9 @@
         case 'quickLaunch':
           openBookmarkFolderLinks(obj.relationId);
           break;
+        case 'browserMute':
+          browserMute();
+          break;
       }
     }
   }
@@ -162,6 +171,9 @@
     if (isWindowsPlatform()) {
       localStorage['closeLastTab'] = localStorage['closeLastTab'] || 'true';
       localStorage['videoBar'] = localStorage['videoBar'] || 'true';
+      localStorage['browserMute'] = localStorage['browserMute'] || 'false';
+      plugin.muteBrowser(eval(localStorage['browserMute']));
+      setBadgeTextByMute();
       localStorage['dbclickCloseTab'] =
           localStorage['dbclickCloseTab'] || 'true';
       localStorage['quicklyVisitMenu'] =
@@ -327,6 +339,19 @@
         });
       });
     }
+  }
+
+  function browserMute() {
+    var muteFlag = eval(localStorage['browserMute']);
+    plugin.muteBrowser(!muteFlag);
+    localStorage['browserMute'] = !muteFlag;
+    setBadgeTextByMute();
+  }
+
+  function setBadgeTextByMute() {
+    var text = '';
+    text = eval(localStorage['browserMute']) ? 'M' : '';
+    chrome.browserAction.setBadgeText({text: text});
   }
 
   function getNPMessage(messageId) {

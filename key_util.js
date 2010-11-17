@@ -8,6 +8,7 @@ key_util.category_table = {
   CAT_BOSS_KEY: 'boss_key',
   CAT_QUICK_LAUNCH: 'quick_launch_shortcuts',
   CAT_FILL_FORM: 'fill_form_shortcuts',
+  CAT_MUTE: 'mute_shortcuts',
   CAT_CHROME_FEATURE: 'google_chrome_feature_shortcuts'
 }
 
