@@ -5,6 +5,7 @@
   shortcut.insertRecord(key_util.extension_support_shortcut_map, 0);
   var custom_shortcut_list = [];
   var isCloseWindow = false;
+  var wallpaperWindowId = null;
   var plugin = {
     convenience: document.getElementById('plugin_convenience'),
     videoAlone: document.getElementById('plugin_videoAlone'),
@@ -100,7 +101,7 @@
 
   function closeCurrentTab() {
     chrome.tabs.getSelected(null, function(tab) {
-      window.setTimeout(function() {chrome.tabs.remove(tab.id);}, 100)
+      window.setTimeout(function() {chrome.tabs.remove(tab.id);}, 50)
 
     });
   }
@@ -223,6 +224,14 @@
         ctx.drawImage(image, 0, 0, width, height);
         return canvas.toDataURL('image/png');
       }
+
+      var createWallpaperWindow = function() {
+        chrome.windows.create({width: width, height: height,
+          url: url, type: 'popup'}, function(window) {
+          plugin.setWallpaper();
+          wallpaperWindowId = window.id;
+        });
+      }
       var zoom = 3;
       var offsetWidth = 30;
       var offsetHeight = 100;
@@ -238,14 +247,24 @@
             Math.round(image.width / zoom), Math.round(image.height / zoom));
         wallpaper.compressiveImage.width = Math.round(image.width / zoom);
         wallpaper.compressiveImage.height = Math.round(image.height / zoom);
-        chrome.windows.create({width: width, height: height,
-          url: url, type: 'popup'}, function(window) {
-          plugin.setWallpaper();
-        });
+        if (wallpaperWindowId != null) {
+          chrome.windows.remove(wallpaperWindowId, function() {
+            createWallpaperWindow();
+          });
+        } else {
+          createWallpaperWindow();
+        }
       }
       image.src = imageSrc;
     }
   }
+
+  chrome.windows.onRemoved.addListener(function(windowId) {
+    if (windowId == wallpaperWindowId) {
+      wallpaperWindowId = null;
+      console.log('closed:' + wallpaperWindowId);
+    }
+  });
 
   var videoAlone = {
     popupWindow: function(request, sender, width, height) {

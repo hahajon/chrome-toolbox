@@ -114,10 +114,10 @@ bool ScriptObjectBase::Enumerate(NPIdentifier **value, uint32_t *count) {
   return true;
 }
 
-void ScriptObjectBase::AddProperty(Property_Item& item) {
+void ScriptObjectBase::AddProperty(const Property_Item& item) {
   property_list_.push_back(item);
 }
 
-void ScriptObjectBase::AddFunction(Function_Item& item) {
+void ScriptObjectBase::AddFunction(const Function_Item& item) {
   function_list_.push_back(item);
 }
