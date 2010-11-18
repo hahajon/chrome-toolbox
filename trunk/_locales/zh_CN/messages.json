@@ -58,6 +58,7 @@
   "tip_failed": {"message": "快速菜单达到10个，请取消其他已选项，重新设置。"},
   "tip_failed2": {"message": "请先选择一个文件夹。"},
   "tip_failed3": {"message": "与快捷键重复，请重新定义。"},
+  "tip_failed4": {"message": "无效的快捷键，请重新定义。"},
   "bookmark_tip": {"message": "您可以指定用相应快捷键迅速打开谷歌浏览器内置书签管理器的某个文件夹中的所有网页。"},
   "bookmark_tip2": {"message": "修改快捷键"},
   "bookmark_tip3": {"message": "点击右侧按钮指定网页收藏夹"},
