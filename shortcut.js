@@ -84,6 +84,17 @@ Shortcut.prototype.insertRecord = function(table, row) {
         shortcut = key_util.getVirtualKey(shortcut);
         self.updateShortcut(shortcut, id);
       }
+      if (results.rows.length == 1) {
+        var virtualKey = results.rows.item(0).shortcut;
+        if (/\+$/.test(virtualKey)) {
+          var shortcutItem = key_util.getCustomShortcutItemById(
+              key_util.extension_support_shortcut_map, shortcutObj.id);
+          if (shortcutItem) {
+            virtualKey = shortcutItem.shortcut;
+            self.updateShortcut(shortcutItem.shortcut, shortcutObj.id);
+          }
+        }
+      }
       row++;
       self.insertRecord(table, row);
     });
@@ -234,6 +245,11 @@ Shortcut.prototype.canEditable = function(element, id) {
           if ($(inputBox.id)) {
             var curElement = event.target;
             if (curElement == inputBox) {
+              if (/\+$/.test(inputBox.value)) {
+                showSavingFailedTip('tip_failed4');
+                removeInputBox(inputBox);
+                return;
+              }
               var isRepetitive = checkRepetitiveShortcut(inputBox.value);
               if (isRepetitive) {
                 inputText = chrome.i18n.getMessage('tip_failed3');
@@ -325,8 +341,9 @@ function setShortcutsToInputBox(inputBox, virtualKey) {
   for (var i = 0; i < keys.length; i++) {
     if (keys[i]) {
       keys[i] = key_util.key_code_map[keys[i]].name;
-    } 
+    }
   }
+  
   inputBox.name = virtualKey;
   inputBox.value = keys.join('+');
 }

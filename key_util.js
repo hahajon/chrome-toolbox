@@ -521,7 +521,9 @@ key_util.keyCodeToShowName = function(keyCode) {
   if (keyCode) {
     keyCodeList = keyCode.split('+');
     for (var i = 0; i < keyCodeList.length; i++) {
+      if (keyCodeList[i]) {
         keyCodeList[i] = key_util.key_code_map[keyCodeList[i]].name;
+      }
     }
     keyCodeList = keyCodeList.join('+');
   }

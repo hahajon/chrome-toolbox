@@ -246,28 +246,25 @@
       var item = key_util.function_table[items[i]];
       var id = item.id;
       var name = chrome.i18n.getMessage(item.function_name);
-      var shortcut = item.chrome_key;
-      var virtualKey = '';
+      var showKey = ''
+      var virtualKey = item.chrome_virtual_key;
       if (item.chrome_virtual_key) {
         virtualKey = item.chrome_virtual_key;
       }
       if (key_util.custom_shortcut_id_list.indexOf(item.id) > -1) {
         item = key_util.getCustomShortcutItemById(bg.custom_shortcut_list, id);
-        shortcut = key_util.keyCodeToShowName(item.shortcut);
         virtualKey = item.shortcut;
       }
-      shortcut = shortcut.indexOf(',') < 0 ?
-           shortcut : shortcut.substring(0, shortcut.indexOf(','));
       virtualKey = virtualKey.indexOf(',') < 0 ?
            virtualKey : virtualKey.substring(0, virtualKey.indexOf(','));
+      showKey = key_util.keyCodeToShowName(virtualKey);
       var li = document.createElement('li');
       li.value = id;
       li.innerHTML = '<div class="left">' + name +
-          '</div><div class="right">' + shortcut + '</div>';
+          '</div><div class="right">' + showKey + '</div>';
       (function(element, virtualKey) {
         dragAndDrop.makeElementSortable(element, virtualKey);
       })(li, virtualKey);
-      console.log('vk:' + virtualKey);
       ul.appendChild(li);
     }
     $('quicklyMenu').appendChild(ul);
