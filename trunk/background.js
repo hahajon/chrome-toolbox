@@ -95,8 +95,6 @@
       if (tab.url != 'chrome://newtab/') {
         chrome.tabs.create({url: 'chrome://newtab/'});
         chrome.tabs.remove(tab.id);
-      } else {
-        chrome.tabs.update({url: 'chrome://newtab/'});
       }
     });
   }
