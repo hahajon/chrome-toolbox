@@ -412,8 +412,9 @@ LRESULT CALLBACK GetMsgProc(int code, WPARAM wParam, LPARAM lParam){
     }
   }
   
-  if ((msg->message == WM_LBUTTONDBLCLK || msg->message == WM_MBUTTONDOWN) 
-      && wParam == PM_REMOVE && g_DBClickCloseTab) {
+  if ((msg->message == WM_LBUTTONDBLCLK || msg->message == WM_MBUTTONDOWN ||
+       msg->message == WM_MBUTTONDBLCLK) && 
+       wParam == PM_REMOVE && g_DBClickCloseTab) {
     POINT pt;
     pt.x = GET_X_LPARAM(msg->lParam);
     pt.y = GET_Y_LPARAM(msg->lParam);
@@ -442,11 +443,12 @@ bottom=%ld,g_IsOnlyOneTab=%d",
     if (wcscmp(class_name, kChromeClassName) == 0 && 
         GetParent(msg->hwnd) == NULL) {
       Cmd_Msg_Item item;
-      msg->message = WM_NULL;
       if (g_IsOnlyOneTab) {
+        msg->message = WM_NULL;
         item.cmd = Cmd_TabClose;
         WriteToServer(item);
-      } else {
+      } else if (msg->message == WM_LBUTTONDBLCLK) {
+        msg->message = WM_NULL;
         item.cmd = Cmd_DBClick_CloseTab;
         WriteToServer(item);
       }
