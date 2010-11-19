@@ -6,6 +6,7 @@
 #include <vector>
 #include "resource.h"
 #include <TlHelp32.h>
+#include <Psapi.h>
 
 using namespace std;
 
@@ -125,7 +126,7 @@ DWORD WINAPI Client_Thread(void* param) {
       } else {
         sprintf(szLog, "CreateFile Failed,GetLastError=%ld", errorcode);
         g_Log.WriteLog("Error", szLog);
-        Sleep(1000);
+        Sleep(10);
         continue;
       }
     } else {
@@ -475,12 +476,14 @@ NPError ConveniencePlugin::Init(NPP instance, uint16_t mode, int16_t argc,
   g_Log.WriteLog("Msg", "ConveniencePlugin Init");
   WritePluginProcessId();
   server_thread_handle_ = CreateThread(NULL, 0, Server_Thread, this, 0, NULL);
+  TCHAR exe_name[MAX_PATH];
+  GetModuleBaseName(GetCurrentProcess(), GetModuleHandle(NULL), exe_name, MAX_PATH);
   HANDLE hprocess = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
   PROCESSENTRY32 process = { sizeof(PROCESSENTRY32) };
   DWORD parent_processid = 0;
   BOOL ret = Process32First(hprocess, &process);
   while (ret) {
-    if (_wcsicmp(process.szExeFile, L"chrome.exe") == 0 && 
+    if (_wcsicmp(process.szExeFile, exe_name) == 0 && 
         process.th32ProcessID == GetCurrentProcessId()) {
       parent_processid = process.th32ParentProcessID;
       break;

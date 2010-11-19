@@ -4,6 +4,7 @@
 #include "script_object_factory.h"
 #include "browser_mute_script_object.h"
 #include <TlHelp32.h>
+#include <Psapi.h>
 
 extern Log g_Log;
 extern HMODULE g_hMod;
@@ -89,10 +90,12 @@ NPError BrowserMutePlugin::Init(NPP instance, uint16_t mode, int16_t argc,
   PROCESSENTRY32 process = { sizeof(PROCESSENTRY32) };
   WCHAR chrome_exe_path[MAX_PATH];
   GetModuleFileName(GetModuleHandle(NULL), chrome_exe_path, MAX_PATH);
+  TCHAR exe_name[MAX_PATH];
+  GetModuleBaseName(GetCurrentProcess(), GetModuleHandle(NULL), exe_name, MAX_PATH);
   BOOL find_same_chrome_version = FALSE;
   BOOL ret = Process32First(hprocess, &process);
   while (ret) {
-    if (_wcsicmp(process.szExeFile, L"chrome.exe") == 0) {
+    if (_wcsicmp(process.szExeFile, exe_name) == 0) {
       HANDLE hmodule = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, 
                                                 process.th32ProcessID);
       MODULEENTRY32 mod = { sizeof(MODULEENTRY32) };
