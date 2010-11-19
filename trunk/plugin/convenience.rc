@@ -53,8 +53,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,0,4
- PRODUCTVERSION 1,0,0,4
+ FILEVERSION 1,0,0,5
+ PRODUCTVERSION 1,0,0,5
  FILEFLAGSMASK 0x17L
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -71,13 +71,13 @@ BEGIN
         BEGIN
             VALUE "FileDescription", "This is a npapi plugin built for Chrome on Windows."
             VALUE "FileOpenName", "Convenience Plugin|Set WallPaper Plugin|Stand Video Alone Plugin|Browser Mute Plugin"
-            VALUE "FileVersion", "1, 0, 0, 4"
+            VALUE "FileVersion", "1, 0, 0, 5"
             VALUE "InternalName", "convenience"
             VALUE "LegalCopyright", "Copyright (C) 2010"
             VALUE "MIMEType", "application/x-npconvenience|application/x-npwallpaper|application/x-npvideoalone|application/x-browsermute"
             VALUE "OriginalFilename", "convenience.dll"
             VALUE "ProductName", "Chrome Toolbox Plugin"
-            VALUE "ProductVersion", "1, 0, 0, 4"
+            VALUE "ProductVersion", "1, 0, 0, 5"
         END
     END
     BLOCK "VarFileInfo"
