@@ -174,6 +174,7 @@ DWORD WINAPI Client_Thread(void* param) {
             item.cmd = Cmd_ClientShutDown;
             WriteToServer(item);
             CloseHandle(client_pipe_handle);
+            client_thread_handle = INVALID_HANDLE_VALUE;
           }
           return 0;
         }
