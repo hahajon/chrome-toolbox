@@ -60,7 +60,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="gdiplus.lib comctl32.lib Psapi.lib"
+				AdditionalDependencies="gdiplus.lib comctl32.lib"
 				LinkIncremental="2"
 				ModuleDefinitionFile="convenience.def"
 				GenerateDebugInformation="true"
@@ -135,7 +135,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="gdiplus.lib comctl32.lib psapi.lib"
+				AdditionalDependencies="gdiplus.lib comctl32.lib psapi.lib version.lib"
 				LinkIncremental="1"
 				ModuleDefinitionFile="convenience.def"
 				GenerateDebugInformation="true"

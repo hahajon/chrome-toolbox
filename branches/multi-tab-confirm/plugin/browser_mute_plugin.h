@@ -14,7 +14,17 @@ public:
 
   static PluginBase* CreateObject() { return new BrowserMutePlugin; }
 
+  BOOL get_use_api_hook_flag() { return use_apihook_flag_; }
+
+  void ScanAndInject();
+
+private:
+  static DWORD WINAPI Mute_Thread(void* param);
+
 private:
   ScriptObjectBase* script_object_;
+  HANDLE mute_thread_handle_;
+  HANDLE stop_event_;
+  BOOL use_apihook_flag_;
 
 };

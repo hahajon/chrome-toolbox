@@ -5,8 +5,6 @@
 
 using namespace std;
 
-#define ERR_BOSSKEY_DEFINED   1000
-
 class ConvenienceScriptObject : public ScriptObjectBase
 {
 public:
@@ -50,10 +48,17 @@ public:
   // Notify plugin current chrome window has or not only one tab.
   bool IsOnlyOneTab(const NPVariant *args, uint32_t argCount,
                     NPVariant *result);
+
+  // Notify plugin is prompt when chrome close with more than one tab.
+  bool CloseChromePrompt(const NPVariant *args, uint32_t argCount,
+                         NPVariant *result);
+
   // For plugin object used. when plugin receive keyboard stroke key, 
   // then call this function to notify frontend some key pressed.
   void OnKeyDown(bool contrl, bool alt, bool shift, WPARAM wParam,
                  LPARAM lParam);
+
+  void UpdateCloseChromePromptFlag(BOOL flag);
 
   // Notify frontend user has trigger a feature.
   void TriggerEvent(const char* shortcuts);
@@ -76,8 +81,6 @@ public:
 private:
   // According shortcuts string to generate modify flag and virtual key code.
   void GetShortCutsKey(char* shortcuts, UINT* modify, UINT* vk);
-  // Get message from frontend, the index is a code correspond to the message.
-  bool GetNPMessage(int index, TCHAR* msg, int msglen);
   // Notify frontend should redefine boss key.
   void RedefineBossKey();
   

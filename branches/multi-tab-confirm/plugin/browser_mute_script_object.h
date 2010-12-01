@@ -19,10 +19,13 @@ public:
   bool MuteBrowser(const NPVariant *args, uint32_t argCount,
                    NPVariant *result);
 
+  BOOL get_mute_flag() { return mute_flag_; }
+
 private:
   // apihook.dll module hanlde.
   HMODULE api_hook_module_;
   // The function address of SetBrowseMute function in apihook.dll
   Pfn_SetBrowserMute set_browser_mute_;
+  BOOL mute_flag_;
 
 };
