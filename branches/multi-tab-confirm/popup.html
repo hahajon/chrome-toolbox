@@ -110,6 +110,10 @@
      <div class="left" id="muteName"></div>
      <div class="right" id="muteShortcut"></div>
    </li>
+   <li id="btnRefreshAll">
+     <div class="left" id="refreshAllName"></div>
+     <div class="right" id="refreshAllShortcut"></div>
+   </li>
  </ul>
 </div>
 <div class="separator"  name="isWindowsOnly"></div>
@@ -152,8 +156,20 @@
       i18nReplace('muteName', name);
       muteName.style.background = 'url(' + imageUrl + ') no-repeat 4px 5px';
     }
+  }
 
-
+  function setFreshAllMenu() {
+    var refreshAllMenuId = 61;
+    var item = key_util.getCustomShortcutItemById(
+            bg.custom_shortcut_list, refreshAllMenuId);
+    var refreshMenu = $('btnRefreshAll');
+    var refreshAllName = $('refreshAllName');
+    var refreshAllShortcut = $('refreshAllShortcut');
+    refreshAllName.innerText = chrome.i18n.getMessage('refresh_all_tabs');
+    refreshAllShortcut.innerText = key_util.keyCodeToShowName(item.shortcut);
+    refreshMenu.onclick = function() {
+      bg.refreshAllTabs();
+    }
   }
 
   function init() {
@@ -166,10 +182,13 @@
       var url = chrome.extension.getURL('options.html');
       chrome.tabs.create({url: url });
     };
+
     if (isWindowsPlatform()) {
       setPopupMenuStatus();
+      setFreshAllMenu();
       setMuteMenu();
       createQuicklyVisitItem();
+      setFreshAllMenu();
     } else {
       setWindowOnlyElement();
     }
