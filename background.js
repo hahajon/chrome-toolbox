@@ -81,11 +81,17 @@
   function setCloseLastOneTabStatus() {
     var isCloseWindow = eval(localStorage['closeLastTab']) && true;
     if (isCloseWindow) {
-      chrome.tabs.getAllInWindow(null, function(tabs) {
-        if (tabs.length > 1) {
-          plugin.isOnlyOneTab(false);
-        } else if (tabs.length == 1) {
+      chrome.windows.getLastFocused(function(win) {
+        if (win.type != "normal") {
           plugin.isOnlyOneTab(true);
+        } else {
+          chrome.tabs.getAllInWindow(win.id, function(tabs) {
+            if (tabs.length > 1) {
+              plugin.isOnlyOneTab(false);
+            } else if (tabs.length == 1) {
+              plugin.isOnlyOneTab(true);
+            }
+          });
         }
       });
     } else {
