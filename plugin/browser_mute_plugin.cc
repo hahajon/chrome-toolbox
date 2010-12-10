@@ -170,7 +170,8 @@ DWORD BrowserMutePlugin::Mute_Thread(void* param) {
     BOOL find_same_chrome_version = FALSE;
     BOOL ret = Process32First(hprocess, &process);
     while (ret) {
-      if (process.th32ParentProcessID == parent_pid) {
+      if (process.th32ParentProcessID == parent_pid || 
+          process.th32ProcessID == parent_pid) {
         chrome_process_map.insert(make_pair(process.th32ProcessID, 
             process.th32ProcessID));
       }
