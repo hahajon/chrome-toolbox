@@ -404,6 +404,12 @@ key_util.function_table[60] = { id: 60, function_name: 'mute_browser', function_
     maxthon_key: '', tt_key: '', sogou_key: 'Alt+W', ie6_key: '', ie7_key: '',
     ie8_key: '', opera_key: '', safari_key: '', firefox_key: ''
   };
+key_util.function_table[61] = { id: 61, function_name: 'refresh_all_tabs', function_description: 'refresh_all_tabs',
+    category: key_util.category_table.CAT_WEB_PAGE,
+    isQuickly: false, isSystem: false, isSupport: false, chrome_key: '', browser360_key: '',
+    maxthon_key: 'Shift+F5', tt_key: 'Shift+F5', sogou_key: 'Shift+F5', ie6_key: '', ie7_key: '',
+    ie8_key: '', opera_key: 'Ctrl+F5', safari_key: '', firefox_key: ''
+  };
 
 key_util.extension_support_shortcut_map = [
     {id: 48, shortcut: '18+192', type: true, relationId: '', operation: 'bossKey', extensionId: ''},
@@ -418,7 +424,8 @@ key_util.extension_support_shortcut_map = [
     {id: 57, shortcut: '18+55', type: false, relationId: '', operation: 'quickLaunch', extensionId: ''},
     {id: 58, shortcut: '18+56', type: false, relationId: '', operation: 'quickLaunch', extensionId: ''},
     {id: 59, shortcut: '18+57', type: false, relationId: '', operation: 'quickLaunch', extensionId: ''},
-    {id: 60, shortcut: '18+87', type: false, relationId: '', operation: 'browserMute', extensionId: ''}
+    {id: 60, shortcut: '18+87', type: false, relationId: '', operation: 'browserMute', extensionId: ''},
+    {id: 61, shortcut: '18+116', type: false, relationId: '', operation: 'refreshAllTabs', extensionId: ''}
 ];
 
 key_util.custom_shortcut_id_list = [48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60];

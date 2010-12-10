@@ -29,6 +29,7 @@ function setMessage() {
     {id: 'item_closeLastTab', message: 'item_close_last_tab'},
     {id: 'item_openInNewTab', message: 'item_open_in_new_tab'},
     {id: 'item_dbClickCloseTab', message: 'item_double_click_close_tab'},
+    {id: 'item_closeChromePrompt', message: 'item_close_chrome_prompt'},
     {id: 'fillForm_title', message: 'fill_form_title'},
     {id: 'fillForm_address', message: 'fill_form_url'},
     {id: 'fillForm_date', message: 'fill_form_date'},
@@ -66,6 +67,7 @@ function Option() {
   this.closeLastTab = $('closeLastTab');
   this.openInNewTab = $('openInNewTab');
   this.dbclickCloseTab = $('dbclickCloseTab');
+  this.closeChromePrompt = $('closeChromePrompt');
   this.isCompare = $('isCompare');
 
   //div element
@@ -200,6 +202,7 @@ Option.prototype.setGeneralTabOption = function() {
   this.closeLastTab.checked = eval(localStorage['closeLastTab']);
   this.openInNewTab.checked = eval(localStorage['openInNewTab']);
   this.dbclickCloseTab.checked = eval(localStorage['dbclickCloseTab']);
+  this.closeChromePrompt.checked = eval(localStorage['closeChromePrompt']);
   this.imageBar.addEventListener('change', function() {
     localStorage['imageBar'] = $('imageBar').checked;
     showSavingSucceedTip();
@@ -216,12 +219,17 @@ Option.prototype.setGeneralTabOption = function() {
   this.openInNewTab.addEventListener('change', function() {
     localStorage['openInNewTab'] = $('openInNewTab').checked;
     showSavingSucceedTip();
-  });
+  }, false);
   this.dbclickCloseTab.addEventListener('change', function() {
     localStorage['dbclickCloseTab'] = $('dbclickCloseTab').checked;
     bg.dbClickCloseTab();
     showSavingSucceedTip();
-  });
+  }, false);
+  this.closeChromePrompt.addEventListener('change', function() {
+    localStorage['closeChromePrompt'] = $('closeChromePrompt').checked;
+    bg.plugin.closeChromePrompt(eval(localStorage['closeChromePrompt']));
+    showSavingSucceedTip();
+  }, false);
 }
 
 function showSavingSucceedTip() {

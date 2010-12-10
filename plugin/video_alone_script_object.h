@@ -29,7 +29,6 @@ public:
   typedef map<HWND, WindowID_Item> WindowMap;
   typedef std::pair<HWND, WindowID_Item> WindowMapPair;
 
-
 public:
   WindowMap window_list_;
 

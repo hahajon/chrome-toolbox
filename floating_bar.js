@@ -471,12 +471,22 @@ var magnifier = {
   }
 };
 
+function isGoogleLogoutBtn(url) {
+  var isLogoutBtn = false;
+  var domain = document.domain;
+  var googleDomain = /.google.com/;
+  if (googleDomain.test(domain) && url.toLowerCase().indexOf('logout') > -1) {
+    isLogoutBtn = true;
+  }
+  return isLogoutBtn;
+}
+
 function setAElementTarget() {
   document.addEventListener('mousedown', function() {
     if (openInNewTabStatus) {
       var target = '';
       var curElement = event.target;
-      if (curElement.tagName == 'A') {
+      if (curElement.tagName == 'A' && !isGoogleLogoutBtn(curElement.href)) {
         target = curElement.target;
         curElement.target = '_blank';
         curElement.addEventListener('mouseup', function() {
@@ -496,8 +506,3 @@ function setAElementTarget() {
 function init() {
   document.addEventListener('mousemove', floatingBar.onMouseMove, false);
 }
-
-
-
-
-
