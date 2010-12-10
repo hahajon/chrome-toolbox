@@ -2,6 +2,7 @@
 #include "browser_mute_script_object.h"
 #include "Log.h"
 #include <TlHelp32.h>
+#include "browser_mute_plugin.h"
 
 extern Log g_Log;
 extern HMODULE g_hMod;
@@ -51,6 +52,11 @@ bool BrowserMuteScriptObject::MuteBrowser(const NPVariant *args,
                                           NPVariant *result) {
   if (argCount != 1 || !NPVARIANT_IS_BOOLEAN(args[0]))
     return false;
+
+  mute_flag_ = NPVARIANT_TO_BOOLEAN(args[0]);
+
+  if (!((BrowserMutePlugin*)plugin_)->get_use_api_hook_flag())
+    return true;
   
   g_Log.WriteLog("Msg", "SetBrowserMute");
 

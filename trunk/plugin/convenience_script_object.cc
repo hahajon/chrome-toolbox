@@ -6,7 +6,7 @@
 extern Log g_Log;
 extern const TCHAR* kChromeClassName;
 extern DWORD g_ChromeMainThread;
-
+extern Local_Message_Item g_Local_Message;
 bool g_DBClickCloseTab = false;
 
 ConvenienceScriptObject::ConvenienceScriptObject(void) {
@@ -53,7 +53,11 @@ NPObject* ConvenienceScriptObject::Allocate(NPP npp, NPClass *aClass) {
     strcpy(item.function_name, "IsOnlyOneTab");
     item.function_pointer = ON_INVOKEHELPER(&ConvenienceScriptObject::
         IsOnlyOneTab);
-    pRet->AddFunction(item);    
+    pRet->AddFunction(item);
+    strcpy(item.function_name, "CloseChromePrompt");
+    item.function_pointer = ON_INVOKEHELPER(&ConvenienceScriptObject::
+        CloseChromePrompt);
+    pRet->AddFunction(item);
   }
   return pRet;
 }
@@ -79,6 +83,7 @@ bool ConvenienceScriptObject::UpdateShortCutList(const NPVariant *args,
                                                  uint32_t argCount,
                                                  NPVariant *result) {
   NPObject* window;
+  ((ConveniencePlugin*)plugin_)->GetLocalMessage();
   NPN_GetValue(plugin_->get_npp(), NPNVWindowNPObject, &window);
 
   if (argCount != 1 || !NPVARIANT_IS_OBJECT(args[0])) {
@@ -174,11 +179,9 @@ bool ConvenienceScriptObject::UpdateShortCutList(const NPVariant *args,
                                            atom, modify, vk);
         if (!register_ret && !errorflag) {
           errorflag = true;
-          TCHAR errormsg[256];
-          if (GetNPMessage(ERR_BOSSKEY_DEFINED, errormsg, 256)) {
-            if (MessageBox(NULL, errormsg, 0, MB_OK) == IDOK) {
-              RedefineBossKey();
-            }
+          if (MessageBox(NULL, g_Local_Message.msg_bosskey_defined, 
+                         0, MB_OK) == IDOK) {
+            RedefineBossKey();
           }
         } else if (register_ret) {
           errorflag = false;
@@ -249,28 +252,6 @@ void ConvenienceScriptObject::GetShortCutsKey(char* shortcuts, UINT* modify,
         *vk = temp_key;
         break;
   }
-}
-
-bool ConvenienceScriptObject::GetNPMessage(int index, TCHAR* msg, int msglen) {
-  NPObject* window;
-  NPN_GetValue(plugin_->get_npp(), NPNVWindowNPObject, &window);
-  NPIdentifier id;
-  id = NPN_GetStringIdentifier("getNPMessage");
-  NPVariant result;
-  VOID_TO_NPVARIANT(result);
-  if (id) {
-    NPVariant param;
-    INT32_TO_NPVARIANT(index, param);
-    if (NPN_Invoke(plugin_->get_npp(), window, id, &param, 1, &result)) {
-      if (MultiByteToWideChar(CP_UTF8, 0, 
-          NPVARIANT_TO_STRING(result).UTF8Characters, -1, msg, msglen)) {
-      }
-      NPN_ReleaseVariantValue(&result);
-      return true;
-    }
-  }
-
-  return false;
 }
 
 void ConvenienceScriptObject::RedefineBossKey() {
@@ -554,6 +535,33 @@ bool ConvenienceScriptObject::IsOnlyOneTab(const NPVariant *args,
   ConveniencePlugin* plugin = (ConveniencePlugin*)plugin_;
   plugin->UpdateIsOnlyOneTab(only_one_tab);
   return true;
+}
+
+bool ConvenienceScriptObject::CloseChromePrompt(const NPVariant *args, 
+                                                uint32_t argCount, 
+                                                NPVariant *result) {
+  if (argCount != 1 || !NPVARIANT_IS_BOOLEAN(args[0]))
+    return false;
+
+  bool prompt  = NPVARIANT_TO_BOOLEAN(args[0]);
+  ConveniencePlugin* plugin = (ConveniencePlugin*)plugin_;
+  plugin->UpdateCloseChromePromptFlag(prompt);
+  return true;
+}
+
+void ConvenienceScriptObject::UpdateCloseChromePromptFlag(BOOL flag) {
+  NPObject* window;
+  NPN_GetValue(plugin_->get_npp(), NPNVWindowNPObject, &window);
+  NPIdentifier id;
+  id = NPN_GetStringIdentifier("updateCloseChromePromptFlag");
+  NPVariant result;
+  VOID_TO_NPVARIANT(result);
+  if (id) {
+    NPVariant param;
+    BOOLEAN_TO_NPVARIANT(flag, param);
+    NPN_Invoke(plugin_->get_npp(), window, id, &param, 1, &result);
+    NPN_ReleaseVariantValue(&result);
+  }
 }
 
 void ConvenienceScriptObject::OnKeyDown(bool contrl, bool alt, bool shift,

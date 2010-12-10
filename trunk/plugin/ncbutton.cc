@@ -2,9 +2,11 @@
 #include "ncbutton.h"
 #include "log.h"
 #include <CommCtrl.h>
+#include "video_alone_script_object.h"
 
 extern Log g_Log;
 extern HMODULE g_hMod;
+extern Local_Message_Item g_Local_Message;
 
 NCButton::NCButton(void) {
   is_topmost_ = false;
@@ -203,7 +205,7 @@ void NCButton::OnMouseOver(POINT pt) {
       toolinfo.hwnd = parent_hwnd_;
       toolinfo.hinst = g_hMod;
       toolinfo.uId = 0;
-      toolinfo.lpszText = L"Always on top";
+      toolinfo.lpszText = g_Local_Message.msg_always_on_top;
       toolinfo.rect.left = pt.x;
       toolinfo.rect.top = pt.y;
       pt.x = rect_.right;

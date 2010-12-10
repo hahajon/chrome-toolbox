@@ -32,6 +32,9 @@
     updateShortCutList: function(shortcutList) {
       this.convenience.UpdateShortCutList(shortcutList);
     },
+    closeChromePrompt: function(flag) {
+      this.convenience.CloseChromePrompt(flag);
+    },
     showVideoAlone: function(title, orgTitle, parentWindowId, curWindowId,
                               tabId) {
       this.videoAlone.ShowVideoAlone(title, orgTitle, parentWindowId,
@@ -122,6 +125,10 @@
     }
   }
 
+  function updateCloseChromePromptFlag(flag) {
+    localStorage['closeChromePrompt'] = flag;
+  }
+
   function executeShortcut(obj) {
     if (obj) {
       switch(obj.operation) {
@@ -137,6 +144,9 @@
           break;
         case 'browserMute':
           browserMute();
+          break;
+        case 'refreshAllTabs':
+          refreshAllTabs();
           break;
       }
     }
@@ -176,8 +186,11 @@
       setBadgeTextByMute();
       localStorage['dbclickCloseTab'] =
           localStorage['dbclickCloseTab'] || 'true';
+      localStorage['closeChromePrompt'] =
+          localStorage['closeChromePrompt'] || 'true';
       localStorage['quicklyVisitMenu'] =
           localStorage['quicklyVisitMenu'] || '5,15';
+      plugin.closeChromePrompt(eval(localStorage['closeChromePrompt']));
       setCloseLastOneTabStatus();
       dbClickCloseTab();
       chrome.tabs.onCreated.addListener(function(tab) {
@@ -373,18 +386,39 @@
   }
 
   function getNPMessage(messageId) {
-    var npMessages = [{messageId: 1000, message: 'np_message_1000'}];
-    for (var i = 0; i < npMessages.length; i++) {
-      var message = npMessages[i];
-      if (messageId == message.messageId) {
-        return chrome.i18n.getMessage(message.message);
-      }
+    var npMessages = [
+      {messageId: 1000, message: 'np_message_1000'},
+
+    ];
+    var npMessage = {
+      1000: 'np_message_1000',
+      1001: 'np_message_1001',
+      1002: 'np_message_1002',
+      1003: 'np_message_1003',
+      1004: 'np_message_1004',
+      1005: 'np_message_1005',
+      1006: 'np_message_1006'
+    };
+    var message = '';
+    if (npMessage[messageId]) {
+      message = chrome.i18n.getMessage(npMessage[messageId]);
     }
+    return message;
   }
 
   function redefineBossKey() {
     shortcut.updateShortcut(null, 48);
     chrome.tabs.create({url: 'options.html#bossKey', selected: true});
+  }
+
+  function refreshAllTabs() {
+    chrome.tabs.getAllInWindow(null, function(tabs) {
+      if (tabs) {
+        for (var i = 0; i < tabs.length; i++) {
+          chrome.tabs.update(tabs[i].id, {url: tabs[i].url});
+        }
+      }
+    });
   }
 
   init();

@@ -15,6 +15,8 @@ extern HMODULE g_hMod;
 extern bool g_DBClickCloseTab;
 bool g_IsListening = false;
 bool g_IsOnlyOneTab = false;
+bool g_CloseChrome_Prompt = true;
+Local_Message_Item g_Local_Message;
 
 DWORD g_ChromeMainThread = 0;
 
@@ -30,6 +32,7 @@ LRESULT CALLBACK GetMsgProc(int code, WPARAM wParam, LPARAM lParam);
 void WriteToServer(const Cmd_Msg_Item& item);
 
 const TCHAR* kFileMappingName = L"Convenience_File";
+const TCHAR* kMsgFileMappingName = L"Convenience_Message_File";
 const TCHAR* kChromeClassName = L"Chrome_WidgetWin_0";
 const TCHAR* kChromeAddressBar = L"Chrome_AutocompleteEditView";
 const TCHAR* kPipeName = L"\\\\.\\pipe\\convenience";
@@ -98,6 +101,144 @@ void UpdateShortcutsFromMemory() {
   }
 }
 
+void GetMessageFromMemory() {
+  g_Log.WriteLog("msg", "GetMessageFromMemory");
+  TCHAR filemap_name[MAX_PATH];
+  wsprintf(filemap_name, L"%s_%ld", kMsgFileMappingName, ReadPluginProcessId());
+  HANDLE memory_file_handle = OpenFileMapping(FILE_MAP_READ, FALSE,
+                                              filemap_name);
+  if (memory_file_handle) {
+    LPVOID p = MapViewOfFile(memory_file_handle, FILE_MAP_READ, 0, 0, 0);
+    if (p) {
+      memcpy(&g_Local_Message, p, sizeof(g_Local_Message));
+      UnmapViewOfFile(p);
+    }
+    CloseHandle(memory_file_handle);
+  }
+}
+
+void WriteMessageToMemory() {
+  TCHAR filemap_name[MAX_PATH];
+  wsprintf(filemap_name, L"%s_%ld", kMsgFileMappingName, ReadPluginProcessId());
+
+  HANDLE memory_file_handle = CreateFileMapping(NULL, NULL,
+      PAGE_READWRITE|SEC_COMMIT,
+      0, sizeof(g_Local_Message), filemap_name);
+  if (memory_file_handle) {
+    LPVOID p = MapViewOfFile(memory_file_handle,
+        FILE_MAP_WRITE, 0, 0, sizeof(g_Local_Message));
+    if (p) {
+      memcpy(p, &g_Local_Message, sizeof(g_Local_Message));
+      UnmapViewOfFile(p);
+    }
+  }
+}
+
+#define SIZEOF_STRUCT_WITH_SPECIFIED_LAST_MEMBER(struct_name, member) \
+  offsetof(struct_name, member) + \
+  (sizeof static_cast<struct_name*>(NULL)->member)
+#define NONCLIENTMETRICS_SIZE_PRE_VISTA \
+  SIZEOF_STRUCT_WITH_SPECIFIED_LAST_MEMBER(NONCLIENTMETRICS, lfMessageFont)
+
+enum WinVersion {
+  WINVERSION_PRE_2000 = 0,  // Not supported
+  WINVERSION_2000 = 1,      // Not supported
+  WINVERSION_XP = 2,
+  WINVERSION_SERVER_2003 = 3,
+  WINVERSION_VISTA = 4,
+  WINVERSION_2008 = 5,
+  WINVERSION_WIN7 = 6,
+};
+
+WinVersion GetWinVersion() {
+  static bool checked_version = false;
+  static WinVersion win_version = WINVERSION_PRE_2000;
+  if (!checked_version) {
+    OSVERSIONINFOEX version_info;
+    version_info.dwOSVersionInfoSize = sizeof version_info;
+    GetVersionEx(reinterpret_cast<OSVERSIONINFO*>(&version_info));
+    if (version_info.dwMajorVersion == 5) {
+      switch (version_info.dwMinorVersion) {
+        case 0:
+          win_version = WINVERSION_2000;
+          break;
+        case 1:
+          win_version = WINVERSION_XP;
+          break;
+        case 2:
+        default:
+          win_version = WINVERSION_SERVER_2003;
+          break;
+      }
+    } else if (version_info.dwMajorVersion == 6) {
+      if (version_info.wProductType != VER_NT_WORKSTATION) {
+        // 2008 is 6.0, and 2008 R2 is 6.1.
+        win_version = WINVERSION_2008;
+      } else {
+        if (version_info.dwMinorVersion == 0) {
+          win_version = WINVERSION_VISTA;
+        } else {
+          win_version = WINVERSION_WIN7;
+        }
+      }
+    } else if (version_info.dwMajorVersion > 6) {
+      win_version = WINVERSION_WIN7;
+    }
+    checked_version = true;
+  }
+  return win_version;
+}
+
+void GetNonClientMetrics(NONCLIENTMETRICS* metrics) {
+  static const UINT SIZEOF_NONCLIENTMETRICS =
+    (GetWinVersion() >= WINVERSION_VISTA) ?
+    sizeof(NONCLIENTMETRICS) : NONCLIENTMETRICS_SIZE_PRE_VISTA;
+  metrics->cbSize = SIZEOF_NONCLIENTMETRICS;
+  const bool success = !!SystemParametersInfo(SPI_GETNONCLIENTMETRICS,
+    SIZEOF_NONCLIENTMETRICS, metrics,
+    0);
+}
+
+BOOL CALLBACK CloseChromeDialgProc(HWND dlg, UINT message, WPARAM wParam, 
+                                   LPARAM lParam) {
+  switch (message) { 
+    case WM_INITDIALOG:
+      {
+        NONCLIENTMETRICS metrics;
+        GetNonClientMetrics(&metrics);
+        HFONT font = CreateFontIndirect(&(metrics.lfMenuFont));
+        SendMessage(GetDlgItem(dlg, IDC_MESSAGE), WM_SETFONT, (WPARAM)font, TRUE);
+        SendMessage(GetDlgItem(dlg, IDC_NOALERT), WM_SETFONT, (WPARAM)font, TRUE);
+        SendMessage(GetDlgItem(dlg, IDOK), WM_SETFONT, (WPARAM)font, TRUE);
+        SendMessage(GetDlgItem(dlg, IDCANCEL), WM_SETFONT, (WPARAM)font, TRUE);
+        SetWindowText(dlg, g_Local_Message.msg_closechrome_title);
+        SetDlgItemText(dlg, IDOK, g_Local_Message.msg_closechrome_ok);
+        SetDlgItemText(dlg, IDCANCEL, g_Local_Message.msg_closechrome_cancel);
+        SetDlgItemText(dlg, IDC_MESSAGE, g_Local_Message.msg_closechrome_message);
+        SetDlgItemText(dlg, IDC_NOALERT, g_Local_Message.msg_closechrome_noalert);
+      }
+      break;
+    case WM_COMMAND:
+      if (LOWORD(wParam) == IDOK) {
+        if (Button_GetCheck(GetDlgItem(dlg, IDC_NOALERT)) == BST_CHECKED) {
+          Cmd_Msg_Item item;
+          item.cmd = Cmd_Update_CloseChrome_Prompt;
+          item.value.is_closechrome_prompt = false;
+          WriteToServer(item);
+          g_CloseChrome_Prompt = false;
+        }
+        HFONT font = (HFONT)SendMessage(GetDlgItem(dlg, IDC_MESSAGE), WM_GETFONT, 0, 0);
+        if (font)
+          DeleteObject(font);
+        EndDialog(dlg, IDOK);
+      }
+      else if (LOWORD(wParam) == IDCANCEL)
+        EndDialog(dlg, IDCANCEL);
+      break;
+  } 
+  return FALSE; 
+} 
+
 DWORD WINAPI Client_Thread(void* param) {
   char szLog[256];
   char buffer[MAX_BUFFER_LEN];
@@ -158,6 +299,12 @@ DWORD WINAPI Client_Thread(void* param) {
           UpdateShortcutsFromMemory();
           break;
         case Cmd_Response_Update:
+          break;
+        case Cmd_Update_Local_Message:
+          GetMessageFromMemory();
+          break;
+        case Cmd_Update_CloseChrome_Prompt:
+          g_CloseChrome_Prompt = cmd.value.is_closechrome_prompt;
           break;
         case Cmd_Update_DBClick_CloseTab:
           g_DBClickCloseTab = cmd.value.double_click_closetab;
@@ -230,6 +377,7 @@ DWORD ConveniencePlugin::Server_Thread(void* param) {
     }
 
     pPlugin->UpdateDBClick_CloseTab(g_DBClickCloseTab);
+    pPlugin->UpdateCloseChromePromptFlag(g_CloseChrome_Prompt);
     
     BOOL result;
     while (true) {
@@ -271,6 +419,10 @@ DWORD ConveniencePlugin::Server_Thread(void* param) {
           break;
         case Cmd_TabClose:
           PostMessage(pPlugin->hwnd_, WM_TABCLOSE, 0, 0);
+          break;
+        case Cmd_Update_CloseChrome_Prompt:
+          PostMessage(pPlugin->hwnd_, WM_UPDATE_CLOSECHROME_PROMPT,
+                      cmd.value.is_closechrome_prompt, 0);
           break;
         case Cmd_DBClick_CloseTab:
           PostMessage(pPlugin->hwnd_, WM_CLOSE_CURRENT_TAB, 0, 0);
@@ -413,7 +565,30 @@ LRESULT CALLBACK GetMsgProc(int code, WPARAM wParam, LPARAM lParam){
       }
     }
   }
-  
+
+  if ((msg->message == WM_NCLBUTTONDOWN && wParam == PM_REMOVE && 
+       msg->wParam == HTCLOSE) && g_CloseChrome_Prompt && !g_IsOnlyOneTab) {
+    TCHAR class_name[256];
+    GetClassName(msg->hwnd, class_name, 256);
+    HWND address_hwnd = FindWindowEx(msg->hwnd, NULL, kChromeAddressBar, NULL);
+    if (wcscmp(class_name, kChromeClassName) == 0 && 
+        address_hwnd && !g_IsOnlyOneTab &&
+        (GetWindowLong(address_hwnd, GWL_STYLE) & WS_VISIBLE)) {
+      msg->message = WM_NULL;
+      Cmd_Msg_Item item;
+      item.cmd = Cmd_ChromeClose;
+      WriteToServer(item);
+    }
+  }
+
+  if ((msg->message == WM_SYSCOMMAND && wParam == PM_REMOVE && 
+       msg->wParam == SC_CLOSE) && g_CloseChrome_Prompt && !g_IsOnlyOneTab) {
+    if (DialogBox(g_hMod, MAKEINTRESOURCE(IDD_CLOSECHROME), msg->hwnd,
+                  CloseChromeDialgProc) != IDOK) {
+       msg->message = WM_NULL;
+    }
+  }
+
   if ((msg->message == WM_LBUTTONDBLCLK || msg->message == WM_MBUTTONDOWN ||
        msg->message == WM_MBUTTONDBLCLK) && 
        wParam == PM_REMOVE && g_DBClickCloseTab) {
@@ -462,6 +637,7 @@ bottom=%ld,g_IsOnlyOneTab=%d",
 ConveniencePlugin::ConveniencePlugin(void) {
   memory_file_handle_ = NULL;
   server_thread_handle_ = NULL;
+  get_message_flag_ = false;
   InitializeCriticalSection(&cs_);
 }
 
@@ -476,6 +652,7 @@ NPError ConveniencePlugin::Init(NPP instance, uint16_t mode, int16_t argc,
   instance->pdata = this;
   g_Log.WriteLog("Msg", "ConveniencePlugin Init");
   WritePluginProcessId();
+
   server_thread_handle_ = CreateThread(NULL, 0, Server_Thread, this, 0, NULL);
   TCHAR exe_name[MAX_PATH];
   GetModuleBaseName(GetCurrentProcess(), GetModuleHandle(NULL), exe_name, MAX_PATH);
@@ -523,8 +700,8 @@ NPError ConveniencePlugin::UnInit(NPSavedData **save) {
   item.cmd = Cmd_ServerShutDown;
   WriteToClient(item);
 
-  UnhookWindowsHookEx(g_KeyboardHook);
   UnhookWindowsHookEx(g_GetMsgHook);
+  UnhookWindowsHookEx(g_KeyboardHook);
 
   if (WaitForSingleObject(server_thread_handle_, 10) == WAIT_TIMEOUT) {
     TerminateThread(server_thread_handle_, 0);
@@ -535,6 +712,29 @@ NPError ConveniencePlugin::UnInit(NPSavedData **save) {
   }
 
   return NPERR_NO_ERROR;
+}
+
+bool ConveniencePlugin::GetNPMessage(int index, TCHAR* msg, int msglen) {
+  NPObject* window;
+  wcscpy(msg, L"");
+  NPN_GetValue(npp_, NPNVWindowNPObject, &window);
+  NPIdentifier id;
+  id = NPN_GetStringIdentifier("getNPMessage");
+  NPVariant result;
+  VOID_TO_NPVARIANT(result);
+  if (id) {
+    NPVariant param;
+    INT32_TO_NPVARIANT(index, param);
+    if (NPN_Invoke(npp_, window, id, &param, 1, &result)) {
+      if (MultiByteToWideChar(CP_UTF8, 0, 
+        NPVARIANT_TO_STRING(result).UTF8Characters, -1, msg, msglen)) {
+      }
+      NPN_ReleaseVariantValue(&result);
+      return true;
+    }
+  }
+
+  return false;
 }
 
 NPError ConveniencePlugin::GetValue(NPPVariable variable, void *value) {
@@ -590,7 +790,7 @@ void ConveniencePlugin::SetShortcutsToMemory(ShortCut_Item* list, int count) {
                                           0, num, filemap_name);
   if (memory_file_handle_) {
     LPVOID p = MapViewOfFile(memory_file_handle_,
-                             FILE_MAP_WRITE, 0, 0, sizeof(hwnd_));
+                             FILE_MAP_WRITE, 0, 0, num);
     if (p) {
       memcpy(p, &count, sizeof(int));
       memcpy((BYTE*)p+sizeof(int), list, sizeof(ShortCut_Item)*count);
@@ -628,6 +828,39 @@ void ConveniencePlugin::UpdateIsOnlyOneTab(bool is_only_one_tab) {
   WriteToClient(item);
 }
 
+void ConveniencePlugin::UpdateCloseChromePromptFlag(bool flag) {
+  Cmd_Msg_Item item;
+  item.cmd = Cmd_Update_CloseChrome_Prompt;
+  item.value.is_closechrome_prompt = flag;
+  g_CloseChrome_Prompt = flag;
+  WriteToClient(item);
+}
+
+void ConveniencePlugin::GetLocalMessage() {
+  if (get_message_flag_)
+    return;
+
+  GetNPMessage(MSG_BOSSKEY_DEFINED, g_Local_Message.msg_bosskey_defined,
+      sizeof(g_Local_Message.msg_bosskey_defined));
+  GetNPMessage(MSG_ALWAYS_ON_TOP, g_Local_Message.msg_always_on_top,
+      sizeof(g_Local_Message.msg_always_on_top));
+  GetNPMessage(MSG_CLOSECHROME_TITLE, g_Local_Message.msg_closechrome_title,
+      sizeof(g_Local_Message.msg_closechrome_title));
+  GetNPMessage(MSG_CLOSECHROME_MESSAGE, g_Local_Message.msg_closechrome_message,
+      sizeof(g_Local_Message.msg_closechrome_message));
+  GetNPMessage(MSG_CLOSECHROME_OK, g_Local_Message.msg_closechrome_ok,
+      sizeof(g_Local_Message.msg_closechrome_ok));
+  GetNPMessage(MSG_CLOSECHROME_CANCEL, g_Local_Message.msg_closechrome_cancel,
+      sizeof(g_Local_Message.msg_closechrome_cancel));
+  GetNPMessage(MSG_CLOSECHROME_NOALERT, g_Local_Message.msg_closechrome_noalert,
+      sizeof(g_Local_Message.msg_closechrome_noalert));
+  WriteMessageToMemory();
+  get_message_flag_ = true;
+  Cmd_Msg_Item item;
+  item.cmd = Cmd_Update_Local_Message;
+  WriteToClient(item);
+}
+
 LRESULT ConveniencePlugin::WndProc(HWND hWnd, UINT Msg, 
                                     WPARAM wParam, LPARAM lParam) {
   ConveniencePlugin* plugin = (ConveniencePlugin*)GetWindowLong(hWnd, 
@@ -650,7 +883,7 @@ LRESULT ConveniencePlugin::WndProc(HWND hWnd, UINT Msg,
       LeaveCriticalSection(&plugin->cs_);
       break;
     case WM_CHROMECLOSE:
-      pObject->TriggerChromeClose();
+      pObject->TriggerShortcuts(MOD_ALT, VK_F4);
       break;
     case WM_TRIGGER_CHROME_SHORTCUTS:
       pObject->TriggerShortcuts(wParam, lParam);
@@ -659,8 +892,10 @@ LRESULT ConveniencePlugin::WndProc(HWND hWnd, UINT Msg,
       pObject->TriggerTabClose();
       break;
     case WM_CLOSE_CURRENT_TAB:
-      Sleep(50);
       pObject->TriggerCloseCurrentTab();
+      break;
+    case WM_UPDATE_CLOSECHROME_PROMPT:
+      pObject->UpdateCloseChromePromptFlag(wParam);
       break;
     case WM_KEYDOWN:
       {

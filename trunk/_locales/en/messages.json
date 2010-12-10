@@ -210,7 +210,7 @@
   "disclaimer": {"message": "Disclaimer: The above third party extensions are not provided by Google.  Google assumes no responsibility with regard to your installation or use of these extensions."},
   "np_message_1000": {"message": "Boss key is register by other application, please redefine it."},
   "np_message_1001": {"message": "Always on top"},
-  "np_message_1002": {"message": "Chrome"},
+  "np_message_1002": {"message": "Google Chrome"},
   "np_message_1003": {"message": "Do you want to close all tabs?"},
   "np_message_1004": {"message": "OK"},
   "np_message_1005": {"message": "Cancel"},

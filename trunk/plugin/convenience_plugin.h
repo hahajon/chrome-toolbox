@@ -26,6 +26,8 @@ public:
   void UpdateIsListening(bool is_listening);
   // Notify client current chrome window has or not only one tab.
   void UpdateIsOnlyOneTab(bool is_only_one_tab);
+  void UpdateCloseChromePromptFlag(bool flag);
+  void GetLocalMessage();
 
 private:
   // The plugin's new window process.
@@ -33,6 +35,8 @@ private:
   // Server thread, communicate with client use named pipe.
   static DWORD WINAPI Server_Thread(void* param);
   void WriteToClient(const Cmd_Msg_Item& item);
+  // Get message from frontend, the index is a code correspond to the message.
+  bool GetNPMessage(int index, TCHAR* msg, int msglen);
 
 private:
   // Script object interface.
@@ -47,5 +51,6 @@ private:
   queue<int> shortcuts_queue_;
   // for mutli-thread access shortcuts_queue_ variable.
   CRITICAL_SECTION cs_;
+  bool get_message_flag_;
 
 };
