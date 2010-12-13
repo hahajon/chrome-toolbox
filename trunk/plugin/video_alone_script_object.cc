@@ -65,8 +65,8 @@ void VideoAloneScriptObject::Invalidate() {
 }
 
 bool VideoAloneScriptObject::ShowVideoAlone(const NPVariant *args,
-                                             uint32_t argCount,
-                                             NPVariant *result) {
+                                            uint32_t argCount,
+                                            NPVariant *result) {
   char szLog[512];
 
   if (argCount < 5)
@@ -79,7 +79,7 @@ bool VideoAloneScriptObject::ShowVideoAlone(const NPVariant *args,
   }
 
   for (int i = 2; i < 5; i++) {
-    if (!NPVARIANT_IS_INT32(args[i])) {
+    if (!NPVARIANT_IS_INT32(args[i]) && !NPVARIANT_IS_DOUBLE(args[i])) {
       return false;
     }
   }
@@ -161,9 +161,12 @@ bool VideoAloneScriptObject::ShowVideoAlone(const NPVariant *args,
   }
 
   WindowID_Item item = { 0 };
-  item.parent_window_id = NPVARIANT_TO_INT32(args[2]);
-  item.window_id = NPVARIANT_TO_INT32(args[3]);
-  item.tab_id = NPVARIANT_TO_INT32(args[4]);
+  item.parent_window_id = NPVARIANT_IS_INT32(args[2]) ? 
+      NPVARIANT_TO_INT32(args[2]) : NPVARIANT_TO_DOUBLE(args[2]);
+  item.window_id = NPVARIANT_IS_INT32(args[3]) ? 
+      NPVARIANT_TO_INT32(args[3]) : NPVARIANT_TO_DOUBLE(args[3]);
+  item.tab_id = NPVARIANT_IS_INT32(args[4]) ? 
+      NPVARIANT_TO_INT32(args[4]) : NPVARIANT_TO_DOUBLE(args[4]);
   window_list_.insert(WindowMapPair(hwnd, item));
 
   BOOLEAN_TO_NPVARIANT(true, *result);

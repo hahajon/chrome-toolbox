@@ -105,7 +105,12 @@ bool ConvenienceScriptObject::UpdateShortCutList(const NPVariant *args,
   }
 
   if (NPN_GetProperty(plugin_->get_npp(), shortcuts_object_, id, &length)) {
-    int len = NPVARIANT_TO_INT32(length);
+    int len = 0;
+    if (NPVARIANT_IS_INT32(length))
+      len = NPVARIANT_TO_INT32(length);
+    else if (NPVARIANT_IS_DOUBLE(length))
+      len = NPVARIANT_TO_DOUBLE(length);
+
     NPVariant array_item;
     NPObject* array_object;
     NPVariant property_value;
