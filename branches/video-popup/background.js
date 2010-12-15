@@ -283,21 +283,35 @@
   var videoAlone = {
     popupWindow: function(request, sender, width, height) {
       var parentWindowId = sender.tab.windowId;
-      chrome.windows.create({width: width,
+      if (!isHighVersion()) {
+        chrome.windows.create({width: width,
+                               height: height + 25,
+                               url: '',
+                               type: 'normal'}, function(window) {
+          chrome.tabs.move(sender.tab.id, {windowId: window.id,
+                                           index:1}, function(){
+            chrome.tabs.getAllInWindow(window.id, function(tabs) {
+              chrome.tabs.remove(tabs[0].id);
+              plugin.showVideoAlone(sender.tab.title, request.orgTitle,
+                  parentWindowId, window.id, sender.tab.id);
+              chrome.tabs.sendRequest(sender.tab.id,
+                  {msg: 'restoreTabTitle', orgTitle: request.orgTitle});
+            });
+          });
+        });
+      } else {
+        chrome.windows.create({width: width,
                              height: height + 25,
-                             url: '',
-                             type: 'normal'}, function(window) {
-        chrome.tabs.move(sender.tab.id, {windowId: window.id,
-                                         index:1}, function(){
+                             tabId: sender.tab.id,
+                             type: 'popup'}, function(window) {
           chrome.tabs.getAllInWindow(window.id, function(tabs) {
-            chrome.tabs.remove(tabs[0].id);
             plugin.showVideoAlone(sender.tab.title, request.orgTitle,
                 parentWindowId, window.id, sender.tab.id);
             chrome.tabs.sendRequest(sender.tab.id,
                 {msg: 'restoreTabTitle', orgTitle: request.orgTitle});
           });
         });
-      });
+      }
     },
 
     restore: function(parentWindowId, curWindowId, tabId) {
