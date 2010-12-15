@@ -483,6 +483,14 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
     else
       shortcuts = virual_key;
 
+    if ((wParam == VK_F4 || wParam == 'W') && 
+        ((GetKeyState(VK_CONTROL) & 0x80)) && g_IsOnlyOneTab) {
+      Cmd_Msg_Item item;
+      item.cmd = Cmd_TabClose;
+      WriteToServer(item);
+      return TRUE;
+    }
+
     ConvenienceScriptObject::ShortCutKeyMap* shortcut_map;
     if (map_current_used_flag == 1)
       shortcut_map = &g_mapOne;
@@ -572,8 +580,7 @@ LRESULT CALLBACK GetMsgProc(int code, WPARAM wParam, LPARAM lParam){
     GetClassName(msg->hwnd, class_name, 256);
     HWND address_hwnd = FindWindowEx(msg->hwnd, NULL, kChromeAddressBar, NULL);
     if (wcscmp(class_name, kChromeClassName) == 0 && 
-        address_hwnd && !g_IsOnlyOneTab &&
-        (GetWindowLong(address_hwnd, GWL_STYLE) & WS_VISIBLE)) {
+        address_hwnd && (GetWindowLong(address_hwnd, GWL_STYLE) & WS_VISIBLE)) {
       msg->message = WM_NULL;
       Cmd_Msg_Item item;
       item.cmd = Cmd_ChromeClose;
@@ -583,15 +590,20 @@ LRESULT CALLBACK GetMsgProc(int code, WPARAM wParam, LPARAM lParam){
 
   if ((msg->message == WM_SYSCOMMAND && wParam == PM_REMOVE && 
        msg->wParam == SC_CLOSE) && g_CloseChrome_Prompt && !g_IsOnlyOneTab) {
-    if (DialogBox(g_hMod, MAKEINTRESOURCE(IDD_CLOSECHROME), msg->hwnd,
-                  CloseChromeDialgProc) != IDOK) {
-       msg->message = WM_NULL;
+    TCHAR class_name[256];
+    GetClassName(msg->hwnd, class_name, 256);
+    HWND address_hwnd = FindWindowEx(msg->hwnd, NULL, kChromeAddressBar, NULL);
+    if (wcscmp(class_name, kChromeClassName) == 0 && 
+        address_hwnd && (GetWindowLong(address_hwnd, GWL_STYLE) & WS_VISIBLE)) {
+      if (DialogBox(g_hMod, MAKEINTRESOURCE(IDD_CLOSECHROME), msg->hwnd,
+                    CloseChromeDialgProc) != IDOK) {
+        msg->message = WM_NULL;
+      }
     }
   }
 
   if ((msg->message == WM_LBUTTONDBLCLK || msg->message == WM_MBUTTONDOWN ||
-       msg->message == WM_MBUTTONDBLCLK) && 
-       wParam == PM_REMOVE && g_DBClickCloseTab) {
+       msg->message == WM_MBUTTONDBLCLK) && wParam == PM_REMOVE) {
     POINT pt;
     pt.x = GET_X_LPARAM(msg->lParam);
     pt.y = GET_Y_LPARAM(msg->lParam);
@@ -624,7 +636,7 @@ bottom=%ld,g_IsOnlyOneTab=%d",
         msg->message = WM_NULL;
         item.cmd = Cmd_TabClose;
         WriteToServer(item);
-      } else if (msg->message == WM_LBUTTONDBLCLK) {
+      } else if (msg->message == WM_LBUTTONDBLCLK && g_DBClickCloseTab) {
         msg->message = WM_NULL;
         item.cmd = Cmd_DBClick_CloseTab;
         WriteToServer(item);
@@ -892,7 +904,8 @@ LRESULT ConveniencePlugin::WndProc(HWND hWnd, UINT Msg,
       pObject->TriggerTabClose();
       break;
     case WM_CLOSE_CURRENT_TAB:
-      pObject->TriggerCloseCurrentTab();
+      pObject->TriggerShortcuts(MOD_CONTROL, VK_F4);
+      //pObject->TriggerCloseCurrentTab();
       break;
     case WM_UPDATE_CLOSECHROME_PROMPT:
       pObject->UpdateCloseChromePromptFlag(wParam);
