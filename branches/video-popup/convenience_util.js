@@ -25,6 +25,5 @@ function isWindowsPlatform() {
 
 function isHighVersion() {
   var version = navigator.userAgent.match(/Chrome\/(\d+)/)[1];
-  console.log(version);
-  return version > 8;
+  return version > 9;
 }
