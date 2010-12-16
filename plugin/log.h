@@ -8,16 +8,11 @@ public:
   Log(void);
   ~Log(void);
 
-  // Open log with header_YYYYMMDD_processid format.
-  bool OpenLog(LPCSTR header);
-  // Write log
-  bool WriteLog(LPCSTR title, LPCSTR contents);
-  // Close log.
+  bool OpenLog(const char* header);
+  bool WriteLog(const char* title, const char* contents);
   bool CloseLog();
 
 private:
-  // 
   FILE* file_;
-  char buffer_[2048];
   SYSTEMTIME time_;
 };

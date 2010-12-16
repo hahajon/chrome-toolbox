@@ -25,9 +25,12 @@ public:
   // Send current state of set shortcuts to client.
   void UpdateIsListening(bool is_listening);
   // Notify client current chrome window has or not only one tab.
-  void UpdateIsOnlyOneTab(bool is_only_one_tab);
+  void UpdateTabCount(int windowid, int tabcount);
+  void UpdateCloseLastTab(bool close_last_tab);
   void UpdateCloseChromePromptFlag(bool flag);
   void GetLocalMessage();
+  void ChromeWindowCreated(int windowid);
+  void ChromeWindowRemoved(int windowid);
 
 private:
   // The plugin's new window process.
