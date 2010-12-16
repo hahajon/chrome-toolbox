@@ -87,7 +87,7 @@
 
   function setCloseLastOneTabStatus() {
     var isCloseWindow = eval(localStorage['closeLastTab']) && true;
-    plugin.updateCloseLastTab(true);
+    plugin.updateCloseLastTab(isCloseWindow);
     chrome.windows.getCurrent(function(win) {
       chrome.tabs.getAllInWindow(win.id, function(tabs) {
         plugin.updateTabCount(win.id, tabs.length);
