@@ -46,12 +46,23 @@ public:
                       NPVariant *result);
 
   // Notify plugin current chrome window has or not only one tab.
-  bool IsOnlyOneTab(const NPVariant *args, uint32_t argCount,
+  bool UpdateTabCount(const NPVariant *args, uint32_t argCount,
                     NPVariant *result);
 
   // Notify plugin is prompt when chrome close with more than one tab.
   bool CloseChromePrompt(const NPVariant *args, uint32_t argCount,
                          NPVariant *result);
+
+  bool CloseLastTab(const NPVariant *args, uint32_t argCount,
+                    NPVariant *result);
+
+  // Notify plugin a chrome window created
+  bool ChromeWindowCreated(const NPVariant *args, uint32_t argCount,
+                           NPVariant *result);
+
+  // Notify plugin a chrome window removed
+  bool ChromeWindowRemoved(const NPVariant *args, uint32_t argCount,
+                           NPVariant *result);
 
   // For plugin object used. when plugin receive keyboard stroke key, 
   // then call this function to notify frontend some key pressed.

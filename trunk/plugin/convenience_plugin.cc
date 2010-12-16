@@ -7,6 +7,7 @@
 #include "resource.h"
 #include <TlHelp32.h>
 #include <Psapi.h>
+#include <map>
 
 using namespace std;
 
@@ -14,9 +15,11 @@ extern Log g_Log;
 extern HMODULE g_hMod;
 extern bool g_DBClickCloseTab;
 bool g_IsListening = false;
-bool g_IsOnlyOneTab = false;
+bool g_Close_Last_Tab = false;
 bool g_CloseChrome_Prompt = true;
 Local_Message_Item g_Local_Message;
+typedef map<HWND, Cmd_Msg_Item::Cmd_Msg_Value::TabCount> ChromeWindowIdMap;
+ChromeWindowIdMap g_ChromeWindowMap;
 
 DWORD g_ChromeMainThread = 0;
 
@@ -312,8 +315,50 @@ DWORD WINAPI Client_Thread(void* param) {
         case Cmd_Update_Is_Listening:
           g_IsListening = cmd.value.is_listening;
           break;
-        case Cmd_Update_Is_Only_One_Tab:
-          g_IsOnlyOneTab = cmd.value.is_only_on_tab;
+        case Cmd_Update_CloseLastTab:
+          g_Close_Last_Tab = cmd.value.close_last_tab;
+          break;
+        case Cmd_Update_TabCount:
+          {  
+            ChromeWindowIdMap::iterator iter;
+            for (iter = g_ChromeWindowMap.begin(); iter != g_ChromeWindowMap.end();
+                 iter++) {
+              if (iter->second.windowid == cmd.value.tabcount.windowid) {
+                iter->second.tabcount = cmd.value.tabcount.tabcount;
+                sprintf(szLog, "windowid=%d, tabcount=%ld", 
+                  cmd.value.tabcount.windowid,
+                  cmd.value.tabcount.tabcount);
+                g_Log.WriteLog("Cmd_Update_TabCount", szLog);
+                break;
+              }
+            }
+          }
+          break;
+        case Cmd_ChromeWindowCreated:
+          {
+            Cmd_Msg_Item::Cmd_Msg_Value::TabCount tabcount;
+            tabcount.windowid = cmd.value.chrome_window.windowid;
+            tabcount.tabcount = 1;
+            g_ChromeWindowMap.insert(make_pair(
+                cmd.value.chrome_window.chrome_handle, 
+                tabcount));
+            sprintf(szLog, "handle=%X, windowid=%ld", 
+                    cmd.value.chrome_window.chrome_handle,
+                    cmd.value.chrome_window.windowid);
+            g_Log.WriteLog("ChromeWindowCreated", szLog);
+          }
+          break;
+        case Cmd_ChromeWindowRemoved:
+          {
+            ChromeWindowIdMap::iterator iter;
+            for (iter = g_ChromeWindowMap.begin(); iter != g_ChromeWindowMap.end();
+                 iter++) {
+              if (iter->second.windowid == cmd.value.chrome_window.windowid) {
+                g_ChromeWindowMap.erase(iter);
+                break;
+              }
+            }
+          }
           break;
         case Cmd_ServerShutDown:
           {
@@ -378,6 +423,17 @@ DWORD ConveniencePlugin::Server_Thread(void* param) {
 
     pPlugin->UpdateDBClick_CloseTab(g_DBClickCloseTab);
     pPlugin->UpdateCloseChromePromptFlag(g_CloseChrome_Prompt);
+    pPlugin->UpdateCloseLastTab(g_Close_Last_Tab);
+    ChromeWindowIdMap::iterator iter;
+    for (iter = g_ChromeWindowMap.begin(); iter != g_ChromeWindowMap.end();
+         iter++) {
+      Cmd_Msg_Item item;
+      item.cmd = Cmd_ChromeWindowCreated;
+      item.value.chrome_window.chrome_handle = iter->first;
+      item.value.chrome_window.windowid = iter->second.windowid;
+      pPlugin->WriteToClient(item);
+    }
+    g_ChromeWindowMap.clear();
     
     BOOL result;
     while (true) {
@@ -483,8 +539,12 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
     else
       shortcuts = virual_key;
 
+    HWND hwnd = GetForegroundWindow();
+    ChromeWindowIdMap::iterator tabcount_iter = g_ChromeWindowMap.find(hwnd);
     if ((wParam == VK_F4 || wParam == 'W') && 
-        ((GetKeyState(VK_CONTROL) & 0x80)) && g_IsOnlyOneTab) {
+        ((GetKeyState(VK_CONTROL) & 0x80)) && g_Close_Last_Tab &&
+        tabcount_iter != g_ChromeWindowMap.end() && 
+        tabcount_iter->second.tabcount == 1) {
       Cmd_Msg_Item item;
       item.cmd = Cmd_TabClose;
       WriteToServer(item);
@@ -534,8 +594,15 @@ LRESULT CALLBACK GetMsgProc(int code, WPARAM wParam, LPARAM lParam){
   }
   MSG* msg = (MSG*)lParam;
 
+  ChromeWindowIdMap::iterator iter = g_ChromeWindowMap.find(msg->hwnd);
+  if (iter == g_ChromeWindowMap.end())
+    return CallNextHookEx(g_GetMsgHook, code, wParam, lParam);
+
+  bool is_only_one_tab = (iter->second.tabcount == 1);
+
   if ((msg->message == WM_LBUTTONDOWN || msg->message == WM_LBUTTONDBLCLK) 
-      && wParam == PM_REMOVE && msg->wParam == MK_LBUTTON && g_IsOnlyOneTab) {
+      && wParam == PM_REMOVE && msg->wParam == MK_LBUTTON && g_Close_Last_Tab 
+      && is_only_one_tab) {
     TCHAR class_name[256];
     GetClassName(msg->hwnd, class_name, 256);
     if (wcscmp(class_name, kChromeClassName) == 0 && 
@@ -575,7 +642,7 @@ LRESULT CALLBACK GetMsgProc(int code, WPARAM wParam, LPARAM lParam){
   }
 
   if ((msg->message == WM_NCLBUTTONDOWN && wParam == PM_REMOVE && 
-       msg->wParam == HTCLOSE) && g_CloseChrome_Prompt && !g_IsOnlyOneTab) {
+       msg->wParam == HTCLOSE) && g_CloseChrome_Prompt && !is_only_one_tab) {
     TCHAR class_name[256];
     GetClassName(msg->hwnd, class_name, 256);
     HWND address_hwnd = FindWindowEx(msg->hwnd, NULL, kChromeAddressBar, NULL);
@@ -589,7 +656,7 @@ LRESULT CALLBACK GetMsgProc(int code, WPARAM wParam, LPARAM lParam){
   }
 
   if ((msg->message == WM_SYSCOMMAND && wParam == PM_REMOVE && 
-       msg->wParam == SC_CLOSE) && g_CloseChrome_Prompt && !g_IsOnlyOneTab) {
+       msg->wParam == SC_CLOSE) && g_CloseChrome_Prompt && !is_only_one_tab) {
     TCHAR class_name[256];
     GetClassName(msg->hwnd, class_name, 256);
     HWND address_hwnd = FindWindowEx(msg->hwnd, NULL, kChromeAddressBar, NULL);
@@ -619,9 +686,9 @@ LRESULT CALLBACK GetMsgProc(int code, WPARAM wParam, LPARAM lParam){
 
     char logs[256];
     sprintf(logs, "x=%ld,y=%ld,left=%ld,right=%ld,top=%ld,\
-bottom=%ld,g_IsOnlyOneTab=%d",
+bottom=%ld,is_only_one_tab=%d",
             pt.x, pt.y, tab_client_rect.left, tab_client_rect.right,
-            tab_client_rect.top, tab_client_rect.bottom, g_IsOnlyOneTab);
+            tab_client_rect.top, tab_client_rect.bottom, is_only_one_tab);
     g_Log.WriteLog("DBClickTab", logs);
 
     if (!PtInRect(&tab_client_rect, pt))
@@ -632,7 +699,7 @@ bottom=%ld,g_IsOnlyOneTab=%d",
     if (wcscmp(class_name, kChromeClassName) == 0 && 
         GetParent(msg->hwnd) == NULL) {
       Cmd_Msg_Item item;
-      if (g_IsOnlyOneTab) {
+      if (g_Close_Last_Tab && is_only_one_tab) {
         msg->message = WM_NULL;
         item.cmd = Cmd_TabClose;
         WriteToServer(item);
@@ -833,10 +900,11 @@ void ConveniencePlugin::UpdateIsListening(bool is_listening) {
   WriteToClient(item);
 }
 
-void ConveniencePlugin::UpdateIsOnlyOneTab(bool is_only_one_tab) {
+void ConveniencePlugin::UpdateTabCount(int windowid, int tabcount) {
   Cmd_Msg_Item item;
-  item.cmd = Cmd_Update_Is_Only_One_Tab;
-  item.value.is_listening = is_only_one_tab;
+  item.cmd = Cmd_Update_TabCount;
+  item.value.tabcount.windowid = windowid;
+  item.value.tabcount.tabcount = tabcount;
   WriteToClient(item);
 }
 
@@ -845,6 +913,49 @@ void ConveniencePlugin::UpdateCloseChromePromptFlag(bool flag) {
   item.cmd = Cmd_Update_CloseChrome_Prompt;
   item.value.is_closechrome_prompt = flag;
   g_CloseChrome_Prompt = flag;
+  WriteToClient(item);
+}
+
+void ConveniencePlugin::UpdateCloseLastTab(bool close_last_tab) {
+  Cmd_Msg_Item item;
+  item.cmd = Cmd_Update_CloseLastTab;
+  item.value.close_last_tab = close_last_tab;
+  g_Close_Last_Tab = close_last_tab;
+  WriteToClient(item);
+}
+
+void ConveniencePlugin::ChromeWindowCreated(int windowid) {
+  Cmd_Msg_Item item;
+  item.cmd = Cmd_ChromeWindowCreated;
+  item.value.chrome_window.windowid = windowid;
+  item.value.chrome_window.chrome_handle = NULL;
+  HWND chrome_hwnd = FindWindowEx(NULL, NULL, kChromeClassName, NULL);
+  char logs[256];
+  while(chrome_hwnd) {
+    BOOL visible = IsWindowVisible(chrome_hwnd);
+    HWND hwnd = GetParent(chrome_hwnd);
+    sprintf(logs, "chrome_hwnd=%X,IsWindowVisible=%d,GetParent=%X", chrome_hwnd, 
+            visible, hwnd);
+    g_Log.WriteLog("create", logs);
+    if (GetWindowThreadProcessId(chrome_hwnd, NULL) == g_ChromeMainThread &&
+        hwnd == NULL) {
+        item.value.chrome_window.chrome_handle = chrome_hwnd;
+        Cmd_Msg_Item::Cmd_Msg_Value::TabCount tabcount;
+        tabcount.windowid = windowid;
+        tabcount.tabcount = 1;
+        g_ChromeWindowMap.insert(make_pair(chrome_hwnd, tabcount));
+        break;
+    }
+    chrome_hwnd = FindWindowEx(NULL, chrome_hwnd, kChromeClassName, NULL);
+  }
+
+  WriteToClient(item);
+}
+
+void ConveniencePlugin::ChromeWindowRemoved(int windowid) {
+  Cmd_Msg_Item item;
+  item.cmd = Cmd_ChromeWindowRemoved;
+  item.value.chrome_window.windowid = windowid;
   WriteToClient(item);
 }
 
@@ -905,7 +1016,6 @@ LRESULT ConveniencePlugin::WndProc(HWND hWnd, UINT Msg,
       break;
     case WM_CLOSE_CURRENT_TAB:
       pObject->TriggerShortcuts(MOD_CONTROL, VK_F4);
-      //pObject->TriggerCloseCurrentTab();
       break;
     case WM_UPDATE_CLOSECHROME_PROMPT:
       pObject->UpdateCloseChromePromptFlag(wParam);
