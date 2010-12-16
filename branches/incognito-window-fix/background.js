@@ -87,16 +87,12 @@
 
   function setCloseLastOneTabStatus() {
     var isCloseWindow = eval(localStorage['closeLastTab']) && true;
-    if (isCloseWindow) {
-      plugin.updateCloseLastTab(true);
-      chrome.windows.getCurrent(function(win) {
-        chrome.tabs.getAllInWindow(win.id, function(tabs) {
-          plugin.updateTabCount(win.id, tabs.length);
-        });
+    plugin.updateCloseLastTab(true);
+    chrome.windows.getCurrent(function(win) {
+      chrome.tabs.getAllInWindow(win.id, function(tabs) {
+        plugin.updateTabCount(win.id, tabs.length);
       });
-    } else {
-      plugin.updateCloseLastTab(false);
-    }
+    });
   }
 
   function beforeLastTabClose() {
@@ -203,9 +199,6 @@
         setCloseLastOneTabStatus();
       });
       chrome.tabs.onRemoved.addListener(function(tabId) {
-        setCloseLastOneTabStatus();
-      });
-      chrome.windows.onFocusChanged.addListener(function(windowId) {
         setCloseLastOneTabStatus();
       });
       chrome.windows.onCreated.addListener(function(window) {
