@@ -50,13 +50,25 @@ NPObject* ConvenienceScriptObject::Allocate(NPP npp, NPClass *aClass) {
     item.function_pointer = ON_INVOKEHELPER(&ConvenienceScriptObject::
         RemoveListener);
     pRet->AddFunction(item);    
-    strcpy(item.function_name, "IsOnlyOneTab");
+    strcpy(item.function_name, "UpdateTabCount");
     item.function_pointer = ON_INVOKEHELPER(&ConvenienceScriptObject::
-        IsOnlyOneTab);
+        UpdateTabCount);
+    pRet->AddFunction(item);
+    strcpy(item.function_name, "CloseLastTab");
+    item.function_pointer = ON_INVOKEHELPER(&ConvenienceScriptObject::
+        CloseLastTab);
     pRet->AddFunction(item);
     strcpy(item.function_name, "CloseChromePrompt");
     item.function_pointer = ON_INVOKEHELPER(&ConvenienceScriptObject::
         CloseChromePrompt);
+    pRet->AddFunction(item);
+    strcpy(item.function_name, "ChromeWindowCreated");
+    item.function_pointer = ON_INVOKEHELPER(&ConvenienceScriptObject::
+        ChromeWindowCreated);
+    pRet->AddFunction(item);
+    strcpy(item.function_name, "ChromeWindowRemoved");
+    item.function_pointer = ON_INVOKEHELPER(&ConvenienceScriptObject::
+        ChromeWindowRemoved);
     pRet->AddFunction(item);
   }
   return pRet;
@@ -444,7 +456,7 @@ bool ConvenienceScriptObject::PressBossKey(const NPVariant *args,
           GetWindowThreadProcessId(chrome_hwnd, NULL) == g_ChromeMainThread) {
         window_list.insert(window_list.begin(), chrome_hwnd);
       }
-      chrome_hwnd = FindWindowEx(NULL,chrome_hwnd,kChromeClassName,NULL);
+      chrome_hwnd = FindWindowEx(NULL, chrome_hwnd, kChromeClassName,NULL);
     }
     vector<HWND>::iterator iter;
     for (iter = window_list.begin(); iter != window_list.end(); iter++) {
@@ -530,15 +542,18 @@ bool ConvenienceScriptObject::RemoveListener(const NPVariant *args,
   return true;
 }
 
-bool ConvenienceScriptObject::IsOnlyOneTab(const NPVariant *args, 
-                                           uint32_t argCount, 
-                                           NPVariant *result) {
-  if (argCount != 1 || !NPVARIANT_IS_BOOLEAN(args[0]))
+bool ConvenienceScriptObject::UpdateTabCount(const NPVariant *args, 
+                                             uint32_t argCount, 
+                                             NPVariant *result) {
+  if (argCount != 2)
     return false;
 
-  bool only_one_tab = NPVARIANT_TO_BOOLEAN(args[0]);
+  int windowid = NPVARIANT_IS_INT32(args[0]) ? NPVARIANT_TO_INT32(args[0]) :
+      NPVARIANT_TO_DOUBLE(args[0]);
+  int tabcount = NPVARIANT_IS_INT32(args[1]) ? NPVARIANT_TO_INT32(args[1]) :
+      NPVARIANT_TO_DOUBLE(args[1]);
   ConveniencePlugin* plugin = (ConveniencePlugin*)plugin_;
-  plugin->UpdateIsOnlyOneTab(only_one_tab);
+  plugin->UpdateTabCount(windowid, tabcount);
   return true;
 }
 
@@ -551,6 +566,47 @@ bool ConvenienceScriptObject::CloseChromePrompt(const NPVariant *args,
   bool prompt  = NPVARIANT_TO_BOOLEAN(args[0]);
   ConveniencePlugin* plugin = (ConveniencePlugin*)plugin_;
   plugin->UpdateCloseChromePromptFlag(prompt);
+  return true;
+}
+
+bool ConvenienceScriptObject::CloseLastTab(const NPVariant *args, 
+                                           uint32_t argCount, 
+                                           NPVariant *result) {
+  if (argCount != 1 || !NPVARIANT_IS_BOOLEAN(args[0]))
+    return false;
+
+  bool close_last_tab  = NPVARIANT_TO_BOOLEAN(args[0]);
+  ConveniencePlugin* plugin = (ConveniencePlugin*)plugin_;
+  plugin->UpdateCloseLastTab(close_last_tab);
+  return true;
+}
+
+bool ConvenienceScriptObject::ChromeWindowCreated(const NPVariant *args, 
+                                                  uint32_t argCount, 
+                                                  NPVariant *result) {
+  if (argCount != 1)
+    return false;
+
+  int windowid = NPVARIANT_IS_INT32(args[0]) ? NPVARIANT_TO_INT32(args[0]) :
+      NPVARIANT_TO_DOUBLE(args[0]);
+  ConveniencePlugin* plugin = (ConveniencePlugin*)plugin_;
+  plugin->ChromeWindowCreated(windowid);
+
+  return true;
+}
+
+bool ConvenienceScriptObject::ChromeWindowRemoved(const NPVariant *args, 
+                                                  uint32_t argCount, 
+                                                  NPVariant *result) {
+  if (argCount != 1)
+    return false;
+
+  int windowid = NPVARIANT_IS_INT32(args[0]) ? NPVARIANT_TO_INT32(args[0]) :
+      NPVARIANT_TO_DOUBLE(args[0]);
+
+  ConveniencePlugin* plugin = (ConveniencePlugin*)plugin_;
+  plugin->ChromeWindowRemoved(windowid);
+
   return true;
 }
 

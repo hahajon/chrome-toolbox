@@ -17,13 +17,16 @@
     removeKeyboardListener: function() {
       this.convenience.RemoveListener();
     },
-    isOnlyOneTab: function(onlyOneFlag) {
-      this.convenience.IsOnlyOneTab(onlyOneFlag);
+    updateTabCount: function(windowid, tabcount) {
+      this.convenience.UpdateTabCount(windowid, tabcount);
+    },
+    updateCloseLastTab: function(closeLastTab) {
+      this.convenience.CloseLastTab(closeLastTab);
     },
     setDBClickCloseTab: function(dbClickFlag) {
       this.convenience.SetDBClickCloseTab(dbClickFlag);
     },
-    pressBossKey : function() {
+    pressBossKey: function() {
       this.convenience.PressBossKey();
     },
     triggerChromeShortcuts: function(virtualKey) {
@@ -51,9 +54,13 @@
     },
     muteBrowser: function(muteFlag) {
       this.browserMute.MuteBrowser(muteFlag);
+    },
+    chromeWindowCreated: function(windowid) {
+      this.convenience.ChromeWindowCreated(windowid);
+    },
+    chromeWindowRemoved: function(windowid) {
+      this.convenience.ChromeWindowRemoved(windowid);
     }
-
-
   }
   chrome.extension.onRequest.addListener(function(request, sender, sendResponse) {
     switch(request.msg) {
@@ -81,17 +88,14 @@
   function setCloseLastOneTabStatus() {
     var isCloseWindow = eval(localStorage['closeLastTab']) && true;
     if (isCloseWindow) {
-      chrome.windows.getLastFocused(function(win) {
+      plugin.updateCloseLastTab(true);
+      chrome.windows.getCurrent(function(win) {
         chrome.tabs.getAllInWindow(win.id, function(tabs) {
-          if (tabs.length > 1) {
-            plugin.isOnlyOneTab(false);
-          } else {
-            plugin.isOnlyOneTab(true);
-          }
+          plugin.updateTabCount(win.id, tabs.length);
         });
       });
     } else {
-      plugin.isOnlyOneTab(false);
+      plugin.updateCloseLastTab(false);
     }
   }
 
@@ -203,6 +207,15 @@
       });
       chrome.windows.onFocusChanged.addListener(function(windowId) {
         setCloseLastOneTabStatus();
+      });
+      chrome.windows.onCreated.addListener(function(window) {
+        plugin.chromeWindowCreated(window.id);
+      });
+      chrome.windows.onRemoved.addListener(function(windowid) {
+        plugin.chromeWindowRemoved(windowid);
+      });
+      chrome.windows.getCurrent(function(window) {
+        plugin.chromeWindowCreated(window.id);
       });
     }
   }

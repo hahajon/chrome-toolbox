@@ -66,9 +66,10 @@ enum Cmd_Msg_Type {
   Cmd_Response_Update,
   Cmd_Update_DBClick_CloseTab,
   Cmd_Update_Is_Listening,
-  Cmd_Update_Is_Only_One_Tab,
+  Cmd_Update_TabCount,
   Cmd_Update_Local_Message,
   Cmd_Update_CloseChrome_Prompt,
+  Cmd_Update_CloseLastTab,
   Cmd_KeyDown,
   Cmd_KeyUp,
   Cmd_Event,
@@ -77,6 +78,8 @@ enum Cmd_Msg_Type {
   Cmd_DBClick_CloseTab,
   Cmd_ServerShutDown,
   Cmd_ClientShutDown,
+  Cmd_ChromeWindowCreated,
+  Cmd_ChromeWindowRemoved,
 };
 
 struct Cmd_Msg_Item {
@@ -85,11 +88,19 @@ struct Cmd_Msg_Item {
     UINT shortcuts_Id;
     bool double_click_closetab;
     bool is_listening;
-    bool is_only_on_tab;
     bool is_closechrome_prompt;
+    bool close_last_tab;
     struct KeyDown {
       WPARAM wparam;
       LPARAM lparam;
     }key_down;
+    struct ChromeWindow {
+      HWND chrome_handle;
+      int windowid;
+    }chrome_window;
+    struct TabCount {
+      int windowid;
+      int tabcount;
+    }tabcount;
   }value;
 };
