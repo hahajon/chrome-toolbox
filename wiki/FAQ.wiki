@@ -1,0 +1,34 @@
+=== Why can’t I sync this extension access multiple computers? ===
+This extension contains an NPAPI plugin, so it can’t be synced.
+
+Q: 我使用多台计算机，为什么其他扩展可以同步，而这个扩展不可以同步？
+
+A: 因为谷歌浏览器的限制，所有包含插件的扩展程序目前都不能进行同步。
+
+=== Mute tabs doesn’t work in Windows Vista/XP! ===
+In Chrome 9.0 and higher versions, Flash process is sandboxed so we can’t find a way to mute Flash. It works in Win7 because we use a different implementation.
+
+Q: 为什么在Windows Vista/XP下不能静音呢？
+
+A: 谷歌浏览器9.0和更高版本把Flash进程放在沙箱当中，导致我们无法对Flash静音。对于Win7系统我们使用了不同的实现方法来支持静音功能。
+
+=== Why is the option page always loading? ===
+Please check if there is a message box, eg. a message box saying “Boss key is registered by another application, please redefine it”. If there isn’t, please try restarting your browser.
+
+Q: 为什么我的选项页面总是显示正在载入中呢？
+
+A: 请注意查看是否弹出提示框，例如提示老板键设置和其他软件冲突的对话框。如果没有，请尝试重启浏览器。
+
+=== Can I hide the browser action icon? ===
+In Chrome 10.0 and higher versions, you can right click on the icon and click on “Hide button”.
+
+Q: 能不能提供一个选项可以将按钮隐藏掉？
+
+A: 谷歌浏览器10.0和更高版本提供隐藏按钮功能，你可以在按钮上点右键，然后点“Hide button”。
+
+=== Standalone video window is awful. Can you make it prettier? ===
+Now we create a normal window for standalone video. We hide the address bar but the tab bar is still there. In Chrome 10.0 and higher versions, we will create a popup window for standalone video, so that it will look prettier.
+
+Q: 独立视频的窗口太难看了，能不能做的漂亮一些。
+
+A: 目前的独立视频的方式是创建一个正常的窗口，这个窗口还是有标签栏和标签的，我们采用了遮盖的方式，所以看起来有些不美观。在谷歌浏览器10.0和更高版本中，我们可以创建一个popup类型的窗口，这个窗口中将没有标签栏和标签，会看起来漂亮一些。
