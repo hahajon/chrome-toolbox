@@ -2,11 +2,14 @@
 #include "ncbutton.h"
 #include "log.h"
 #include <CommCtrl.h>
+#include <dwmapi.h>
 #include "video_alone_script_object.h"
 
 extern Log g_Log;
 extern HMODULE g_hMod;
 extern Local_Message_Item g_Local_Message;
+extern int g_Chrome_MajorVersion;
+extern BOOL g_Enable_DWM;
 
 NCButton::NCButton(void) {
   is_topmost_ = false;
@@ -52,17 +55,23 @@ void NCButton::Init(HWND parenthwnd) {
   is_topmost_ = true;
 }
 
-void NCButton::OnPaint() {
+void NCButton::OnPaint(HDC paintdc /* = NULL */) {
   POINT pt;
 
   GetButtonRect();
 
-  pt.x = rect_.left;
-  pt.y = rect_.top;
-  ScreenToClient(parent_hwnd_, &pt);
+  RECT window_rect;
+  HDC windowdc = NULL;
+  GetWindowRect(parent_hwnd_, &window_rect);
+  pt.x = rect_.left - window_rect.left;
+  pt.y = rect_.top - window_rect.top;
   if (grph_ != NULL)
     delete grph_;
-  grph_ = Graphics::FromHWND(parent_hwnd_);
+  if (paintdc != NULL)
+    grph_ = Graphics::FromHDC(paintdc);
+  else {
+    grph_ = Graphics::FromHDC(GetWindowDC(parent_hwnd_));
+  }
 
   if (mask_dc_) {
     DeleteDC(mask_dc_);
@@ -74,7 +83,7 @@ void NCButton::OnPaint() {
   mask_bitmap_ = CreateCompatibleBitmap(hdc, normal_image_->GetWidth(),
                                         normal_image_->GetHeight());
   SelectObject(mask_dc_, mask_bitmap_);
-  if (IsMaximized(parent_hwnd_))
+  if (IsMaximized(parent_hwnd_) || g_Chrome_MajorVersion >= 10)
     BitBlt(mask_dc_, 0, 0, normal_image_->GetWidth(), normal_image_->GetHeight(),
            hdc, pt.x-TIP_BUTTON_WIDTH-CONST_FRAME_BORDER, pt.y, SRCCOPY);
   else {
@@ -82,7 +91,7 @@ void NCButton::OnPaint() {
     GetClientRect(parent_hwnd_, &rt);
     BitBlt(mask_dc_, 0, 0, normal_image_->GetWidth(), normal_image_->GetHeight(),
            hdc, rt.right-TIP_BUTTON_WIDTH-CONST_FRAME_BORDER, 
-           pt.y + TIP_BUTTON_HEIGHT, SRCCOPY);
+           pt.y+TIP_BUTTON_HEIGHT, SRCCOPY);
   }
   grph_->ReleaseHDC(hdc);
 
@@ -118,6 +127,10 @@ void NCButton::OnPaint() {
   grph_->ReleaseHDC(destdc);
   DeleteDC(hdc_temp);
   DeleteObject(bitmap);
+  if (paintdc) {
+    delete grph_;
+    grph_ = Graphics::FromHDC(GetWindowDC(parent_hwnd_));
+  }
 }
 
 void NCButton::OnMouseLeave() {
@@ -129,9 +142,10 @@ void NCButton::OnMouseDown(POINT pt) {
 
   if (PtInRect(&rect_, pt)) {
     POINT pt;
-    pt.x = rect_.left;
-    pt.y = rect_.top;
-    ScreenToClient(parent_hwnd_, &pt);
+    RECT window_rect;
+    GetWindowRect(parent_hwnd_, &window_rect);
+    pt.x = rect_.left - window_rect.left;
+    pt.y = rect_.top - window_rect.top;
     HDC hdc = grph_->GetHDC();
     BitBlt(hdc, pt.x, pt.y, TIP_BUTTON_WIDTH, TIP_BUTTON_HEIGHT, 
            mask_dc_, 0, 0, SRCCOPY);
@@ -165,9 +179,10 @@ void NCButton::OnMouseOver(POINT pt) {
 
   if (PtInRect(&rect_, pt) && button_state_ == BUTTON_STATE_NORMAL) {
     POINT pt;
-    pt.x = rect_.left;
-    pt.y = rect_.top;
-    ScreenToClient(parent_hwnd_, &pt);
+    RECT window_rect;
+    GetWindowRect(parent_hwnd_, &window_rect);
+    pt.x = rect_.left - window_rect.left;
+    pt.y = rect_.top - window_rect.top;
     HDC hdc = grph_->GetHDC();
     BitBlt(hdc, pt.x, pt.y, TIP_BUTTON_WIDTH, TIP_BUTTON_HEIGHT, 
            mask_dc_, 0, 0, SRCCOPY);
@@ -206,6 +221,9 @@ void NCButton::OnMouseOver(POINT pt) {
       toolinfo.hinst = g_hMod;
       toolinfo.uId = 0;
       toolinfo.lpszText = g_Local_Message.msg_always_on_top;
+      pt.x = rect_.left;
+      pt.y = rect_.top;
+      ScreenToClient(parent_hwnd_, &pt);
       toolinfo.rect.left = pt.x;
       toolinfo.rect.top = pt.y;
       pt.x = rect_.right;
@@ -230,9 +248,10 @@ void NCButton::OnMouseUp(POINT pt) {
 
   if (PtInRect(&rect_, pt)) {
     POINT pt;
-    pt.x = rect_.left;
-    pt.y = rect_.top;
-    ScreenToClient(parent_hwnd_, &pt);
+    RECT window_rect;
+    GetWindowRect(parent_hwnd_, &window_rect);
+    pt.x = rect_.left - window_rect.left;
+    pt.y = rect_.top - window_rect.top;
     HDC hdc = grph_->GetHDC();
     BitBlt(hdc, pt.x, pt.y, TIP_BUTTON_WIDTH, TIP_BUTTON_HEIGHT,
            mask_dc_, 0, 0, SRCCOPY);
@@ -262,13 +281,13 @@ void NCButton::GetButtonRect() {
 
   GetWindowRect(parent_hwnd_, &rt);
   if (IsMaximized(parent_hwnd_)) {
-    if (versionInfo.dwMajorVersion >= 6)
+    if (g_Enable_DWM)
       rect_.right = rt.right - VISTA_OFFSET_LEN - 2*CONST_FRAME_BORDER;
     else
       rect_.right = rt.right - OFFSET_LEN - 2*CONST_FRAME_BORDER;
     rt.top = 0;
   } else {
-    if (versionInfo.dwMajorVersion >= 6)
+    if (g_Enable_DWM)
       rect_.right = rt.right - VISTA_OFFSET_LEN; 
     else
       rect_.right = rt.right - OFFSET_LEN; 

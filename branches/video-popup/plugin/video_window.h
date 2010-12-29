@@ -18,6 +18,7 @@ public:
   bool IsEnqual(HWND hwnd) { return hwnd == chrome_hwnd_; }
   BOOL WndProc(HWND hwnd, UINT& msg, WPARAM& wParam, LPARAM& lParam);
   void Unsubclass();
+  void PaintCustomCaption(BOOL drawicon);
 
 private:
   HWND chrome_hwnd_;

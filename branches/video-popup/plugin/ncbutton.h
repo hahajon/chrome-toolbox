@@ -12,7 +12,7 @@ public:
 
   void Init(HWND parenthwnd);
 
-  void OnPaint();
+  void OnPaint(HDC paintdc = NULL);
   void OnMouseOver(POINT pt);
   void OnMouseDown(POINT pt);
   void OnMouseUp(POINT pt);
