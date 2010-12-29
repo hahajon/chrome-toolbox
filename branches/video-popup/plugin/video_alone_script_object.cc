@@ -57,7 +57,7 @@ LRESULT CALLBACK CallWndProc(int nCode, WPARAM wParam, LPARAM lParam) {
     if (g_Chrome_MajorVersion == 0)
       g_Chrome_MajorVersion = ReadChromeMajorVersion();
 
-    if (g_Chrome_MajorVersion >= 10) {
+    if (g_Chrome_MajorVersion >= MINIMUM_VERSION_SUPPORT_POPUP) {
       HMODULE h = LoadLibrary(L"dwmapi.dll");
       if (h) {
         if (DwmIsCompositionEnabled(&g_Enable_DWM) == S_OK) {

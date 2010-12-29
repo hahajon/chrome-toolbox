@@ -83,7 +83,8 @@ void NCButton::OnPaint(HDC paintdc /* = NULL */) {
   mask_bitmap_ = CreateCompatibleBitmap(hdc, normal_image_->GetWidth(),
                                         normal_image_->GetHeight());
   SelectObject(mask_dc_, mask_bitmap_);
-  if (IsMaximized(parent_hwnd_) || g_Chrome_MajorVersion >= 10)
+  if (IsMaximized(parent_hwnd_) || 
+      g_Chrome_MajorVersion >= MINIMUM_VERSION_SUPPORT_POPUP)
     BitBlt(mask_dc_, 0, 0, normal_image_->GetWidth(), normal_image_->GetHeight(),
            hdc, pt.x-TIP_BUTTON_WIDTH-CONST_FRAME_BORDER, pt.y, SRCCOPY);
   else {

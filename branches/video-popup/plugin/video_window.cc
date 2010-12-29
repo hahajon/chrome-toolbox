@@ -137,18 +137,20 @@ BOOL VideoWindow::WndProc(HWND hwnd, UINT& msg, WPARAM& wParam, LPARAM& lParam) 
   g_Log.WriteLog("WndProc", logs);
   switch(msg) {
     case WM_NCPAINT:
-      if (g_Chrome_MajorVersion >= 10 && g_Enable_DWM) {
+      if (g_Chrome_MajorVersion >= MINIMUM_VERSION_SUPPORT_POPUP && 
+          g_Enable_DWM) {
         PaintCustomCaption(FALSE);
       }
       break;
     case WM_PAINT:
     case WM_ACTIVATE:
-      if (g_Chrome_MajorVersion >= 10 || bFlag == ReadyResizeState ||
-          bFlag == FinishResizeState)
+      if (g_Chrome_MajorVersion >= MINIMUM_VERSION_SUPPORT_POPUP || 
+          bFlag == ReadyResizeState || bFlag == FinishResizeState)
         tip_button_.OnPaint();
       break;
     case WM_SETICON:
-      if (g_Chrome_MajorVersion >= 10 && g_Enable_DWM) {
+      if (g_Chrome_MajorVersion >= MINIMUM_VERSION_SUPPORT_POPUP &&
+          g_Enable_DWM) {
         PaintCustomCaption(TRUE);
       }
       break;
@@ -226,7 +228,7 @@ BOOL VideoWindow::WndProc(HWND hwnd, UINT& msg, WPARAM& wParam, LPARAM& lParam) 
       tip_button_.OnMouseUp(pt);
       break;
     case WM_NCLBUTTONDBLCLK:
-      if (g_Chrome_MajorVersion < 10)
+      if (g_Chrome_MajorVersion < MINIMUM_VERSION_SUPPORT_POPUP)
         msg = WM_NULL;
       break;
     case WM_NCMOUSELEAVE:
@@ -249,7 +251,7 @@ BOOL VideoWindow::WndProc(HWND hwnd, UINT& msg, WPARAM& wParam, LPARAM& lParam) 
       break;
     case WM_SIZE:
       {
-        if (g_Chrome_MajorVersion >= 10)
+        if (g_Chrome_MajorVersion >= MINIMUM_VERSION_SUPPORT_POPUP)
           break;
 
         if (bFlag != ReadyResizeState) {
