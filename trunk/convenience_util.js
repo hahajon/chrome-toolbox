@@ -22,3 +22,8 @@ function isFunction(handler) {
 function isWindowsPlatform() {
   return navigator.userAgent.toLowerCase().indexOf('windows') > -1;
 }
+
+function isHighVersion() {
+  var version = navigator.userAgent.match(/Chrome\/(\d+)/)[1];
+  return version > 9;
+}

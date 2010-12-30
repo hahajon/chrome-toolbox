@@ -12,11 +12,12 @@ public:
 
   void Init(HWND parenthwnd);
 
-  void OnPaint();
+  void OnPaint(HDC paintdc = NULL);
   void OnMouseOver(POINT pt);
   void OnMouseDown(POINT pt);
   void OnMouseUp(POINT pt);
   void OnMouseLeave();
+  void OnDwmEnableChanged();
 
 private:
   enum BUTTON_STATE {
@@ -29,6 +30,9 @@ private:
   void GetButtonRect();
 
 private:
+  void LoadButtonImage();
+
+private:
   RECT rect_;
   HWND parent_hwnd_;
   BUTTON_STATE button_state_;
@@ -39,6 +43,8 @@ private:
   Image* notip_normal_image_;
   Image* notip_mouseover_image_;
   Image* notip_mousedown_image_;
+  int tip_button_width_;
+  int tip_button_height_;
   HDC mask_dc_;
   HBITMAP mask_bitmap_;
   Graphics* grph_;
