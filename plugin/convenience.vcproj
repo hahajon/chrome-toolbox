@@ -60,7 +60,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="gdiplus.lib comctl32.lib"
+				AdditionalDependencies="gdiplus.lib comctl32.lib psapi.lib version.lib dwmapi.lib"
 				LinkIncremental="2"
 				ModuleDefinitionFile="convenience.def"
 				GenerateDebugInformation="true"
@@ -135,9 +135,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="gdiplus.lib comctl32.lib psapi.lib version.lib"
+				AdditionalDependencies="gdiplus.lib comctl32.lib psapi.lib version.lib dwmapi.lib uxtheme.lib"
 				LinkIncremental="1"
 				ModuleDefinitionFile="convenience.def"
+				DelayLoadDLLs="dwmapi.dll;uxtheme.dll"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"

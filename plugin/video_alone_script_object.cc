@@ -3,12 +3,35 @@
 #include "log.h"
 #include "video_window_manager.h"
 
+#include <dwmapi.h>
+
 HHOOK hCallWndProcHook = NULL;
 extern Log g_Log;
 extern HMODULE g_hMod;
 VideoWindowManager g_VideoWinMan;
 
+int g_Chrome_MajorVersion = 0;
+BOOL g_Enable_DWM = FALSE;
+
 WNDPROC g_OldProc = NULL;
+
+int ReadChromeMajorVersion() {
+  TCHAR current_path[MAX_PATH];
+  GetCurrentDirectory(MAX_PATH, current_path);
+  TCHAR file_name[MAX_PATH];
+  wsprintf(file_name, L"%s\\convenience.ini", current_path);
+  return GetPrivateProfileInt(L"CFG", L"MAJORVERSION", 0, file_name);
+}
+
+void WriteChromeMajorVersion() {
+  TCHAR current_path[MAX_PATH];
+  GetCurrentDirectory(MAX_PATH, current_path);
+  TCHAR file_name[MAX_PATH];
+  wsprintf(file_name, L"%s\\convenience.ini", current_path);
+  TCHAR value[32];
+  wsprintf(value, L"%ld", g_Chrome_MajorVersion);
+  WritePrivateProfileString(L"CFG", L"MAJORVERSION", value, file_name);
+}
 
 LRESULT CALLBACK NewWndProc(HWND hWnd, UINT Msg, WPARAM wParam, 
                             LPARAM lParam) {
@@ -29,9 +52,29 @@ LRESULT CALLBACK CallWndProc(int nCode, WPARAM wParam, LPARAM lParam) {
   CWPSTRUCT * pRet = (CWPSTRUCT *)lParam;
 
   if (pRet->message == WM_CHROMEHWND) {
+    if (g_Chrome_MajorVersion == 0)
+      g_Chrome_MajorVersion = ReadChromeMajorVersion();
+
+    HMODULE h = LoadLibrary(L"dwmapi.dll");
+    if (h) {
+      DwmIsCompositionEnabled(&g_Enable_DWM);
+      FreeLibrary(h);
+    }
+
     g_VideoWinMan.AddNewVideoWindow((HWND)pRet->wParam, (HWND)pRet->lParam);
     g_OldProc = SubclassWindow((HWND)pRet->wParam, NewWndProc);
-    SetTimer((HWND)pRet->wParam, EVENTID_FRESH, 100, NULL);
+
+
+    if (g_Chrome_MajorVersion >= MINIMUM_VERSION_SUPPORT_POPUP && 
+        g_Enable_DWM) {
+      DwmSetWindowAttribute((HWND)pRet->wParam, DWMWA_ALLOW_NCPAINT, 
+                            &g_Enable_DWM, sizeof(g_Enable_DWM));
+      SendMessage((HWND)pRet->wParam, WM_NCPAINT, 0, 0);
+    }
+
+    if (g_Chrome_MajorVersion < MINIMUM_VERSION_SUPPORT_POPUP) {
+      SetTimer((HWND)pRet->wParam, EVENTID_FRESH, 100, NULL);
+    }
   }
   
   return CallNextHookEx(hCallWndProcHook, nCode, wParam, lParam);
@@ -81,6 +124,19 @@ bool VideoAloneScriptObject::ShowVideoAlone(const NPVariant *args,
   for (int i = 2; i < 5; i++) {
     if (!NPVARIANT_IS_INT32(args[i]) && !NPVARIANT_IS_DOUBLE(args[i])) {
       return false;
+    }
+  }
+
+  if (g_Chrome_MajorVersion == 0) {
+    string user_agent = NPN_UserAgent(plugin_->get_npp());
+    int index = user_agent.find("Chrome/");
+    if (index != string::npos) {
+      int last_index = user_agent.find('.', index);
+      if (last_index != string::npos) {
+        string majorversion = user_agent.substr(index+7, last_index-index-7);
+        g_Chrome_MajorVersion = atoi(majorversion.c_str());
+        WriteChromeMajorVersion();
+      }
     }
   }
 

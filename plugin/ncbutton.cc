@@ -2,11 +2,14 @@
 #include "ncbutton.h"
 #include "log.h"
 #include <CommCtrl.h>
+#include <dwmapi.h>
 #include "video_alone_script_object.h"
 
 extern Log g_Log;
 extern HMODULE g_hMod;
 extern Local_Message_Item g_Local_Message;
+extern int g_Chrome_MajorVersion;
+extern BOOL g_Enable_DWM;
 
 NCButton::NCButton(void) {
   is_topmost_ = false;
@@ -21,30 +24,16 @@ void NCButton::Init(HWND parenthwnd) {
   parent_hwnd_ = parenthwnd;
   mask_dc_ = NULL;
   mask_bitmap_ = NULL;
+  normal_image_ = NULL;
+  mouse_over_image_ = NULL;
+  mouse_down_image_ = NULL;
+  notip_normal_image_ = NULL;
+  notip_mouseover_image_ = NULL;
+  notip_mousedown_image_ = NULL;
 
-  GetButtonRect();
+  LoadButtonImage();
 
-  TCHAR filename[MAX_PATH];
-  TCHAR png_filename[MAX_PATH];
-  GetModuleFileName(g_hMod, filename, MAX_PATH);
-  wchar_t* postfix = wcsrchr(filename, '\\');
-  if (postfix)
-    *postfix = 0;
-
-  wsprintf(png_filename, L"%s\\resources\\tip_normal.png", filename);
-  normal_image_ = new Image(png_filename);
-  wsprintf(png_filename, L"%s\\resources\\tip_mouseover.png", filename);
-  mouse_over_image_ = new Image(png_filename);
-  wsprintf(png_filename, L"%s\\resources\\tip_mousedown.png", filename);
-  mouse_down_image_ = new Image(png_filename);
-  wsprintf(png_filename, L"%s\\resources\\notip_normal.png", filename);
-  notip_normal_image_ = new Image(png_filename);
-  wsprintf(png_filename, L"%s\\resources\\notip_mouseover.png", filename);
-  notip_mouseover_image_ = new Image(png_filename);
-  wsprintf(png_filename, L"%s\\resources\\notip_mousedown.png", filename);
-  notip_mousedown_image_ = new Image(png_filename);
-
-  grph_ = Graphics::FromHWND(parent_hwnd_);
+  grph_ = Graphics::FromHDC(GetWindowDC(parent_hwnd_));
 
   SetWindowPos(parent_hwnd_, HWND_TOPMOST, 0, 0, 0, 0,
                SWP_NOSIZE | SWP_NOMOVE);
@@ -52,17 +41,23 @@ void NCButton::Init(HWND parenthwnd) {
   is_topmost_ = true;
 }
 
-void NCButton::OnPaint() {
+void NCButton::OnPaint(HDC paintdc /* = NULL */) {
   POINT pt;
 
   GetButtonRect();
 
-  pt.x = rect_.left;
-  pt.y = rect_.top;
-  ScreenToClient(parent_hwnd_, &pt);
+  RECT window_rect;
+  HDC windowdc = NULL;
+  GetWindowRect(parent_hwnd_, &window_rect);
+  pt.x = rect_.left - window_rect.left;
+  pt.y = rect_.top - window_rect.top;
   if (grph_ != NULL)
     delete grph_;
-  grph_ = Graphics::FromHWND(parent_hwnd_);
+  if (paintdc != NULL)
+    grph_ = Graphics::FromHDC(paintdc);
+  else {
+    grph_ = Graphics::FromHDC(GetWindowDC(parent_hwnd_));
+  }
 
   if (mask_dc_) {
     DeleteDC(mask_dc_);
@@ -74,15 +69,16 @@ void NCButton::OnPaint() {
   mask_bitmap_ = CreateCompatibleBitmap(hdc, normal_image_->GetWidth(),
                                         normal_image_->GetHeight());
   SelectObject(mask_dc_, mask_bitmap_);
-  if (IsMaximized(parent_hwnd_))
+  if (IsMaximized(parent_hwnd_) || 
+      g_Chrome_MajorVersion >= MINIMUM_VERSION_SUPPORT_POPUP)
     BitBlt(mask_dc_, 0, 0, normal_image_->GetWidth(), normal_image_->GetHeight(),
-           hdc, pt.x-TIP_BUTTON_WIDTH-CONST_FRAME_BORDER, pt.y, SRCCOPY);
+           hdc, pt.x-tip_button_width_-CONST_FRAME_BORDER, pt.y, SRCCOPY);
   else {
     RECT rt;
     GetClientRect(parent_hwnd_, &rt);
     BitBlt(mask_dc_, 0, 0, normal_image_->GetWidth(), normal_image_->GetHeight(),
-           hdc, rt.right-TIP_BUTTON_WIDTH-CONST_FRAME_BORDER, 
-           pt.y + TIP_BUTTON_HEIGHT, SRCCOPY);
+           hdc, rt.right-tip_button_width_-CONST_FRAME_BORDER, 
+           pt.y+tip_button_height_, SRCCOPY);
   }
   grph_->ReleaseHDC(hdc);
 
@@ -96,28 +92,32 @@ void NCButton::OnPaint() {
   
   if (is_topmost_) {
     Status state = g.DrawImage(mouse_down_image_, 
-        Rect(0, 0, TIP_BUTTON_WIDTH, TIP_BUTTON_HEIGHT), 0, 0, 
+        Rect(0, 0, tip_button_width_, tip_button_height_), 0, 0, 
         mouse_down_image_->GetWidth(), mouse_down_image_->GetHeight(), 
         UnitPixel);
   } else if (button_state_ == BUTTON_STATE_MOUSEOVER) {
     Status state = g.DrawImage(notip_mouseover_image_, 
-        Rect(0, 0, TIP_BUTTON_WIDTH, TIP_BUTTON_HEIGHT), 0, 0,
+        Rect(0, 0, tip_button_width_, tip_button_height_), 0, 0,
         mouse_over_image_->GetWidth(), mouse_over_image_->GetHeight(), 
         UnitPixel);
     button_state_ = BUTTON_STATE_MOUSEOVER;
   } else {
     Status state = g.DrawImage(notip_normal_image_, 
-        Rect(0, 0, TIP_BUTTON_WIDTH, TIP_BUTTON_HEIGHT), 0, 0,
+        Rect(0, 0, tip_button_width_, tip_button_height_), 0, 0,
         normal_image_->GetWidth(), normal_image_->GetHeight(), 
         UnitPixel);
     button_state_ = BUTTON_STATE_NORMAL;
   }
   HDC destdc = grph_->GetHDC();
-  BitBlt(destdc, pt.x, pt.y, TIP_BUTTON_WIDTH, TIP_BUTTON_HEIGHT, 
+  BitBlt(destdc, pt.x, pt.y, tip_button_width_, tip_button_height_, 
          hdc_temp, 0, 0, SRCCOPY);
   grph_->ReleaseHDC(destdc);
   DeleteDC(hdc_temp);
   DeleteObject(bitmap);
+  if (paintdc) {
+    delete grph_;
+    grph_ = Graphics::FromHDC(GetWindowDC(parent_hwnd_));
+  }
 }
 
 void NCButton::OnMouseLeave() {
@@ -129,11 +129,12 @@ void NCButton::OnMouseDown(POINT pt) {
 
   if (PtInRect(&rect_, pt)) {
     POINT pt;
-    pt.x = rect_.left;
-    pt.y = rect_.top;
-    ScreenToClient(parent_hwnd_, &pt);
+    RECT window_rect;
+    GetWindowRect(parent_hwnd_, &window_rect);
+    pt.x = rect_.left - window_rect.left;
+    pt.y = rect_.top - window_rect.top;
     HDC hdc = grph_->GetHDC();
-    BitBlt(hdc, pt.x, pt.y, TIP_BUTTON_WIDTH, TIP_BUTTON_HEIGHT, 
+    BitBlt(hdc, pt.x, pt.y, tip_button_width_, tip_button_height_, 
            mask_dc_, 0, 0, SRCCOPY);
     grph_->ReleaseHDC(hdc);
     if (is_topmost_) {
@@ -141,14 +142,14 @@ void NCButton::OnMouseDown(POINT pt) {
                    SWP_NOSIZE | SWP_NOMOVE);
 
       Status state = grph_->DrawImage(mouse_down_image_, 
-          Rect(pt.x, pt.y, TIP_BUTTON_WIDTH, TIP_BUTTON_HEIGHT), 0, 0,
+          Rect(pt.x, pt.y, tip_button_width_, tip_button_height_), 0, 0,
           normal_image_->GetWidth(), normal_image_->GetHeight(),UnitPixel);
       is_topmost_ = false;
     } else {
       SetWindowPos(parent_hwnd_, HWND_TOPMOST, 0, 0, 0, 0, 
                    SWP_NOSIZE | SWP_NOMOVE);
       Status state = grph_->DrawImage(notip_mousedown_image_, 
-          Rect(pt.x, pt.y, TIP_BUTTON_WIDTH, TIP_BUTTON_HEIGHT), 0, 0,
+          Rect(pt.x, pt.y, tip_button_width_, tip_button_height_), 0, 0,
           mouse_down_image_->GetWidth(), mouse_down_image_->GetHeight(),
           UnitPixel);
       is_topmost_ = true;
@@ -165,21 +166,22 @@ void NCButton::OnMouseOver(POINT pt) {
 
   if (PtInRect(&rect_, pt) && button_state_ == BUTTON_STATE_NORMAL) {
     POINT pt;
-    pt.x = rect_.left;
-    pt.y = rect_.top;
-    ScreenToClient(parent_hwnd_, &pt);
+    RECT window_rect;
+    GetWindowRect(parent_hwnd_, &window_rect);
+    pt.x = rect_.left - window_rect.left;
+    pt.y = rect_.top - window_rect.top;
     HDC hdc = grph_->GetHDC();
-    BitBlt(hdc, pt.x, pt.y, TIP_BUTTON_WIDTH, TIP_BUTTON_HEIGHT, 
+    BitBlt(hdc, pt.x, pt.y, tip_button_width_, tip_button_height_, 
            mask_dc_, 0, 0, SRCCOPY);
     grph_->ReleaseHDC(hdc);
     if (is_topmost_)
       grph_->DrawImage(mouse_over_image_, 
-          Rect(pt.x, pt.y, TIP_BUTTON_WIDTH, TIP_BUTTON_HEIGHT), 0, 0,
+          Rect(pt.x, pt.y, tip_button_width_, tip_button_height_), 0, 0,
           mouse_over_image_->GetWidth(), mouse_over_image_->GetHeight(),
           UnitPixel);
     else
       grph_->DrawImage(notip_mouseover_image_, 
-          Rect(pt.x, pt.y, TIP_BUTTON_WIDTH, TIP_BUTTON_HEIGHT), 0, 0,
+          Rect(pt.x, pt.y, tip_button_width_, tip_button_height_), 0, 0,
           notip_mouseover_image_->GetWidth(), notip_mouseover_image_->GetHeight(),
           UnitPixel);
 
@@ -206,6 +208,9 @@ void NCButton::OnMouseOver(POINT pt) {
       toolinfo.hinst = g_hMod;
       toolinfo.uId = 0;
       toolinfo.lpszText = g_Local_Message.msg_always_on_top;
+      pt.x = rect_.left;
+      pt.y = rect_.top;
+      ScreenToClient(parent_hwnd_, &pt);
       toolinfo.rect.left = pt.x;
       toolinfo.rect.top = pt.y;
       pt.x = rect_.right;
@@ -230,51 +235,103 @@ void NCButton::OnMouseUp(POINT pt) {
 
   if (PtInRect(&rect_, pt)) {
     POINT pt;
-    pt.x = rect_.left;
-    pt.y = rect_.top;
-    ScreenToClient(parent_hwnd_, &pt);
+    RECT window_rect;
+    GetWindowRect(parent_hwnd_, &window_rect);
+    pt.x = rect_.left - window_rect.left;
+    pt.y = rect_.top - window_rect.top;
     HDC hdc = grph_->GetHDC();
-    BitBlt(hdc, pt.x, pt.y, TIP_BUTTON_WIDTH, TIP_BUTTON_HEIGHT,
+    BitBlt(hdc, pt.x, pt.y, tip_button_width_, tip_button_height_,
            mask_dc_, 0, 0, SRCCOPY);
     grph_->ReleaseHDC(hdc);
     if (is_topmost_)
       grph_->DrawImage(mouse_over_image_, 
-          Rect(pt.x, pt.y, TIP_BUTTON_WIDTH, TIP_BUTTON_HEIGHT), 0, 0,
+          Rect(pt.x, pt.y, tip_button_width_, tip_button_height_), 0, 0,
           mouse_over_image_->GetWidth(), mouse_over_image_->GetHeight(),
           UnitPixel);
     else
       grph_->DrawImage(notip_mouseover_image_, 
-          Rect(pt.x, pt.y, TIP_BUTTON_WIDTH, TIP_BUTTON_HEIGHT), 0, 0,
+          Rect(pt.x, pt.y, tip_button_width_, tip_button_height_), 0, 0,
           notip_mouseover_image_->GetWidth(), notip_mouseover_image_->GetHeight(),
           UnitPixel);
     button_state_ = BUTTON_STATE_MOUSEOVER;
   }
 }
 
+void NCButton::OnDwmEnableChanged() {
+  LoadButtonImage();
+}
+
+void NCButton::LoadButtonImage() {
+  TCHAR filename[MAX_PATH];
+  TCHAR png_filename[MAX_PATH];
+  GetModuleFileName(g_hMod, filename, MAX_PATH);
+  wchar_t* postfix = wcsrchr(filename, '\\');
+  if (postfix)
+    *postfix = 0;
+
+  if (normal_image_)
+    delete normal_image_;
+  if (mouse_over_image_)
+    delete mouse_over_image_;
+  if (mouse_down_image_)
+    delete mouse_down_image_;
+  if (notip_normal_image_)
+    delete notip_normal_image_;
+  if (notip_mouseover_image_)
+    delete notip_mouseover_image_;
+  if (notip_mousedown_image_)
+    delete notip_mousedown_image_;
+
+  if (g_Chrome_MajorVersion >= MINIMUM_VERSION_SUPPORT_POPUP && g_Enable_DWM) {
+    wsprintf(png_filename, L"%s\\resources\\tip_mousedown_win7.png", filename);
+    normal_image_ = new Image(png_filename);
+    wsprintf(png_filename, L"%s\\resources\\tip_mouseover_win7.png", filename);
+    mouse_over_image_ = new Image(png_filename);
+    wsprintf(png_filename, L"%s\\resources\\tip_mousedown_win7.png", filename);
+    mouse_down_image_ = new Image(png_filename);
+    wsprintf(png_filename, L"%s\\resources\\notip_normal_win7.png", filename);
+    notip_normal_image_ = new Image(png_filename);
+    wsprintf(png_filename, L"%s\\resources\\notip_mouseover_win7.png", filename);
+    notip_mouseover_image_ = new Image(png_filename);
+    wsprintf(png_filename, L"%s\\resources\\notip_mousedown_win7.png", filename);
+    notip_mousedown_image_ = new Image(png_filename);
+  } else {
+    wsprintf(png_filename, L"%s\\resources\\tip_normal.png", filename);
+    normal_image_ = new Image(png_filename);
+    wsprintf(png_filename, L"%s\\resources\\tip_mouseover.png", filename);
+    mouse_over_image_ = new Image(png_filename);
+    wsprintf(png_filename, L"%s\\resources\\tip_mousedown.png", filename);
+    mouse_down_image_ = new Image(png_filename);
+    wsprintf(png_filename, L"%s\\resources\\notip_normal.png", filename);
+    notip_normal_image_ = new Image(png_filename);
+    wsprintf(png_filename, L"%s\\resources\\notip_mouseover.png", filename);
+    notip_mouseover_image_ = new Image(png_filename);
+    wsprintf(png_filename, L"%s\\resources\\notip_mousedown.png", filename);
+    notip_mousedown_image_ = new Image(png_filename);
+  }
+}
+
 void NCButton::GetButtonRect() {
   RECT rt;
 
-  static OSVERSIONINFO versionInfo = { 0 };
-  if (versionInfo.dwMajorVersion == 0) {
-    versionInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-    GetVersionEx(&versionInfo);
-  }
-
   GetWindowRect(parent_hwnd_, &rt);
   if (IsMaximized(parent_hwnd_)) {
-    if (versionInfo.dwMajorVersion >= 6)
-      rect_.right = rt.right - VISTA_OFFSET_LEN - 2*CONST_FRAME_BORDER;
-    else
-      rect_.right = rt.right - OFFSET_LEN - 2*CONST_FRAME_BORDER;
     rt.top = 0;
+    rt.right -= CONST_FRAME_BORDER;
   } else {
-    if (versionInfo.dwMajorVersion >= 6)
-      rect_.right = rt.right - VISTA_OFFSET_LEN; 
-    else
-      rect_.right = rt.right - OFFSET_LEN; 
     rt.top++;
+    if (g_Chrome_MajorVersion < MINIMUM_VERSION_SUPPORT_POPUP && g_Enable_DWM)
+      rt.right += CONST_FRAME_BORDER;
   }
+  if (g_Enable_DWM) {
+    rect_.right = rt.right - VISTA_OFFSET_LEN;
+  } else
+    rect_.right = rt.right - OFFSET_LEN;
+
+  tip_button_width_ = normal_image_->GetWidth();
+  tip_button_height_ = normal_image_->GetHeight();
+
   rect_.top = rt.top;
-  rect_.left = rect_.right - TIP_BUTTON_WIDTH;
-  rect_.bottom = rect_.top + TIP_BUTTON_HEIGHT;
+  rect_.left = rect_.right - tip_button_width_;
+  rect_.bottom = rect_.top + tip_button_height_;
 }

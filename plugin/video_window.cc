@@ -3,11 +3,20 @@
 #include "resource.h"
 #include "log.h"
 
+#include <Uxtheme.h>
+#include <dwmapi.h>
+
 extern Log g_Log;
 extern HMODULE g_hMod;
 extern WNDPROC g_OldProc;
+extern int g_Chrome_MajorVersion;
+extern BOOL g_Enable_DWM;
 
-const int kMinChromeHeiht = 150;
+const int kMinChromeHeight = 150;
+const int kBorderWidth = 8;
+const int kOffsetSize = 8;
+const int kIconSize = 16;
+const int kCaptionHeight = 30;
 
 VideoWindow::VideoWindow(void) {
 }
@@ -32,6 +41,89 @@ void VideoWindow::Unsubclass() {
   }
 }
 
+void VideoWindow::PaintCustomCaption(BOOL drawicon)
+{
+  RECT rcClient;
+  GetWindowRect(chrome_hwnd_, &rcClient);
+  HDC hdc = GetWindowDC(chrome_hwnd_);
+  HTHEME hTheme = OpenThemeData(NULL, L"CompositedWindow::Window");
+  if (hTheme) {
+    HDC hdcPaint = CreateCompatibleDC(hdc);
+    if (hdcPaint) {
+      int cx = rcClient.right - rcClient.left;
+      int cy = rcClient.bottom -rcClient.top;
+
+      // Define the BITMAPINFO structure used to draw text.
+      // Note that biHeight is negative. This is done because
+      // DrawThemeTextEx() needs the bitmap to be in top-to-bottom
+      // order.
+      BITMAPINFO dib = { 0 };
+      dib.bmiHeader.biSize            = sizeof(BITMAPINFOHEADER);
+      dib.bmiHeader.biWidth           = cx;
+      dib.bmiHeader.biHeight          = -cy;
+      dib.bmiHeader.biPlanes          = 1;
+      dib.bmiHeader.biBitCount        = 32;
+      dib.bmiHeader.biCompression     = BI_RGB;
+
+      HBITMAP hbm = CreateDIBSection(hdc, &dib, DIB_RGB_COLORS, NULL, NULL, 0);
+      if (hbm) {
+        HBITMAP hbmOld = (HBITMAP)SelectObject(hdcPaint, hbm);
+
+        // Setup the theme drawing options.
+        DTTOPTS DttOpts = {sizeof(DTTOPTS)};
+        DttOpts.dwFlags = DTT_COMPOSITED | DTT_GLOWSIZE;
+        DttOpts.iGlowSize = 15;
+
+        // Select a font.
+        LOGFONT lgFont;
+        HFONT hFontOld = NULL;
+        if (SUCCEEDED(GetThemeSysFont(hTheme, 801, &lgFont))) {
+          HFONT hFont = CreateFontIndirect(&lgFont);
+          hFontOld = (HFONT) SelectObject(hdcPaint, hFont);
+        }
+
+        // Draw the title.
+        TCHAR szTitle[1024];
+        GetWindowText(chrome_hwnd_, szTitle, 1024);
+        RECT rcPaint = rcClient;
+        rcPaint.top  = kOffsetSize;
+        rcPaint.right = cx - VISTA_OFFSET_LEN - 3*TIP_BUTTON_WIDTH;
+        rcPaint.left = kCaptionHeight;
+        rcPaint.bottom = kCaptionHeight;
+        DrawThemeTextEx(hTheme, hdcPaint, 0, 0, szTitle, -1, 
+                        DT_LEFT | DT_WORD_ELLIPSIS, &rcPaint, 
+                        &DttOpts);
+
+        DrawIconEx(hdcPaint, kOffsetSize, kOffsetSize, 
+                   (HICON)SendMessage(chrome_hwnd_, WM_GETICON, 0, 0), 
+                   kIconSize, kIconSize, 0, NULL, DI_NORMAL | DI_COMPAT);
+        tip_button_.OnPaint(hdcPaint);
+        if (drawicon) {
+          cx = kCaptionHeight;
+          cy = kCaptionHeight;
+          BitBlt(hdc, 0, 0, cx, cy, hdcPaint, 0, 0, SRCCOPY);
+        } else {
+          BitBlt(hdc, 0, 0, cx, kCaptionHeight, hdcPaint, 0, 0, SRCCOPY);
+          BitBlt(hdc, 0, 0, kBorderWidth, cy, hdcPaint, 0, 0, SRCCOPY);
+          BitBlt(hdc, cx-kBorderWidth, 0, kBorderWidth, cy, hdcPaint,
+                 cx-kBorderWidth, 0, SRCCOPY);
+          BitBlt(hdc, 0, cy-kBorderWidth, cx, kBorderWidth, hdcPaint, 0,
+                 cy-kBorderWidth, SRCCOPY);
+        }
+
+        SelectObject(hdcPaint, hbmOld);
+        if (hFontOld) {
+          SelectObject(hdcPaint, hFontOld);
+        }
+        DeleteObject(hbm);
+      }
+      DeleteDC(hdcPaint);
+    }
+    CloseThemeData(hTheme);
+  }
+  ReleaseDC(chrome_hwnd_, hdc);
+}
+
 BOOL VideoWindow::WndProc(HWND hwnd, UINT& msg, WPARAM& wParam, LPARAM& lParam) {
   if (hwnd != chrome_hwnd_) {
     return FALSE;
@@ -44,10 +136,36 @@ BOOL VideoWindow::WndProc(HWND hwnd, UINT& msg, WPARAM& wParam, LPARAM& lParam) 
           hwnd, msg, wParam, lParam, GetCurrentThreadId());
   g_Log.WriteLog("WndProc", logs);
   switch(msg) {
+    case WM_NCPAINT:
+      if (g_Chrome_MajorVersion >= MINIMUM_VERSION_SUPPORT_POPUP && 
+          g_Enable_DWM) {
+        PaintCustomCaption(FALSE);
+      }
+      break;
     case WM_PAINT:
     case WM_ACTIVATE:
-      if (bFlag == ReadyResizeState || bFlag == FinishResizeState)
+      if (g_Chrome_MajorVersion >= MINIMUM_VERSION_SUPPORT_POPUP || 
+          bFlag == ReadyResizeState || bFlag == FinishResizeState)
         tip_button_.OnPaint();
+      break;
+    case WM_SETICON:
+      if (g_Chrome_MajorVersion >= MINIMUM_VERSION_SUPPORT_POPUP &&
+          g_Enable_DWM) {
+        PaintCustomCaption(TRUE);
+      }
+      break;
+    case WM_DWMCOMPOSITIONCHANGED:
+      {
+        if (DwmIsCompositionEnabled(&g_Enable_DWM) == S_OK) {
+          tip_button_.OnDwmEnableChanged();
+          if (g_Chrome_MajorVersion >= MINIMUM_VERSION_SUPPORT_POPUP && 
+              g_Enable_DWM) {
+            DwmSetWindowAttribute(hwnd, DWMWA_ALLOW_NCPAINT, 
+                                  &g_Enable_DWM, sizeof(g_Enable_DWM));
+            SendMessage(hwnd, WM_NCPAINT, 0, 0);
+          }
+        }
+      }
       break;
     case WM_TIMER:
       {
@@ -65,8 +183,8 @@ BOOL VideoWindow::WndProc(HWND hwnd, UINT& msg, WPARAM& wParam, LPARAM& lParam) 
         if (nLoop++ % 10 == 0) {
           if (lastSizeParam == NULL) {
             int height = rt.bottom - rt.top;
-            if (height < kMinChromeHeiht)
-              height = kMinChromeHeiht;
+            if (height < kMinChromeHeight)
+              height = kMinChromeHeight;
             bFlag = ReadyResizeState;
             SetWindowPos(chrome_hwnd_, NULL, 0, 0, rt.right-rt.left, height, 
                          SWP_NOMOVE | SWP_NOREPOSITION);
@@ -113,7 +231,8 @@ BOOL VideoWindow::WndProc(HWND hwnd, UINT& msg, WPARAM& wParam, LPARAM& lParam) 
       tip_button_.OnMouseUp(pt);
       break;
     case WM_NCLBUTTONDBLCLK:
-      msg = WM_NULL;
+      if (g_Chrome_MajorVersion < MINIMUM_VERSION_SUPPORT_POPUP)
+        msg = WM_NULL;
       break;
     case WM_NCMOUSELEAVE:
       tip_button_.OnMouseLeave();
@@ -135,6 +254,9 @@ BOOL VideoWindow::WndProc(HWND hwnd, UINT& msg, WPARAM& wParam, LPARAM& lParam) 
       break;
     case WM_SIZE:
       {
+        if (g_Chrome_MajorVersion >= MINIMUM_VERSION_SUPPORT_POPUP)
+          break;
+
         if (bFlag != ReadyResizeState) {
           msg = WM_NULL;
           bFlag = NeedResizeState;
@@ -149,11 +271,11 @@ BOOL VideoWindow::WndProc(HWND hwnd, UINT& msg, WPARAM& wParam, LPARAM& lParam) 
         int width, height;
         width = LOWORD(lParam);
         height = HIWORD(lParam);
-        if (height < kMinChromeHeiht) {
-          SetWindowPos(chrome_hwnd_, NULL, 0, 0, width, kMinChromeHeiht, 
+        if (height < kMinChromeHeight) {
+          SetWindowPos(chrome_hwnd_, NULL, 0, 0, width, kMinChromeHeight, 
                        SWP_NOMOVE | SWP_NOREPOSITION);
-          lParam = MAKELPARAM(width, kMinChromeHeiht);
-          height = kMinChromeHeiht;
+          lParam = MAKELPARAM(width, kMinChromeHeight);
+          height = kMinChromeHeight;
         }
         lastSizeParam = lParam;
 
