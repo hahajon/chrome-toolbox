@@ -202,7 +202,8 @@
         setCloseLastOneTabStatus();
       });
       chrome.windows.onCreated.addListener(function(window) {
-        plugin.chromeWindowCreated(window.id);
+        if (window.type == 'normal')
+          plugin.chromeWindowCreated(window.id);
       });
       chrome.windows.onRemoved.addListener(function(windowid) {
         plugin.chromeWindowRemoved(windowid);
