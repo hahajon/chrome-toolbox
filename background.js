@@ -73,8 +73,7 @@
       case 'getStatus':
         sendResponse({msg: 'status', imageBar: localStorage['imageBar'],
             videoBar: localStorage['videoBar'],
-            openInNewTab: localStorage['openInNewTab'],
-            openTabInBehind: localStorage['openTabInBehind']});
+            openInNewTab: localStorage['openInNewTab']});
         break;
       case 'saveForm':
         var formInfo = JSON.stringify(request.formInfo)
@@ -82,8 +81,6 @@
         break;
       case 'deleteForm':
         fillForm.deleteByUrl(request.url);
-      case 'createNewTabInBehind':
-        chrome.tabs.create({"url": request.url, "selected": false});
         break;
     }
   });
@@ -181,8 +178,6 @@
   function init() {
     localStorage['imageBar'] = localStorage['imageBar'] || 'true';
     localStorage['openInNewTab'] = localStorage['openInNewTab'] || 'false';
-    localStorage['openTabInBehind'] = 
-        localStorage['openTabInBehind'] || 'false';
     localStorage['isFirstInstallThisVer'] =
         localStorage['isFirstInstallThisVer'] || 'true';
     if (isWindowsPlatform()) {

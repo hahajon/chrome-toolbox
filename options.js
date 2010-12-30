@@ -28,7 +28,6 @@ function setMessage() {
     {id: 'item_videoBar', message: 'item_video_bar'},
     {id: 'item_closeLastTab', message: 'item_close_last_tab'},
     {id: 'item_openInNewTab', message: 'item_open_in_new_tab'},
-    {id: 'item_openTabInBehind', message: 'item_open_tab_in_behind'},
     {id: 'item_dbClickCloseTab', message: 'item_double_click_close_tab'},
     {id: 'item_closeChromePrompt', message: 'item_close_chrome_prompt'},
     {id: 'fillForm_title', message: 'fill_form_title'},
@@ -67,7 +66,6 @@ function Option() {
   this.videoBar = $('videoBar');
   this.closeLastTab = $('closeLastTab');
   this.openInNewTab = $('openInNewTab');
-  this.openTabInBehind = $('openTabInBehind');
   this.dbclickCloseTab = $('dbclickCloseTab');
   this.closeChromePrompt = $('closeChromePrompt');
   this.isCompare = $('isCompare');
@@ -203,7 +201,6 @@ Option.prototype.setGeneralTabOption = function() {
   this.videoBar.checked = eval(localStorage['videoBar']);
   this.closeLastTab.checked = eval(localStorage['closeLastTab']);
   this.openInNewTab.checked = eval(localStorage['openInNewTab']);
-  this.openTabInBehind.checked = eval(localStorage['openTabInBehind']);
   this.dbclickCloseTab.checked = eval(localStorage['dbclickCloseTab']);
   this.closeChromePrompt.checked = eval(localStorage['closeChromePrompt']);
   this.imageBar.addEventListener('change', function() {
@@ -220,15 +217,7 @@ Option.prototype.setGeneralTabOption = function() {
     showSavingSucceedTip();
   });
   this.openInNewTab.addEventListener('change', function() {
-    localStorage['openTabInBehind'] = false;
-    $('openTabInBehind').checked = false;
     localStorage['openInNewTab'] = $('openInNewTab').checked;
-    showSavingSucceedTip();
-  }, false);
-  this.openTabInBehind.addEventListener('change', function() {
-    localStorage['openInNewTab'] = false;
-    $('openInNewTab').checked = false;
-    localStorage['openTabInBehind'] = $('openTabInBehind').checked;
     showSavingSucceedTip();
   }, false);
   this.dbclickCloseTab.addEventListener('change', function() {
