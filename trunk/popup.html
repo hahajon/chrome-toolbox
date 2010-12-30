@@ -103,10 +103,10 @@
     </li>
   </ul>
 </div>
-<div class="separator" name="isWindowsOnly"></div>
-<div class="extensionFun"  name="isWindowsOnly">
+<div class="separator"></div>
+<div class="extensionFun">
  <ul>
-   <li id="btnMute">
+   <li id="btnMute" name="isWindowsOnly">
      <div class="left" id="muteName"></div>
      <div class="right" id="muteShortcut"></div>
    </li>
@@ -169,6 +169,7 @@
     refreshAllShortcut.innerText = key_util.keyCodeToShowName(item.shortcut);
     refreshMenu.onclick = function() {
       bg.refreshAllTabs();
+      window.close();
     }
   }
 
@@ -177,23 +178,19 @@
     i18nReplace('tSaveForm', 'save_form');
     i18nReplace('tDeleteForm', 'delete_form');
     i18nReplace('optionText', 'option');
-
     $('optionPage').onclick = function() {
       var url = chrome.extension.getURL('options.html');
       chrome.tabs.create({url: url });
+      window.close();
     };
-
+    setPopupMenuStatus();
+    setFreshAllMenu();
     if (isWindowsPlatform()) {
-      setPopupMenuStatus();
-      setFreshAllMenu();
       setMuteMenu();
       createQuicklyVisitItem();
-      setFreshAllMenu();
     } else {
       setWindowOnlyElement();
     }
-
-
   }
   function i18nReplace(id, messageName) {
     $(id).innerText = chrome.i18n.getMessage(messageName);
@@ -202,7 +199,6 @@
   var openBookmark = function() {
     document.body.style.backgroundColor = '#ff0000';
   }
-
 
   function setPopupMenuStatus() {
     var fillFormMenu = [
