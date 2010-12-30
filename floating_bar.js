@@ -481,6 +481,27 @@ function isGoogleLogoutBtn(url) {
   return isLogoutBtn;
 }
 
+function changeAElemenTarge(curElement) {
+  target = curElement.target;
+  if (openTabInBehindStatus) {
+    var targteUrl = curElement.href
+    curElement.removeAttribute('href');
+    chrome.extension.sendRequest({msg: 'createNewTabInBehind', url: targteUrl })
+  } else {
+    curElement.target = '_blank';
+  }
+  curElement.addEventListener('mouseup', function() {
+    window.setTimeout(function() {
+      curElement.setAttribute('href', targteUrl);
+      if (target) {
+        curElement.target = target;
+      } else {
+        curElement.removeAttribute('target');
+      }
+    }, 10)
+  }, false)
+}
+
 function setAElementTarget() {
   document.addEventListener('mousedown', function() {
     if (1 == event.button || 2 == event.button) {
@@ -489,29 +510,16 @@ function setAElementTarget() {
     if (openInNewTabStatus || openTabInBehindStatus) {
       var target = '';
       var curElement = event.target;
-      if (curElement.tagName == 'A' && !isGoogleLogoutBtn(curElement.href)) {
-        target = curElement.target;
-        if (openTabInBehindStatus) {
-          var targteUrl = curElement.href
-          curElement.removeAttribute('href');
-          chrome.extension.sendRequest({msg: 'createNewTabInBehind', url: targteUrl })
-        } else {
-          curElement.target = '_blank';
-        }
-        curElement.addEventListener('mouseup', function() {
-          window.setTimeout(function() {
-           curElement.setAttribute('href', targteUrl)
-            if (target) {
-              curElement.target = target;
-            } else {
-              curElement.removeAttribute('target');
-            }
-          }, 10)
-        }, false)
+      if (curElement.tagName == 'A' && !isGoogleLogoutBtn(curElement.href)){
+        changeAElemenTarge(curElement);
+      }else if  (curElement.parentElement.tagName == 'A'  && 
+          !isGoogleLogoutBtn(curElement.parentElement.href) ) {
+        changeAElemenTarge(curElement.parentElement);
       }
     }
   }, false)
 }
+
 function init() {
   document.addEventListener('mousemove', floatingBar.onMouseMove, false);
 }
