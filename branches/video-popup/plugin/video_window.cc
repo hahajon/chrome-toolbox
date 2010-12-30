@@ -87,7 +87,7 @@ void VideoWindow::PaintCustomCaption(BOOL drawicon)
         GetWindowText(chrome_hwnd_, szTitle, 1024);
         RECT rcPaint = rcClient;
         rcPaint.top  = kOffsetSize;
-        rcPaint.right = cx - VISTA_OFFSET_LEN - 2*TIP_BUTTON_WIDTH;
+        rcPaint.right = cx - VISTA_OFFSET_LEN - 3*TIP_BUTTON_WIDTH;
         rcPaint.left = kCaptionHeight;
         rcPaint.bottom = kCaptionHeight;
         DrawThemeTextEx(hTheme, hdcPaint, 0, 0, szTitle, -1, 
@@ -156,11 +156,14 @@ BOOL VideoWindow::WndProc(HWND hwnd, UINT& msg, WPARAM& wParam, LPARAM& lParam) 
       break;
     case WM_DWMCOMPOSITIONCHANGED:
       {
-        if (DwmIsCompositionEnabled(&g_Enable_DWM)) {
-          DwmSetWindowAttribute(hwnd, DWMWA_ALLOW_NCPAINT, &g_Enable_DWM,
-                                sizeof(g_Enable_DWM));
-          if (g_Enable_DWM)
+        if (DwmIsCompositionEnabled(&g_Enable_DWM) == S_OK) {
+          tip_button_.OnDwmEnableChanged();
+          if (g_Chrome_MajorVersion >= MINIMUM_VERSION_SUPPORT_POPUP && 
+              g_Enable_DWM) {
+            DwmSetWindowAttribute(hwnd, DWMWA_ALLOW_NCPAINT, 
+                                  &g_Enable_DWM, sizeof(g_Enable_DWM));
             SendMessage(hwnd, WM_NCPAINT, 0, 0);
+          }
         }
       }
       break;

@@ -52,21 +52,24 @@ LRESULT CALLBACK CallWndProc(int nCode, WPARAM wParam, LPARAM lParam) {
   CWPSTRUCT * pRet = (CWPSTRUCT *)lParam;
 
   if (pRet->message == WM_CHROMEHWND) {
-    g_VideoWinMan.AddNewVideoWindow((HWND)pRet->wParam, (HWND)pRet->lParam);
-    g_OldProc = SubclassWindow((HWND)pRet->wParam, NewWndProc);
     if (g_Chrome_MajorVersion == 0)
       g_Chrome_MajorVersion = ReadChromeMajorVersion();
 
     HMODULE h = LoadLibrary(L"dwmapi.dll");
     if (h) {
-      if (DwmIsCompositionEnabled(&g_Enable_DWM) == S_OK &&
-          g_Chrome_MajorVersion >= MINIMUM_VERSION_SUPPORT_POPUP) {
-        DwmSetWindowAttribute((HWND)pRet->wParam, DWMWA_ALLOW_NCPAINT, 
-                               &g_Enable_DWM, sizeof(g_Enable_DWM));
-        if (g_Enable_DWM)
-          SendMessage((HWND)pRet->wParam, WM_NCPAINT, 0, 0);
-      }
+      DwmIsCompositionEnabled(&g_Enable_DWM);
       FreeLibrary(h);
+    }
+
+    g_VideoWinMan.AddNewVideoWindow((HWND)pRet->wParam, (HWND)pRet->lParam);
+    g_OldProc = SubclassWindow((HWND)pRet->wParam, NewWndProc);
+
+
+    if (g_Chrome_MajorVersion >= MINIMUM_VERSION_SUPPORT_POPUP && 
+        g_Enable_DWM) {
+      DwmSetWindowAttribute((HWND)pRet->wParam, DWMWA_ALLOW_NCPAINT, 
+                            &g_Enable_DWM, sizeof(g_Enable_DWM));
+      SendMessage((HWND)pRet->wParam, WM_NCPAINT, 0, 0);
     }
 
     if (g_Chrome_MajorVersion < MINIMUM_VERSION_SUPPORT_POPUP) {
