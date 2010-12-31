@@ -3,7 +3,7 @@ It's because this extension uses an NPAPI plugin to support features like double
 
 Q: 为什么这个扩展需要访问计算机的所有数据？
 
-A: 因为这个扩展使用插件来实现像双击关闭标签页这样的功能，而所有使用插件的扩展均会这样提示。
+A: 因为这个扩展使用插件来实现像双击关闭标签页这样的功能。所有使用插件的扩展安装时都会显示这样的提示。
 
 === Why can't I sync this extension access multiple computers? ===
 This extension contains an NPAPI plugin, so it can't be synced.
