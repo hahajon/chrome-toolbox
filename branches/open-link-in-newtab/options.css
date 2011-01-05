@@ -104,12 +104,13 @@ body {
   margin-left: 20px;
   font-weight: bold;
 }
-
 .item {
   line-height: 28px;
   margin-left: 40px;
 }
-
+.openInNewTabs {
+  margin: 0px 0px 0px 20px;
+} 
 .box {
   border-bottom:1px solid #dfe8ef;
 }

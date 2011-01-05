@@ -74,7 +74,8 @@
         sendResponse({msg: 'status', imageBar: localStorage['imageBar'],
             videoBar: localStorage['videoBar'],
             openInNewTab: localStorage['openInNewTab'],
-            openTabInBehind: localStorage['openTabInBehind']});
+            openInBefore: localStorage['openInBefore'],
+            openInBehind: localStorage['openInBehind']});
         break;
       case 'saveForm':
         var formInfo = JSON.stringify(request.formInfo)
@@ -181,8 +182,8 @@
   function init() {
     localStorage['imageBar'] = localStorage['imageBar'] || 'true';
     localStorage['openInNewTab'] = localStorage['openInNewTab'] || 'false';
-    localStorage['openTabInBehind'] = 
-        localStorage['openTabInBehind'] || 'false';
+    localStorage['openInBefore'] = localStorage['openInBefore'] || 'true';
+    localStorage['openInBehind'] = localStorage['openInBehind'] || 'false';
     localStorage['isFirstInstallThisVer'] =
         localStorage['isFirstInstallThisVer'] || 'true';
     if (isWindowsPlatform()) {

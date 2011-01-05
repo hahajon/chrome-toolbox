@@ -44,7 +44,7 @@ var videoBarStatus = true;
 var floatingBarClass;
 var floatingBarMenus;
 var openInNewTabStatus = true;
-var openTabInBehindStatus = false;
+var openInBehindStatus = false;
 var isWindowsPlatform =
     navigator.userAgent.toLowerCase().indexOf('windows') > -1;
 chrome.extension.onRequest.addListener(function(request, sender, response) {
@@ -53,6 +53,7 @@ chrome.extension.onRequest.addListener(function(request, sender, response) {
   }else if (request.msg == 'status') {
     imageBarStatus = eval(request.imageBar);
     videoBarStatus = eval(request.videoBar);
+    openInBehindStatus = eval(request.openInBehind); 
     openInNewTabStatus = eval(request.openInNewTab);
     initFloatingBarMenu();
   } else if (request.msg == 'restoreTabTitle') {
@@ -65,7 +66,7 @@ chrome.extension.sendRequest({msg: 'getStatus'}, function(response) {
     imageBarStatus = eval(response.imageBar);
     videoBarStatus = eval(response.videoBar);
     openInNewTabStatus = eval(response.openInNewTab);
-    openTabInBehindStatus = eval(response.openTabInBehind);
+    openInBehindStatus = eval(response.openInBehind); 
     setAElementTarget();
     initFloatingBarMenu();
     init();
@@ -483,8 +484,8 @@ function isGoogleLogoutBtn(url) {
 
 function changeAElemenTarge(curElement) {
   target = curElement.target;
-  if (openTabInBehindStatus) {
-    var targteUrl = curElement.href
+  if (openInBehindStatus) {
+    var targteUrl = curElement.href;
     curElement.removeAttribute('href');
     chrome.extension.sendRequest({msg: 'createNewTabInBehind', url: targteUrl })
   } else {
@@ -507,7 +508,7 @@ function setAElementTarget() {
     if (1 == event.button || 2 == event.button) {
       return;
     }
-    if (openInNewTabStatus || openTabInBehindStatus) {
+    if (openInNewTabStatus) {
       var target = '';
       var curElement = event.target;
       if (curElement.tagName == 'A' && !isGoogleLogoutBtn(curElement.href)){
