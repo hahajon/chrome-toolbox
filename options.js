@@ -28,6 +28,8 @@ function setMessage() {
     {id: 'item_videoBar', message: 'item_video_bar'},
     {id: 'item_closeLastTab', message: 'item_close_last_tab'},
     {id: 'item_openInNewTab', message: 'item_open_in_new_tab'},
+    {id: 'item_openInBefore', message: 'item_open_in_before'},
+    {id: 'item_openInBehind', message: 'item_open_in_behind'},
     {id: 'item_dbClickCloseTab', message: 'item_double_click_close_tab'},
     {id: 'item_closeChromePrompt', message: 'item_close_chrome_prompt'},
     {id: 'fillForm_title', message: 'fill_form_title'},
@@ -66,6 +68,8 @@ function Option() {
   this.videoBar = $('videoBar');
   this.closeLastTab = $('closeLastTab');
   this.openInNewTab = $('openInNewTab');
+  this.openInBefore = $('openInBefore');
+  this.openInBehind = $('openInBehind');
   this.dbclickCloseTab = $('dbclickCloseTab');
   this.closeChromePrompt = $('closeChromePrompt');
   this.isCompare = $('isCompare');
@@ -201,8 +205,11 @@ Option.prototype.setGeneralTabOption = function() {
   this.videoBar.checked = eval(localStorage['videoBar']);
   this.closeLastTab.checked = eval(localStorage['closeLastTab']);
   this.openInNewTab.checked = eval(localStorage['openInNewTab']);
+  this.openInBefore.checked = eval(localStorage['openInBefore']);
+  this.openInBehind.checked = eval(localStorage['openInBehind']);
   this.dbclickCloseTab.checked = eval(localStorage['dbclickCloseTab']);
   this.closeChromePrompt.checked = eval(localStorage['closeChromePrompt']);
+  disabledRadioOrNOt();
   this.imageBar.addEventListener('change', function() {
     localStorage['imageBar'] = $('imageBar').checked;
     showSavingSucceedTip();
@@ -217,9 +224,16 @@ Option.prototype.setGeneralTabOption = function() {
     showSavingSucceedTip();
   });
   this.openInNewTab.addEventListener('change', function() {
+    disabledRadioOrNOt();
     localStorage['openInNewTab'] = $('openInNewTab').checked;
     showSavingSucceedTip();
   }, false);
+  this.openInBefore.addEventListener('change', function() {
+    changeCheckedRadio('openInBehind', 'openInBefore');
+  });
+  this.openInBehind.addEventListener('change', function() {
+    changeCheckedRadio('openInBefore', 'openInBehind');
+  });
   this.dbclickCloseTab.addEventListener('change', function() {
     localStorage['dbclickCloseTab'] = $('dbclickCloseTab').checked;
     bg.dbClickCloseTab();
@@ -230,6 +244,25 @@ Option.prototype.setGeneralTabOption = function() {
     bg.plugin.closeChromePrompt(eval(localStorage['closeChromePrompt']));
     showSavingSucceedTip();
   }, false);
+}
+
+function disabledRadioOrNOt() {
+  var openInNewTabChecked = $('openInNewTab').checked;
+  localStorage['openInNewTab'] = openInNewTabChecked;
+  if (openInNewTabChecked) {
+    $('openInBefore').removeAttribute('disabled');
+    $('openInBehind').removeAttribute('disabled');
+  } else {
+    $('openInBefore').setAttribute('disabled', 'disabled');
+    $('openInBehind').setAttribute('disabled', 'disabled');
+  }
+}
+
+function changeCheckedRadio(changeId, checkedId) {
+  $(changeId).checked = false;
+  localStorage[changeId] = false;
+  localStorage[checkedId] = $(checkedId).checked;
+  showSavingSucceedTip();
 }
 
 function showSavingSucceedTip() {
@@ -270,10 +303,8 @@ function redirectTabByUrlParameter() {
   if (url.indexOf('#') > -1) {
     var parameter = url.substr(url.indexOf('#'), url.length);
     if (parameter == 'bosskey') {
-
     }
   }
-
 }
 
 function createRecommendedContext(googleExtensionsRecommended,

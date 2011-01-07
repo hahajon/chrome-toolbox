@@ -44,6 +44,7 @@ var videoBarStatus = true;
 var floatingBarClass;
 var floatingBarMenus;
 var openInNewTabStatus = true;
+var openInBehindStatus = false;
 var isWindowsPlatform =
     navigator.userAgent.toLowerCase().indexOf('windows') > -1;
 chrome.extension.onRequest.addListener(function(request, sender, response) {
@@ -52,6 +53,7 @@ chrome.extension.onRequest.addListener(function(request, sender, response) {
   }else if (request.msg == 'status') {
     imageBarStatus = eval(request.imageBar);
     videoBarStatus = eval(request.videoBar);
+    openInBehindStatus = eval(request.openInBehind); 
     openInNewTabStatus = eval(request.openInNewTab);
     initFloatingBarMenu();
   } else if (request.msg == 'restoreTabTitle') {
@@ -64,6 +66,7 @@ chrome.extension.sendRequest({msg: 'getStatus'}, function(response) {
     imageBarStatus = eval(response.imageBar);
     videoBarStatus = eval(response.videoBar);
     openInNewTabStatus = eval(response.openInNewTab);
+    openInBehindStatus = eval(response.openInBehind); 
     setAElementTarget();
     initFloatingBarMenu();
     init();
@@ -481,28 +484,45 @@ function isGoogleLogoutBtn(url) {
   return isLogoutBtn;
 }
 
+function changeAElemenTarge(curElement) {
+  target = curElement.target;
+  if (openInBehindStatus) {
+    var targteUrl = curElement.href;
+    curElement.removeAttribute('href');
+    chrome.extension.sendRequest({msg: 'createNewTabInBehind', url: targteUrl })
+  } else {
+    curElement.target = '_blank';
+  }
+  curElement.addEventListener('mouseup', function() {
+    window.setTimeout(function() {
+      curElement.setAttribute('href', targteUrl);
+      if (target) {
+        curElement.target = target;
+      } else {
+        curElement.removeAttribute('target');
+      }
+    }, 10)
+  }, false)
+}
+
 function setAElementTarget() {
   document.addEventListener('mousedown', function() {
+    if (1 == event.button || 2 == event.button) {
+      return;
+    }
     if (openInNewTabStatus) {
       var target = '';
       var curElement = event.target;
-      if (curElement.tagName == 'A' && !isGoogleLogoutBtn(curElement.href)) {
-        target = curElement.target;
-        curElement.target = '_blank';
-        curElement.addEventListener('mouseup', function() {
-          window.setTimeout(function() {
-            if (target) {
-              curElement.target = target;
-            } else {
-              curElement.removeAttribute('target');
-            }
-          }, 10)
-        }, false)
+      if (curElement.tagName == 'A' && !isGoogleLogoutBtn(curElement.href)){
+        changeAElemenTarge(curElement);
+      }else if  (curElement.parentElement.tagName == 'A'  && 
+          !isGoogleLogoutBtn(curElement.parentElement.href) ) {
+        changeAElemenTarge(curElement.parentElement);
       }
     }
-
   }, false)
 }
+
 function init() {
   document.addEventListener('mousemove', floatingBar.onMouseMove, false);
 }
