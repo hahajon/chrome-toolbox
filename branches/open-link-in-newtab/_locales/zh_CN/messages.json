@@ -1,4 +1,4 @@
-﻿{
+{
   "name": {"message": "快捷工具（由Google提供）"},
   "description": {"message": "支持自定义快速访问菜单，保存未提交表单数据，快捷键，网址一键通，原始图片查看，图片放大镜，设置图片为桌面背景，独立视频"},
   "description_linux_and_mac": {"message": "支持保存未提交表单数据，原始图片查看，图片放大镜。"},
@@ -32,11 +32,11 @@
   "title_tab": {"message": "标签页"},
   "item_image_bar": {"message": "当鼠标悬停在图片上时，启动图片工具浮动条（图片放大镜，设置图片为桌面背景，查看原始图片）"},
   "item_image_bar_not_windows": {"message": "当鼠标悬停在图片上时，启动图片工具浮动条（图片放大镜，查看原始图片）"},
-  "item_video_bar": {"message": "当鼠标悬停在视频上时启动视频工具浮动条（独立视频）"},
+  "item_video_bar": {"message": "当鼠标悬停在视频上时，启动视频工具浮动条（独立视频）"},
   "item_close_last_tab": {"message": "关闭最后一个标签时，不关闭浏览器（创建新标签）"},
-  "item_open_in_new_tab": {"message": " 当鼠标点击链接时默认在新窗口中打开链接"},
-  "item_open_in_before": {"message": "前台"},
-  "item_open_in_behind": {"message": "后台"},
+  "item_open_in_new_tab": {"message": " 当鼠标点击链接时，默认在新标签中打开链接"},
+  "item_open_in_before": {"message": "在前台标签中打开"},
+  "item_open_in_behind": {"message": "在后台标签中打开"},
   "item_double_click_close_tab": {"message": "鼠标双击关闭标签"},
   "item_close_chrome_prompt": {"message": "关闭多个标签前先确认"},
   "fill_form_url": {"message": "网址"},

@@ -1,4 +1,4 @@
-﻿{
+{
   "name": {"message": "Chrome Toolbox (by Google)"},
   "description": {"message": "A quick access tool that allows you to put your favorite browser commands in one drop down menu, save unsubmitted form data, magnify images, view videos in standalone windows, and define shortcuts to open all links in any bookmark folder."},
   "description_linux_and_mac": {"message": "A quick access tool that allows you to save unsubmitted form data and magnify images."},
@@ -33,10 +33,10 @@
   "item_image_bar": {"message": "When the mouse pointer hovers over an image, show image floating toolbar (magnifier, view original image, set wallpaper)"},
   "item_image_bar_not_windows": {"message": "When the mouse pointer hovers over an image, show image floating toolbar (magnifier, view original image)"},  
   "item_video_bar": {"message": "When the mouse pointer hovers over a video, show video floating toolbar (view video in standalone window)"},
-  "item_close_last_tab": {"message": "Don't close current browser window when closing last tab, create a new tab instead."},
+  "item_close_last_tab": {"message": "Don't close current browser window when closing last tab, create a new tab instead"},
   "item_open_in_new_tab": {"message": "When clicking on a link, always open it in a new tab"},
-  "item_open_in_before": {"message": "Front"},
-  "item_open_in_behind": {"message": "Background"},
+  "item_open_in_before": {"message": "Open in front tab"},
+  "item_open_in_behind": {"message": "Open in background tab"},
   "item_double_click_close_tab": {"message": "Double click on a tab to close it"},
   "item_close_chrome_prompt": {"message": "Confirm before closing multiple tabs"},
   "fill_form_url": {"message": "URL"},
