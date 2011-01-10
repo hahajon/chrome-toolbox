@@ -483,19 +483,19 @@ function isGoogleLogoutBtn(url) {
   }
   return isLogoutBtn;
 }
-
-function changeAElemenTarget(curElement) {
+                
+function changeAElementTarget(curElement) {
   target = curElement.target;
   if (openInBehindStatus) {
-    var targteUrl = curElement.href;
+    var targetUrl = curElement.href;
     curElement.removeAttribute('href');
-    chrome.extension.sendRequest({msg: 'createNewTabInBehind', url: targteUrl })
+    chrome.extension.sendRequest({msg: 'createNewTabInBehind', url: targetUrl })
   } else {
     curElement.target = '_blank';
   }
   curElement.addEventListener('mouseup', function() {
     window.setTimeout(function() {
-      curElement.setAttribute('href', targteUrl);
+      curElement.setAttribute('href', targetUrl);
       if (target) {
         curElement.target = target;
       } else {
@@ -514,10 +514,10 @@ function setAElementTarget() {
       var target = '';
       var curElement = event.target;
       if (curElement.tagName == 'A' && !isGoogleLogoutBtn(curElement.href)){
-        changeAElemenTarget(curElement);
+        changeAElementTarget(curElement);
       } else if (curElement.parentElement.tagName == 'A'  && 
           !isGoogleLogoutBtn(curElement.parentElement.href) ) {
-        changeAElemenTarget(curElement.parentElement);
+        changeAElementTarget(curElement.parentElement);
       }
     }
   }, false)
