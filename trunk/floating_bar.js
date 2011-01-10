@@ -484,7 +484,7 @@ function isGoogleLogoutBtn(url) {
   return isLogoutBtn;
 }
 
-function changeAElemenTarge(curElement) {
+function changeAElemenTarget(curElement) {
   target = curElement.target;
   if (openInBehindStatus) {
     var targteUrl = curElement.href;
@@ -514,10 +514,10 @@ function setAElementTarget() {
       var target = '';
       var curElement = event.target;
       if (curElement.tagName == 'A' && !isGoogleLogoutBtn(curElement.href)){
-        changeAElemenTarge(curElement);
-      }else if  (curElement.parentElement.tagName == 'A'  && 
+        changeAElemenTarget(curElement);
+      } else if (curElement.parentElement.tagName == 'A'  && 
           !isGoogleLogoutBtn(curElement.parentElement.href) ) {
-        changeAElemenTarge(curElement.parentElement);
+        changeAElemenTarget(curElement.parentElement);
       }
     }
   }, false)
