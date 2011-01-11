@@ -1,23 +1,23 @@
 === Why does this extension require accessing all data on my computer? ===
-It's because this extension uses an NPAPI plugin to support features like double click to close a tab. As long as you install an extension using an NPAPI plugin, Chrome will warning you like this.
+It's because this extension uses an NPAPI plugin to support features like double click to close a tab. As long as you install an extension using an NPAPI plugin, Google Chrome will warning you like this.
 
 Q: 为什么这个扩展需要访问计算机的所有数据？
 
 A: 因为这个扩展使用插件来实现像双击关闭标签页这样的功能。所有使用插件的扩展安装时都会显示这样的提示。
 
 === Why can't I sync this extension access multiple computers? ===
-This extension contains an NPAPI plugin, so it can't be synced.
+Based on the security concern, Google Chrome doesn't sync any extension which contains an NPAPI plugin.
 
-Q: 我使用多台计算机，为什么其他扩展可以同步，而这个扩展不可以同步？
+Q: 为什么我不能在多台计算机之间同步这个扩展？
 
-A: 因为谷歌浏览器的限制，所有包含插件的扩展程序目前都不能进行同步。
+A: 出于对安全性的考虑，谷歌浏览器不同步任何包含插件的扩展程序。
 
-=== Why can't I install this extension on Chrome OS? ===
-This extension contains an NPAPI plugin, which is unsupported on Chrome OS.
+=== Why doesn't this extension work some time after I install it? ===
+Do you have an anti Trojan software installed? If so, please check your anti Torjan software and see if it records convenience.dll as a Torjan. If so, remove it and select to trust it when your anti Trojan software warn you next time. If you don't see your anti Trojan software warns you, please change its setting to manual, ie. warn you before it blocks Trojans.
 
-Q: 为什么我不能在Chrome OS上安装这个扩展？
+Q: 为什么扩展安装一段时间之后就不工作了？
 
-A: 因为这个扩展使用了NPAPI插件而Chrome OS不支持NPAPI插件。
+A: 请您看一下是否安装了360安全卫士。如果安装，请查看木马防火墙中的阻止列表中是否存在convenience.dll。如果存在，请将该项移除，并在下次启动chrome，360提示时信任这个dll。如果您没有看到这个提示，可以将360的木马防火墙设置为手动。
 
 === Mute tabs doesn't work in Windows Vista/XP! ===
 In Chrome 9.0 and higher versions, Flash process is sandboxed so we can't find a way to mute Flash. It works in Win7 because we use a different implementation.
@@ -46,3 +46,10 @@ Now we create a normal window for standalone video. We hide the address bar but 
 Q: 独立视频的窗口太难看了，能不能做的漂亮一些。
 
 A: 目前的独立视频的方式是创建一个正常的窗口，这个窗口还是有标签栏和标签的，我们采用了遮盖的方式，所以看起来有些不美观。在谷歌浏览器10.0和更高版本中，我们可以创建一个popup类型的窗口，这个窗口中将没有标签栏和标签，会看起来漂亮一些。
+
+=== Why can't I install this extension on Chrome OS? ===
+This extension contains an NPAPI plugin, which is unsupported on Chrome OS.
+
+Q: 为什么我不能在Chrome OS上安装这个扩展？
+
+A: 因为这个扩展使用了NPAPI插件，Chrome OS不能安装使用NPAPI插件的扩展。
