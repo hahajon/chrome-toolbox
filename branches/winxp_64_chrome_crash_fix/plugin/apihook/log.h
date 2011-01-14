@@ -8,12 +8,11 @@ public:
   Log(void);
   ~Log(void);
 
-  bool OpenLog(LPCSTR header);
-  bool WriteLog(LPCSTR title, LPCSTR contents);
+  bool OpenLog(const char* header);
+  bool WriteLog(const char* title, const char* contents);
   bool CloseLog();
 
 private:
   FILE* file_;
-  char buffer_[2048];
   SYSTEMTIME time_;
 };
