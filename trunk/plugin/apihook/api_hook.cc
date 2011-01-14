@@ -336,7 +336,8 @@ BOOL WINAPI ApiHook::CreateProcessA(LPCSTR lpApplicationName,
     char logs[256];
     sprintf(logs, "CreateProcessA, ProcessID=%ld", lpProcessInformation->dwProcessId);
     g_Log.WriteLog("Msg", logs);
-    InjectIntoProcess(lpProcessInformation->hProcess);
+    if (lpCommandLine != NULL && strstr(lpCommandLine, "--type=plugin") != 0)
+      InjectIntoProcess(lpProcessInformation->hProcess);
   }
   return ret;
 }
@@ -359,7 +360,8 @@ BOOL WINAPI ApiHook::CreateProcessW(LPCWSTR lpApplicationName,
     char logs[256];
     sprintf(logs, "CreateProcessW, ProcessID=%ld", lpProcessInformation->dwProcessId);
     g_Log.WriteLog("Msg", logs);
-    InjectIntoProcess(lpProcessInformation->hProcess);
+    if (lpCommandLine != NULL && wcsstr(lpCommandLine, L"--type=plugin") != 0)
+      InjectIntoProcess(lpProcessInformation->hProcess);
   }
   return ret;
 }

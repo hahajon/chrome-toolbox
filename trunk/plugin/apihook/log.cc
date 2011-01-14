@@ -1,5 +1,6 @@
 #include "stdafx.h"
-#include "Log.h"
+
+#include "log.h"
 
 Log::Log(void) {
   file_ = NULL;
@@ -10,15 +11,15 @@ Log::~Log(void) {
     CloseLog();
 }
 
-bool Log::OpenLog(LPCSTR header) {
+bool Log::OpenLog(const char* header) {
   if (file_ != NULL)
     return false;
 
   char filename[MAX_PATH];
   GetLocalTime(&time_);
-  sprintf(filename, "C:\\Log\\%s_%d%02d%02d_%d.log",
-          header, time_.wYear, time_.wMonth, time_.wDay, 
-          GetCurrentProcessId());
+  sprintf_s(filename, "C:\\Log\\%s_%d%02d%02d_%d.log",
+            header, time_.wYear, time_.wMonth, time_.wDay,
+            GetCurrentProcessId());
   file_ = fopen(filename, "a");
   if (file_ == NULL)
     return false;
@@ -26,22 +27,19 @@ bool Log::OpenLog(LPCSTR header) {
     return true;
 }
 
-bool Log::WriteLog(LPCSTR title, LPCSTR contents) {
+bool Log::WriteLog(const char* title, const char* contents) {
   if (file_ == NULL) {
     return false;
   }
 
   GetLocalTime(&time_);
-  sprintf(buffer_, "[%02d:%02d:%02d %03d] [%s] %s\n",
-          time_.wHour, time_.wMinute, time_.wSecond, time_.wMilliseconds,
-          title, contents);
-  int nLen = strlen(buffer_);
-  if (fwrite(buffer_, nLen, 1, file_) == 1) {
+  if (fprintf(file_, "[%02d:%02d:%02d %03d] [%s] %s\n",
+              time_.wHour, time_.wMinute, time_.wSecond, time_.wMilliseconds,
+              title, contents) > 0) {
     fflush(file_);
     return true;
-  } else {
+  } else
     return false;
-  }
 }
 
 bool Log::CloseLog() {
