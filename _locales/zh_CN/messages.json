@@ -220,5 +220,6 @@
   "terms_of_service": {"message": "服务条款"},
   "terms_of_service_link": {"message": "https://chrome.google.com/extensions/intl/zh-CN/gallery_tos.html"},
   "privacy_policy": {"message": "隐私权政策"},
-  "privacy_policy_link": {"message": "http://www.google.com/intl/zh-CN/privacy.html"}  
+  "privacy_policy_link": {"message": "http://www.google.com/intl/zh-CN/privacy.html"},
+  "form_close" : {"message": "关闭"}  
 }
