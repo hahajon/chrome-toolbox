@@ -51,6 +51,7 @@ function setMessage() {
     {id: 'disclaimer', message: 'disclaimer'},
     {id: 'termsOfService', message: 'terms_of_service'},
     {id: 'privacyPolicy', message: 'privacy_policy'},
+    {id: 'form_close', message: 'form_close'},
   ];
   document.title = chrome.i18n.getMessage('option_title');
   for (var i = 0; i < i18n_map.length; i++) {

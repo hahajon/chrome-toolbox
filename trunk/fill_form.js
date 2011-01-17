@@ -24,12 +24,12 @@ FillForm.prototype.showContentById = function(id) {
       url.innerText = 'URL:' + results.rows.item(0).url;
       var formInfo = JSON.parse(results.rows.item(0).formInfo);
       var table = '';
-      table = '<table id="tt" cellpadding="0" cellspacing="0" border="0">'+
+      table = '<table id="tt" cellpadding="0" cellspacing="0" border="0"> '+
               '<thead>' +
               '<tr>' +
-              '<td style="width:150px;">' + title_field + '</td>' +
-              '<td style="width:250px;">' + title_content +'</td>' +
-              '<td style="width:100px;">' + title_type + '</td>' +
+              '<td style="width:160px;">' + title_field + '</td>' +
+              '<td style="width:300px;">' + title_content +'</td>' +
+              '<td style="width:105px;">' + title_type + '</td>' +
               '</tr>' +
               '</thead>';
       for (var i = 0; i < formInfo.length; i++) {
@@ -40,6 +40,7 @@ FillForm.prototype.showContentById = function(id) {
                  '</tr>';
       }
       table += '</table>';
+     
       $('divFromInfoTable').innerHTML = table;
       $('formContent').style.left = window.innerWidth/2 - 250 + 'px';
       $('formContent').style.display = 'block';

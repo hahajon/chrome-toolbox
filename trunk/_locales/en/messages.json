@@ -220,5 +220,6 @@
   "terms_of_service": {"message": "Terms of Service"},
   "terms_of_service_link": {"message": "https://chrome.google.com/extensions/intl/en/gallery_tos.html"},
   "privacy_policy": {"message": "Privacy Policy"},
-  "privacy_policy_link": {"message": "http://www.google.com/intl/en/privacy.html"}
+  "privacy_policy_link": {"message": "http://www.google.com/intl/en/privacy.html"},
+  "form_close" : {"message": "Close"}
 }
