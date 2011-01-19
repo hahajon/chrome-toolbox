@@ -18,6 +18,7 @@
 #define WM_TABCLOSE                   WM_USER+103
 #define WM_CLOSE_CURRENT_TAB          WM_USER+104
 #define WM_UPDATE_CLOSECHROME_PROMPT  WM_USER+105
+#define WM_CHROMEMOUSEWHEEL           WM_USER+106
 
 #define EVENTID_FRESH   3456
 
@@ -71,9 +72,11 @@ enum Cmd_Msg_Type {
   Cmd_Update_Local_Message,
   Cmd_Update_CloseChrome_Prompt,
   Cmd_Update_CloseLastTab,
+  Cmd_Update_SwitchTab,
   Cmd_KeyDown,
   Cmd_KeyUp,
   Cmd_Event,
+  Cmd_MouseRotated,
   Cmd_ChromeClose,
   Cmd_TabClose,
   Cmd_DBClick_CloseTab,
@@ -91,6 +94,8 @@ struct Cmd_Msg_Item {
     bool is_listening;
     bool is_closechrome_prompt;
     bool close_last_tab;
+    bool enable_switch_tab;
+    int rotatedcount;
     struct KeyDown {
       WPARAM wparam;
       LPARAM lparam;

@@ -31,6 +31,7 @@ public:
   void GetLocalMessage();
   void ChromeWindowCreated(int windowid);
   void ChromeWindowRemoved(int windowid);
+  void EnableMouseSwitchTab(bool flag);
 
 private:
   // The plugin's new window process.
