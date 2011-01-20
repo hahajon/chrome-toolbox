@@ -70,21 +70,32 @@ void InjectIntoProcess(HANDLE hprocess) {
 }
 
 void RenameApiHookDll() {
-  TCHAR dllpath[MAX_PATH*2] = L"";
-  TCHAR newdllpath[MAX_PATH*2] = L"";
-  GetModuleFileName(g_hMod, dllpath, MAX_PATH);
-  wcscpy(newdllpath, dllpath);
-  wchar_t* postfix = wcsrchr(newdllpath, '\\');
+  char dllpath[MAX_PATH*2] = "";
+  char newdllpath[MAX_PATH*2] = "";
+  GetModuleFileNameA(g_hMod, dllpath, MAX_PATH);
+  strcpy(newdllpath, dllpath);
+  char* postfix = strrchr(newdllpath, '\\');
   if (postfix != NULL) {
     *(postfix+1) = 0;
-    wcscat(newdllpath, L"mutechrome.dll");
+    strcat(newdllpath, "mutechrome.dll");
   }
-  postfix = wcsrchr(dllpath, '\\');
+  postfix = strrchr(dllpath, '\\');
   if (postfix != NULL) {
     *(postfix+1) = 0;
-    wcscat(dllpath, L"apihook.dll");
+    strcat(dllpath, "apihook.dll");
   }
-  CopyFile(dllpath, newdllpath, FALSE);
+  FILE* src_file = fopen(dllpath, "rb");
+  FILE* dest_file = fopen(newdllpath, "wb");
+  if (src_file && dest_file) {
+    byte buffer[1024];
+    int len = fread(buffer, 1, 1024, src_file);
+    while (len > 0) {
+      fwrite(buffer, 1, len, dest_file);
+      len = fread(buffer, 1, 1024, src_file);
+    }
+    fclose(src_file);
+    fclose(dest_file);
+  }
 }
 
 bool GetProdcutVersion(LPCTSTR filename, DWORD* mostversion, 
@@ -291,7 +302,6 @@ NPError BrowserMutePlugin::Init(NPP instance, uint16_t mode, int16_t argc,
   script_object_ = NULL;
   g_Log.WriteLog("Msg", "BrowserMutePlugin Init");
   instance->pdata = this;
-  RenameApiHookDll();
   use_apihook_flag_ = TRUE;
 
   OSVERSIONINFO versionInfo = { 0 };
@@ -303,6 +313,7 @@ NPError BrowserMutePlugin::Init(NPP instance, uint16_t mode, int16_t argc,
     stop_event_ = CreateEvent(NULL, FALSE, FALSE, NULL);
     mute_thread_handle_ = CreateThread(NULL, 0, Mute_Thread, this, 0, 0);
   } else {
+    RenameApiHookDll();
     ScanAndInject();
   }
   return PluginBase::Init(instance, mode, argc, argn, argv, saved);
