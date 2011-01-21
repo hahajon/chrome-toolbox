@@ -34,11 +34,11 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam);
 LRESULT CALLBACK GetMsgProc(int code, WPARAM wParam, LPARAM lParam);
 void WriteToServer(const Cmd_Msg_Item& item);
 
-const TCHAR* kFileMappingName = L"Convenience_File";
-const TCHAR* kMsgFileMappingName = L"Convenience_Message_File";
-const TCHAR* kChromeClassName = L"Chrome_WidgetWin_0";
-const TCHAR* kChromeAddressBar = L"Chrome_AutocompleteEditView";
-const TCHAR* kPipeName = L"\\\\.\\pipe\\convenience";
+const TCHAR* kFileMappingName = _T("Convenience_File");
+const TCHAR* kMsgFileMappingName = _T("Convenience_Message_File");
+const TCHAR* kChromeClassName = _T("Chrome_WidgetWin_0");
+const TCHAR* kChromeAddressBar = _T("Chrome_AutocompleteEditView");
+const TCHAR* kPipeName = _T("\\\\.\\pipe\\convenience");
 
 const int kCloseTabButtonLeftOffset = 186;
 const int kCloseTabButtonTopOffset = 18;
@@ -56,24 +56,25 @@ int ReadPluginProcessId() {
   TCHAR current_path[MAX_PATH];
   GetCurrentDirectory(MAX_PATH, current_path);
   TCHAR file_name[MAX_PATH];
-  wsprintf(file_name, L"%s\\convenience.ini", current_path);
-  return GetPrivateProfileInt(L"CFG", L"PID", 0, file_name);
+  _stprintf(file_name, _T("%s\\convenience.ini"), current_path);
+  return GetPrivateProfileInt(_T("CFG"), _T("PID"), 0, file_name);
 }
 
 void WritePluginProcessId() {
   TCHAR current_path[MAX_PATH];
   GetCurrentDirectory(MAX_PATH, current_path);
   TCHAR file_name[MAX_PATH];
-  wsprintf(file_name, L"%s\\convenience.ini", current_path);
+  _stprintf(file_name, _T("%s\\convenience.ini"), current_path);
   TCHAR value[32];
-  wsprintf(value, L"%ld", GetCurrentProcessId());
-  WritePrivateProfileString(L"CFG", L"PID", value, file_name);
+  _stprintf(value, _T("%ld"), GetCurrentProcessId());
+  WritePrivateProfileString(_T("CFG"), _T("PID"), value, file_name);
 }
 
 void UpdateShortcutsFromMemory() {
   g_Log.WriteLog("msg", "UpdateShortcutsFromMemory");
   TCHAR filemap_name[MAX_PATH];
-  wsprintf(filemap_name, L"%s_%ld", kFileMappingName, ReadPluginProcessId());
+  _stprintf(filemap_name, _T("%s_%ld"), kFileMappingName, 
+            ReadPluginProcessId());
   HANDLE memory_file_handle = OpenFileMapping(FILE_MAP_READ, FALSE,
                                               filemap_name);
   if (memory_file_handle) {
@@ -107,7 +108,8 @@ void UpdateShortcutsFromMemory() {
 void GetMessageFromMemory() {
   g_Log.WriteLog("msg", "GetMessageFromMemory");
   TCHAR filemap_name[MAX_PATH];
-  wsprintf(filemap_name, L"%s_%ld", kMsgFileMappingName, ReadPluginProcessId());
+  _stprintf(filemap_name, _T("%s_%ld"), kMsgFileMappingName, 
+            ReadPluginProcessId());
   HANDLE memory_file_handle = OpenFileMapping(FILE_MAP_READ, FALSE,
                                               filemap_name);
   if (memory_file_handle) {
@@ -122,7 +124,8 @@ void GetMessageFromMemory() {
 
 void WriteMessageToMemory() {
   TCHAR filemap_name[MAX_PATH];
-  wsprintf(filemap_name, L"%s_%ld", kMsgFileMappingName, ReadPluginProcessId());
+  _stprintf(filemap_name, _T("%s_%ld"), kMsgFileMappingName, 
+            ReadPluginProcessId());
 
   HANDLE memory_file_handle = CreateFileMapping(NULL, NULL,
       PAGE_READWRITE|SEC_COMMIT,
@@ -253,7 +256,7 @@ DWORD WINAPI Client_Thread(void* param) {
   OVERLAPPED ol = { 0 };
   ol.hEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
   TCHAR pipe_name[MAX_PATH];
-  wsprintf(pipe_name, L"%s_%ld", kPipeName, ReadPluginProcessId());
+  _stprintf(pipe_name, _T("%s_%ld"), kPipeName, ReadPluginProcessId());
 
   while(true) {
     client_pipe_handle = CreateFile(pipe_name, GENERIC_READ | GENERIC_WRITE,
@@ -396,7 +399,7 @@ DWORD ConveniencePlugin::Server_Thread(void* param) {
 
   ConveniencePlugin* pPlugin = (ConveniencePlugin*)param;
   TCHAR pipe_name[MAX_PATH];
-  wsprintf(pipe_name, L"%s_%ld", kPipeName, ReadPluginProcessId());
+  _stprintf(pipe_name, _T("%s_%ld"), kPipeName, ReadPluginProcessId());
 
   pPlugin->server_pipe_handle_ = CreateNamedPipe(pipe_name,
       PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
@@ -605,7 +608,7 @@ LRESULT CALLBACK GetMsgProc(int code, WPARAM wParam, LPARAM lParam){
       && is_only_one_tab) {
     TCHAR class_name[256];
     GetClassName(msg->hwnd, class_name, 256);
-    if (wcscmp(class_name, kChromeClassName) == 0 && 
+    if (_tcscmp(class_name, kChromeClassName) == 0 && 
         GetParent(msg->hwnd) == NULL) { 
       RECT rt = {0};
       if (IsMaximized(msg->hwnd)) {
@@ -646,7 +649,7 @@ LRESULT CALLBACK GetMsgProc(int code, WPARAM wParam, LPARAM lParam){
     TCHAR class_name[256];
     GetClassName(msg->hwnd, class_name, 256);
     HWND address_hwnd = FindWindowEx(msg->hwnd, NULL, kChromeAddressBar, NULL);
-    if (wcscmp(class_name, kChromeClassName) == 0 && 
+    if (_tcscmp(class_name, kChromeClassName) == 0 && 
         address_hwnd && (GetWindowLong(address_hwnd, GWL_STYLE) & WS_VISIBLE)) {
       msg->message = WM_NULL;
       Cmd_Msg_Item item;
@@ -660,7 +663,7 @@ LRESULT CALLBACK GetMsgProc(int code, WPARAM wParam, LPARAM lParam){
     TCHAR class_name[256];
     GetClassName(msg->hwnd, class_name, 256);
     HWND address_hwnd = FindWindowEx(msg->hwnd, NULL, kChromeAddressBar, NULL);
-    if (wcscmp(class_name, kChromeClassName) == 0 && 
+    if (_tcscmp(class_name, kChromeClassName) == 0 && 
         address_hwnd && (GetWindowLong(address_hwnd, GWL_STYLE) & WS_VISIBLE)) {
       if (DialogBox(g_hMod, MAKEINTRESOURCE(IDD_CLOSECHROME), msg->hwnd,
                     CloseChromeDialgProc) != IDOK) {
@@ -696,7 +699,7 @@ bottom=%ld,is_only_one_tab=%d",
 
     TCHAR class_name[256];
     GetClassName(msg->hwnd, class_name, 256);
-    if (wcscmp(class_name, kChromeClassName) == 0 && 
+    if (_tcscmp(class_name, kChromeClassName) == 0 && 
         GetParent(msg->hwnd) == NULL) {
       Cmd_Msg_Item item;
       if (g_Close_Last_Tab && is_only_one_tab) {
@@ -740,7 +743,7 @@ NPError ConveniencePlugin::Init(NPP instance, uint16_t mode, int16_t argc,
   DWORD parent_processid = 0;
   BOOL ret = Process32First(hprocess, &process);
   while (ret) {
-    if (_wcsicmp(process.szExeFile, exe_name) == 0 && 
+    if (_tcsicmp(process.szExeFile, exe_name) == 0 && 
         process.th32ProcessID == GetCurrentProcessId()) {
       parent_processid = process.th32ParentProcessID;
       break;
@@ -795,7 +798,7 @@ NPError ConveniencePlugin::UnInit(NPSavedData **save) {
 
 bool ConveniencePlugin::GetNPMessage(int index, TCHAR* msg, int msglen) {
   NPObject* window;
-  wcscpy(msg, L"");
+  _tcscpy(msg, _T(""));
   NPN_GetValue(npp_, NPNVWindowNPObject, &window);
   NPIdentifier id;
   id = NPN_GetStringIdentifier("getNPMessage");
@@ -862,7 +865,7 @@ void ConveniencePlugin::SetShortcutsToMemory(ShortCut_Item* list, int count) {
 
   int num = sizeof(ShortCut_Item)*count + sizeof(int);
   TCHAR filemap_name[MAX_PATH];
-  wsprintf(filemap_name, L"%s_%ld", kFileMappingName, ReadPluginProcessId());
+  _stprintf(filemap_name, _T("%s_%ld"), kFileMappingName, ReadPluginProcessId());
 
   memory_file_handle_ = CreateFileMapping(NULL, NULL,
                                           PAGE_READWRITE|SEC_COMMIT,

@@ -70,8 +70,8 @@ bool BrowserMuteScriptObject::MuteBrowser(const NPVariant *args,
     BOOL flag = FALSE;
     if (Module32First(hmodule, &mod)) {
       while(Module32Next(hmodule, &mod)) {
-        if (_wcsicmp(mod.szModule, L"mutechrome.dll") == 0 ||
-            _wcsicmp(mod.szModule, L"apihook.dll") == 0) {
+        if (_tcsicmp(mod.szModule, _T("mutechrome.dll")) == 0 ||
+            _tcsicmp(mod.szModule, _T("apihook.dll")) == 0) {
           flag = TRUE;
           api_hook_module_ = mod.hModule;
           break;
@@ -84,10 +84,10 @@ bool BrowserMuteScriptObject::MuteBrowser(const NPVariant *args,
     if (!flag) {
       TCHAR dllpath[MAX_PATH*2];
       GetModuleFileName(g_hMod, dllpath, MAX_PATH);
-      wchar_t* postfix = wcsrchr(dllpath, '\\');
+      TCHAR* postfix = _tcsrchr(dllpath, '\\');
       if (postfix != NULL) {
         *(postfix+1) = 0;
-        wcscat(dllpath, L"mutechrome.dll");
+        _tcscat(dllpath, _T("mutechrome.dll"));
         g_Log.WriteLog("Msg", "Before LoadLibrary");
         api_hook_module_ = LoadLibrary(dllpath);
         g_Log.WriteLog("Msg", "After LoadLibrary");
