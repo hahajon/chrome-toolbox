@@ -39,6 +39,7 @@
   "item_open_in_behind": {"message": "Open in background tab"},
   "item_double_click_close_tab": {"message": "Double click on a tab to close it"},
   "item_close_chrome_prompt": {"message": "Confirm before closing multiple tabs"},
+  "item_cursor_wheel_switch_tab": {"message": "Wheel switch tabs"},
   "fill_form_url": {"message": "URL"},
   "fill_form_title": {"message": "Title"},
   "fill_form_date": {"message": "Date"},

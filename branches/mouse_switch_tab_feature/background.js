@@ -26,6 +26,9 @@
     setDBClickCloseTab: function(dbClickFlag) {
       this.convenience.SetDBClickCloseTab(dbClickFlag);
     },
+    setCursorWheelSwitchTab: function(switchTabFlag) {
+      this.convenience.EnableMouseSwitchTab(switchTabFlag);
+    },
     pressBossKey: function() {
       this.convenience.PressBossKey();
     },
@@ -119,6 +122,11 @@
     var flag = eval(localStorage['dbclickCloseTab']) && true;
     plugin.setDBClickCloseTab(flag);
   }
+  
+  function cursorWheelSwitchTab() {
+    var flag = eval(localStorage['cursorWheelSwitchTab']) && true;
+    plugin.setCursorWheelSwitchTab(flag);
+  }
 
   function closeLastTabNotCloseWindow() {
     var closeLastTab = localStorage['closeLastTab'] =
@@ -184,6 +192,7 @@
     localStorage['imageBar'] = localStorage['imageBar'] || 'true';
     localStorage['openInNewTab'] = localStorage['openInNewTab'] || 'false';
     localStorage['openInBefore'] = localStorage['openInBefore'] || 'true';
+    localStorage['cursorWheelSwitchTab'] = localStorage['cursorWheelSwitchTab'] || 'false';
     localStorage['openInBehind'] = localStorage['openInBehind'] || 'false';
     localStorage['isFirstInstallThisVer'] =
         localStorage['isFirstInstallThisVer'] || 'true';
