@@ -39,6 +39,7 @@
   "item_open_in_behind": {"message": "在后台标签中打开"},
   "item_double_click_close_tab": {"message": "鼠标双击关闭标签"},
   "item_close_chrome_prompt": {"message": "关闭多个标签前先确认"},
+  "item_cursor_wheel_switch_tab": {"message": "滚轮切换标签页"},
   "fill_form_url": {"message": "网址"},
   "fill_form_title": {"message": "网页标题"},
   "fill_form_date": {"message": "最近保存时间"},

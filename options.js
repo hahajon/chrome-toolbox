@@ -32,6 +32,7 @@ function setMessage() {
     {id: 'item_openInBehind', message: 'item_open_in_behind'},
     {id: 'item_dbClickCloseTab', message: 'item_double_click_close_tab'},
     {id: 'item_closeChromePrompt', message: 'item_close_chrome_prompt'},
+    {id: 'item_cursorWheelSwitchTab', message: 'item_cursor_wheel_switch_tab'},
     {id: 'fillForm_title', message: 'fill_form_title'},
     {id: 'fillForm_address', message: 'fill_form_url'},
     {id: 'fillForm_date', message: 'fill_form_date'},
@@ -73,6 +74,7 @@ function Option() {
   this.openInBehind = $('openInBehind');
   this.dbclickCloseTab = $('dbclickCloseTab');
   this.closeChromePrompt = $('closeChromePrompt');
+  this.cursorWheelSwitchTab = $('cursorWheelSwitchTab');
   this.isCompare = $('isCompare');
 
   //div element
@@ -210,6 +212,7 @@ Option.prototype.setGeneralTabOption = function() {
   this.openInBehind.checked = eval(localStorage['openInBehind']);
   this.dbclickCloseTab.checked = eval(localStorage['dbclickCloseTab']);
   this.closeChromePrompt.checked = eval(localStorage['closeChromePrompt']);
+  this.cursorWheelSwitchTab.checked = eval(localStorage['cursorWheelSwitchTab']);
   disabledRadioOrNOt();
   this.imageBar.addEventListener('change', function() {
     localStorage['imageBar'] = $('imageBar').checked;
@@ -243,6 +246,11 @@ Option.prototype.setGeneralTabOption = function() {
   this.closeChromePrompt.addEventListener('change', function() {
     localStorage['closeChromePrompt'] = $('closeChromePrompt').checked;
     bg.plugin.closeChromePrompt(eval(localStorage['closeChromePrompt']));
+    showSavingSucceedTip();
+  }, false);
+  this.cursorWheelSwitchTab.addEventListener('change', function() {
+    localStorage['cursorWheelSwitchTab'] = $('cursorWheelSwitchTab').checked;
+    bg.cursorWheelSwitchTab();
     showSavingSucceedTip();
   }, false);
 }
