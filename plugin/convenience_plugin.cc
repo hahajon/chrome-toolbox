@@ -320,6 +320,9 @@ DWORD WINAPI Client_Thread(void* param) {
         case Cmd_Update_CloseLastTab:
           g_Close_Last_Tab = cmd.value.close_last_tab;
           break;
+        case Cmd_Update_SwitchTab:
+          g_EnableSwitchTab = cmd.value.enable_switch_tab;
+          break;
         case Cmd_Update_TabCount:
           {  
             ChromeWindowIdMap::iterator iter;
