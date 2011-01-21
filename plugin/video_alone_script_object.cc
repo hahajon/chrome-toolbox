@@ -19,18 +19,18 @@ int ReadChromeMajorVersion() {
   TCHAR current_path[MAX_PATH];
   GetCurrentDirectory(MAX_PATH, current_path);
   TCHAR file_name[MAX_PATH];
-  wsprintf(file_name, L"%s\\convenience.ini", current_path);
-  return GetPrivateProfileInt(L"CFG", L"MAJORVERSION", 0, file_name);
+  _stprintf(file_name, _T("%s\\convenience.ini"), current_path);
+  return GetPrivateProfileInt(_T("CFG"), _T("MAJORVERSION"), 0, file_name);
 }
 
 void WriteChromeMajorVersion() {
   TCHAR current_path[MAX_PATH];
   GetCurrentDirectory(MAX_PATH, current_path);
   TCHAR file_name[MAX_PATH];
-  wsprintf(file_name, L"%s\\convenience.ini", current_path);
+  _stprintf(file_name, _T("%s\\convenience.ini"), current_path);
   TCHAR value[32];
-  wsprintf(value, L"%ld", g_Chrome_MajorVersion);
-  WritePrivateProfileString(L"CFG", L"MAJORVERSION", value, file_name);
+  _stprintf(value, _T("%ld"), g_Chrome_MajorVersion);
+  WritePrivateProfileString(_T("CFG"), _T("MAJORVERSION"), value, file_name);
 }
 
 LRESULT CALLBACK NewWndProc(HWND hWnd, UINT Msg, WPARAM wParam, 
@@ -55,7 +55,7 @@ LRESULT CALLBACK CallWndProc(int nCode, WPARAM wParam, LPARAM lParam) {
     if (g_Chrome_MajorVersion == 0)
       g_Chrome_MajorVersion = ReadChromeMajorVersion();
 
-    HMODULE h = LoadLibrary(L"dwmapi.dll");
+    HMODULE h = LoadLibrary(_T("dwmapi.dll"));
     if (h) {
       DwmIsCompositionEnabled(&g_Enable_DWM);
       FreeLibrary(h);
@@ -148,9 +148,9 @@ bool VideoAloneScriptObject::ShowVideoAlone(const NPVariant *args,
   HWND hParentWnd = NULL;
   HWND hwnd;
   while(nLoop < 100) {
-    hParentWnd = FindWindowEx(NULL, hParentWnd, L"Chrome_WidgetWin_0", NULL);
+    hParentWnd = FindWindowEx(NULL, hParentWnd, _T("Chrome_WidgetWin_0"), NULL);
     if (hParentWnd != NULL) {
-      hwnd = FindWindowEx(hParentWnd, NULL, L"Chrome_WidgetWin_0", szWinText);
+      hwnd = FindWindowEx(hParentWnd, NULL, _T("Chrome_WidgetWin_0"), szWinText);
       if (hwnd)
         break;
     }

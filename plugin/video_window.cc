@@ -173,7 +173,7 @@ BOOL VideoWindow::WndProc(HWND hwnd, UINT& msg, WPARAM& wParam, LPARAM& lParam) 
           break;
 
         HWND hChildWnd = FindWindowEx(chrome_hwnd_, NULL, 
-            L"Chrome_WidgetWin_0", NULL);
+            _T("Chrome_WidgetWin_0"), NULL);
         int cy = CONST_FRAME_CAPTION_HEIGHT;
         if (IsMaximized(chrome_hwnd_))
           cy = 25;
@@ -265,7 +265,7 @@ BOOL VideoWindow::WndProc(HWND hwnd, UINT& msg, WPARAM& wParam, LPARAM& lParam) 
         }
 
         HWND hChildWnd = FindWindowEx(chrome_hwnd_, NULL, 
-            L"Chrome_WidgetWin_0", NULL);
+            _T("Chrome_WidgetWin_0"), NULL);
         int cy = CONST_FRAME_CAPTION_HEIGHT;
         int cx = CONST_FRAME_BORDER;
         int width, height;

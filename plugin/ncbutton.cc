@@ -265,7 +265,7 @@ void NCButton::LoadButtonImage() {
   TCHAR filename[MAX_PATH];
   TCHAR png_filename[MAX_PATH];
   GetModuleFileName(g_hMod, filename, MAX_PATH);
-  wchar_t* postfix = wcsrchr(filename, '\\');
+  TCHAR* postfix = _tcsrchr(filename, '\\');
   if (postfix)
     *postfix = 0;
 
@@ -283,30 +283,30 @@ void NCButton::LoadButtonImage() {
     delete notip_mousedown_image_;
 
   if (g_Chrome_MajorVersion >= MINIMUM_VERSION_SUPPORT_POPUP && g_Enable_DWM) {
-    wsprintf(png_filename, L"%s\\resources\\tip_mousedown_win7.png", filename);
+    _stprintf(png_filename, _T("%s\\resources\\tip_mousedown_win7.png"), filename);
     normal_image_ = new Image(png_filename);
-    wsprintf(png_filename, L"%s\\resources\\tip_mouseover_win7.png", filename);
+    _stprintf(png_filename, _T("%s\\resources\\tip_mouseover_win7.png"), filename);
     mouse_over_image_ = new Image(png_filename);
-    wsprintf(png_filename, L"%s\\resources\\tip_mousedown_win7.png", filename);
+    _stprintf(png_filename, _T("%s\\resources\\tip_mousedown_win7.png"), filename);
     mouse_down_image_ = new Image(png_filename);
-    wsprintf(png_filename, L"%s\\resources\\notip_normal_win7.png", filename);
+    _stprintf(png_filename, _T("%s\\resources\\notip_normal_win7.png"), filename);
     notip_normal_image_ = new Image(png_filename);
-    wsprintf(png_filename, L"%s\\resources\\notip_mouseover_win7.png", filename);
+    _stprintf(png_filename, _T("%s\\resources\\notip_mouseover_win7.png"), filename);
     notip_mouseover_image_ = new Image(png_filename);
-    wsprintf(png_filename, L"%s\\resources\\notip_mousedown_win7.png", filename);
+    _stprintf(png_filename, _T("%s\\resources\\notip_mousedown_win7.png"), filename);
     notip_mousedown_image_ = new Image(png_filename);
   } else {
-    wsprintf(png_filename, L"%s\\resources\\tip_normal.png", filename);
+    _stprintf(png_filename, _T("%s\\resources\\tip_normal.png"), filename);
     normal_image_ = new Image(png_filename);
-    wsprintf(png_filename, L"%s\\resources\\tip_mouseover.png", filename);
+    _stprintf(png_filename, _T("%s\\resources\\tip_mouseover.png"), filename);
     mouse_over_image_ = new Image(png_filename);
-    wsprintf(png_filename, L"%s\\resources\\tip_mousedown.png", filename);
+    _stprintf(png_filename, _T("%s\\resources\\tip_mousedown.png"), filename);
     mouse_down_image_ = new Image(png_filename);
-    wsprintf(png_filename, L"%s\\resources\\notip_normal.png", filename);
+    _stprintf(png_filename, _T("%s\\resources\\notip_normal.png"), filename);
     notip_normal_image_ = new Image(png_filename);
-    wsprintf(png_filename, L"%s\\resources\\notip_mouseover.png", filename);
+    _stprintf(png_filename, _T("%s\\resources\\notip_mouseover.png"), filename);
     notip_mouseover_image_ = new Image(png_filename);
-    wsprintf(png_filename, L"%s\\resources\\notip_mousedown.png", filename);
+    _stprintf(png_filename, _T("%s\\resources\\notip_mousedown.png"), filename);
     notip_mousedown_image_ = new Image(png_filename);
   }
 }

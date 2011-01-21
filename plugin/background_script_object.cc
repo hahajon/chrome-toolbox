@@ -88,13 +88,13 @@ void WINAPI TimerProc(HWND hWnd, UINT nMsg, UINT nIDEvent, DWORD dwTime) {
   if (!GetClassName(g_WallPapperWindow, class_name, 256))
     return;
 
-  if (wcscmp(class_name, L"Chrome_WidgetWin_0") == 0) {
+  if (_tcscmp(class_name, _T("Chrome_WidgetWin_0")) == 0) {
     HWND hChildWnd = FindWindowEx(g_WallPapperWindow, NULL, 
-        L"Chrome_AutocompleteEditView", NULL);
+        _T("Chrome_AutocompleteEditView"), NULL);
     if (hChildWnd)
       SendMessage(hChildWnd, WM_CLOSE, 0, 0);
     hChildWnd = FindWindowEx(g_WallPapperWindow, NULL, 
-        L"Chrome_WidgetWin_0", NULL);
+        _T("Chrome_WidgetWin_0"), NULL);
     int cx, cy;
     cx = CONST_FRAME_BORDER;
     cy = 25;
@@ -209,9 +209,9 @@ bool BackgroundScriptObject::ApplyWallPaper(const NPVariant *args,
   GlobalUnlock(handle);
   GlobalFree(handle);
 
-  TCHAR current_path[MAX_PATH];
-  GetCurrentDirectory(MAX_PATH, current_path);
-  TCHAR file_name[MAX_PATH];
+  WCHAR current_path[MAX_PATH];
+  GetCurrentDirectoryW(MAX_PATH, current_path);
+  WCHAR file_name[MAX_PATH];
   wsprintf(file_name, L"%s\\ExtensionWallPaper.bmp", current_path);
   CLSID bmp_clsid;
   GetEncoderClsid(L"image/bmp", &bmp_clsid);

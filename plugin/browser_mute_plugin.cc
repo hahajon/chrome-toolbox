@@ -5,7 +5,6 @@
 #include "browser_mute_script_object.h"
 #include <TlHelp32.h>
 #include <Psapi.h>
-#include <tchar.h>
 #include <Mmdeviceapi.h>
 #include <Audiopolicy.h>
 #include <map>
@@ -32,12 +31,12 @@ void InjectIntoProcess(HANDLE hprocess) {
   char logs[256];
   if (p) {
     g_Log.WriteLog("Msg", "VirtualAllocEx");
-    TCHAR dllpath[MAX_PATH*2];
+    TCHAR dllpath[MAX_PATH];
     GetModuleFileName(g_hMod, dllpath, MAX_PATH);
-    wchar_t* postfix = wcsrchr(dllpath, '\\');
+    TCHAR* postfix = _tcsrchr(dllpath, '\\');
     if (postfix != NULL) {
       *(postfix+1) = 0;
-      wcscat(dllpath, L"mutechrome.dll");
+      _tcscat(dllpath, _T("mutechrome.dll"));
     } else {
       g_Log.WriteLog("Error", "postfix==NULL");
       return;
@@ -70,22 +69,22 @@ void InjectIntoProcess(HANDLE hprocess) {
 }
 
 void RenameApiHookDll() {
-  char dllpath[MAX_PATH*2] = "";
-  char newdllpath[MAX_PATH*2] = "";
-  GetModuleFileNameA(g_hMod, dllpath, MAX_PATH);
-  strcpy(newdllpath, dllpath);
-  char* postfix = strrchr(newdllpath, '\\');
+  TCHAR dllpath[MAX_PATH] = _T("");
+  TCHAR newdllpath[MAX_PATH] = _T("");
+  GetModuleFileName(g_hMod, dllpath, MAX_PATH);
+  _tcscpy(newdllpath, dllpath);
+  TCHAR* postfix = _tcsrchr(newdllpath, '\\');
   if (postfix != NULL) {
     *(postfix+1) = 0;
-    strcat(newdllpath, "mutechrome.dll");
+    _tcscat(newdllpath, _T("mutechrome.dll"));
   }
-  postfix = strrchr(dllpath, '\\');
+  postfix = _tcsrchr(dllpath, '\\');
   if (postfix != NULL) {
     *(postfix+1) = 0;
-    strcat(dllpath, "apihook.dll");
+    _tcscat(dllpath, _T("apihook.dll"));
   }
-  FILE* src_file = fopen(dllpath, "rb");
-  FILE* dest_file = fopen(newdllpath, "wb");
+  FILE* src_file = _tfopen(dllpath, _T("rb"));
+  FILE* dest_file = _tfopen(newdllpath, _T("wb"));
   if (src_file && dest_file) {
     byte buffer[1024];
     int len = fread(buffer, 1, 1024, src_file);
@@ -110,7 +109,7 @@ bool GetProdcutVersion(LPCTSTR filename, DWORD* mostversion,
     BYTE* version_buffer = new BYTE[version_info_size];
     GetFileVersionInfo(filename, infosize_handle, version_info_size,
                        version_buffer);
-    if (VerQueryValue(version_buffer, L"\\", (void**)&file_info, &info_size)) {
+    if (VerQueryValue(version_buffer, _T("\\"), (void**)&file_info, &info_size)) {
       *mostversion = file_info->dwProductVersionMS;
       *leastversion = file_info->dwProductVersionLS;
       delete[] version_buffer;
@@ -245,13 +244,13 @@ void BrowserMutePlugin::ScanAndInject() {
   BOOL find_same_chrome_version = FALSE;
   BOOL ret = Process32First(hprocess, &process);
   while (ret) {
-    if (_wcsicmp(process.szExeFile, exe_name) == 0) {
+    if (_tcsicmp(process.szExeFile, exe_name) == 0) {
       HANDLE hmodule = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, 
-        process.th32ProcessID);
+          process.th32ProcessID);
       MODULEENTRY32 mod = { sizeof(MODULEENTRY32) };
       BOOL find_apihook_flag = FALSE;
       if (Module32First(hmodule, &mod)) {
-        if (_wcsicmp(mod.szExePath, chrome_exe_path) != 0) {
+        if (_tcsicmp(mod.szExePath, chrome_exe_path) != 0) {
           CloseHandle(hmodule);
           ret = Process32Next(hprocess, &process);
           continue;
@@ -259,8 +258,8 @@ void BrowserMutePlugin::ScanAndInject() {
           find_same_chrome_version = TRUE;
         }
         while(Module32Next(hmodule, &mod)) {
-          if (_wcsicmp(mod.szModule, L"mutechrome.dll") == 0 ||
-            _wcsicmp(mod.szModule, L"apihook.dll") == 0) {
+          if (_tcsicmp(mod.szModule, _T("mutechrome.dll")) == 0 ||
+            _tcsicmp(mod.szModule, _T("apihook.dll")) == 0) {
               find_apihook_flag = TRUE;
               break;
           }

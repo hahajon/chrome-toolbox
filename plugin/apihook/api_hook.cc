@@ -129,7 +129,7 @@ void ApiHook::ReplaceIATEntryInAllMods(PCSTR calleemodulename, PROC pfnorig,
     // NOTE: We don't hook functions in our own module
     if (me.hModule != thismod) {
       // Hook this function in this module
-      if (wcsicmp(me.szModule, L"convenience.dll") == 0)
+      if (_tcsicmp(me.szModule, _T("convenience.dll")) == 0)
         continue;
       EnterCriticalSection(&g_CS);
       ReplaceIATEntryInOneMod(calleemodulename, pfnorig, pfnhook, me.hModule);
