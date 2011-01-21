@@ -619,7 +619,7 @@ bool ConvenienceScriptObject::ChromeWindowRemoved(const NPVariant *args,
 bool ConvenienceScriptObject::EnableMouseSwitchTab(const NPVariant* args, 
                                                    uint32_t argCount, 
                                                    NPVariant* result) {
-  if (argCount != 1 || NPVARIANT_IS_BOOLEAN(args[0]))
+  if (argCount != 1 || !NPVARIANT_IS_BOOLEAN(args[0]))
     return false;
 
   ConveniencePlugin* plugin = (ConveniencePlugin*)plugin_;
