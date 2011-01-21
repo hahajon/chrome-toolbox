@@ -192,7 +192,6 @@
     localStorage['imageBar'] = localStorage['imageBar'] || 'true';
     localStorage['openInNewTab'] = localStorage['openInNewTab'] || 'false';
     localStorage['openInBefore'] = localStorage['openInBefore'] || 'true';
-    localStorage['cursorWheelSwitchTab'] = localStorage['cursorWheelSwitchTab'] || 'false';
     localStorage['openInBehind'] = localStorage['openInBehind'] || 'false';
     localStorage['isFirstInstallThisVer'] =
         localStorage['isFirstInstallThisVer'] || 'true';
@@ -200,6 +199,8 @@
       localStorage['closeLastTab'] = localStorage['closeLastTab'] || 'true';
       localStorage['videoBar'] = localStorage['videoBar'] || 'true';
       localStorage['browserMute'] = localStorage['browserMute'] || 'false';
+      localStorage['cursorWheelSwitchTab'] = 
+          localStorage['cursorWheelSwitchTab'] || 'false';
       plugin.muteBrowser(eval(localStorage['browserMute']));
       setBadgeTextByMute();
       localStorage['dbclickCloseTab'] =
@@ -211,6 +212,7 @@
       plugin.closeChromePrompt(eval(localStorage['closeChromePrompt']));
       setCloseLastOneTabStatus();
       dbClickCloseTab();
+      cursorWheelSwitchTab();
       chrome.tabs.onCreated.addListener(function(tab) {
         setCloseLastOneTabStatus();
       });
