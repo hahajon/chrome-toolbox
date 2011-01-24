@@ -22,8 +22,7 @@
               li.innerHTML = '<img src ="' + url + '" alt="">' +  node.title;
               (function(id) {
                 li.onclick = function() {
-                  createSelectedBookmarkFolderLinks(id);
-                  setSelectedFolderClass(id);
+                  selectBookMarks(id)
                 }
               })(node.id);
               parent.appendChild(li);
@@ -37,10 +36,14 @@
       $('bookmarkTree').appendChild(ul);
       $('bookmarkBox').style.display = 'block';
       var left = (document.body.clientWidth - $('bookmarkBox').clientWidth) / 2;
-
       $('bookmarkBox').style.left = left + 'px';
-
+      selectBookMarks('1')
     });
+  }
+  
+  function selectBookMarks(id) {
+    createSelectedBookmarkFolderLinks(id);
+    setSelectedFolderClass(id);
   }
 
   function createQuickLaunchTab() {
@@ -123,7 +126,6 @@
     $('bookmarkList').innerHTML = '';
     var ul = document.createElement('UL');
     var traversalAllNode = function(nodeId) {
-
       chrome.bookmarks.getChildren(nodeId, function(children) {
         for (var i = 0; i < children.length; i++) {
           if (children[i].url) {
