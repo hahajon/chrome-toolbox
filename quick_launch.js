@@ -37,7 +37,6 @@
       $('bookmarkBox').style.display = 'block';
       var left = (document.body.clientWidth - $('bookmarkBox').clientWidth) / 2;
       $('bookmarkBox').style.left = left + 'px';
-      selectBookMarks('1')
     });
   }
   
@@ -195,8 +194,10 @@
     shortcut.selectById(id, function(tx, results) {
       if (results.rows.length > 0 && results.rows.item(0).relationId) {
         var relationId = results.rows.item(0).relationId;
-        $('bookmarkNode_' + relationId).className = 'selected';
+        $('bookmarkNode_' + relationId).className = 'selected'; 
         createSelectedBookmarkFolderLinks(relationId);
+      } else {
+        selectBookMarks('1')
       }
     });
   }
