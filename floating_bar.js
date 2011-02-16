@@ -485,9 +485,9 @@ function isGoogleLogoutBtn(url) {
 }
                 
 function changeAElementTarget(curElement) {
-  target = curElement.target;
+  var target = curElement.target;
+  var targetUrl = curElement.href;
   if (openInBehindStatus) {
-    var targetUrl = curElement.href;
     curElement.removeAttribute('href');
     chrome.extension.sendRequest({msg: 'createNewTabInBehind', url: targetUrl })
   } else {
@@ -511,7 +511,6 @@ function setAElementTarget() {
       return;
     }
     if (openInNewTabStatus) {
-      var target = '';
       var curElement = event.target;
       if (curElement.tagName == 'A' && !isGoogleLogoutBtn(curElement.href)){
         changeAElementTarget(curElement);
