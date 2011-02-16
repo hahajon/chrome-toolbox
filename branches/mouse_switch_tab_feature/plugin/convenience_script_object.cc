@@ -374,6 +374,23 @@ void ConvenienceScriptObject::TriggerCloseCurrentTab() {
   NPN_ReleaseVariantValue(&result);
 }
 
+void ConvenienceScriptObject::TriggerSwitchTab(bool forward) {
+  g_Log.WriteLog("Invoke", "TriggerSwitchTab");
+
+  NPObject* window;
+  NPN_GetValue(plugin_->get_npp(), NPNVWindowNPObject, &window);
+  NPIdentifier id;
+  id = NPN_GetStringIdentifier("wheelSwitchTab");
+  NPVariant result;
+  VOID_TO_NPVARIANT(result);
+  if (id) {
+    NPVariant param;
+    BOOLEAN_TO_NPVARIANT(forward, param);
+    NPN_Invoke(plugin_->get_npp(), window, id, &param, 1, &result);
+  }
+  NPN_ReleaseVariantValue(&result);
+}
+
 void ConvenienceScriptObject::TriggerShortcuts(UINT modify, UINT vk, 
                                                bool issleep /* = true */) {
   INPUT inputs[4] = { 0 };

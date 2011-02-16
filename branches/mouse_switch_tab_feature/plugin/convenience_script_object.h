@@ -87,6 +87,8 @@ public:
   void TriggerCloseCurrentTab();
   // Send shortcuts to chrome.
   void TriggerShortcuts(UINT modify, UINT vk, bool issleep = true);
+  // Notify frontend switch tab.
+  void TriggerSwitchTab(bool forward);
 
   typedef map<string,ShortCut_Item> ShortCutKeyMap;
   typedef pair<string,ShortCut_Item> ShortCutPair;
