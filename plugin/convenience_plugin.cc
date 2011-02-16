@@ -1070,13 +1070,8 @@ LRESULT ConveniencePlugin::WndProc(HWND hWnd, UINT Msg,
       break;
     case WM_CHROMEMOUSEWHEEL:
       {
-        UINT mod = MOD_CONTROL;
-        if (lParam > 0) {
-          mod |= MOD_SHIFT;
-        }
-        for (int i = 0; i < abs(lParam); i++) {
-          pObject->TriggerShortcuts(mod, VK_TAB, false);
-        }
+        bool forward = lParam > 0 ? true : false;
+        pObject->TriggerSwitchTab(forward);
       }
       break;
     case WM_KEYDOWN:
