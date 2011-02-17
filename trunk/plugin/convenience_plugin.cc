@@ -13,10 +13,11 @@ using namespace std;
 
 extern Log g_Log;
 extern HMODULE g_hMod;
-extern bool g_DBClickCloseTab;
 bool g_IsListening = false;
 bool g_Close_Last_Tab = false;
 bool g_CloseChrome_Prompt = true;
+bool g_DBClickCloseTab = true;
+bool g_EnableSwitchTab = false;
 Local_Message_Item g_Local_Message;
 typedef map<HWND, Cmd_Msg_Item::Cmd_Msg_Value::TabCount> ChromeWindowIdMap;
 ChromeWindowIdMap g_ChromeWindowMap;
@@ -26,6 +27,7 @@ DWORD g_ChromeMainThread = 0;
 WNDPROC ConveniencePlugin::old_proc_ = NULL;
 HHOOK g_KeyboardHook = NULL;
 HHOOK g_GetMsgHook = NULL;
+HHOOK g_CallWndHook = NULL;
 HANDLE client_pipe_handle = INVALID_HANDLE_VALUE;
 HANDLE client_thread_handle = INVALID_HANDLE_VALUE;
 
@@ -321,6 +323,9 @@ DWORD WINAPI Client_Thread(void* param) {
         case Cmd_Update_CloseLastTab:
           g_Close_Last_Tab = cmd.value.close_last_tab;
           break;
+        case Cmd_Update_SwitchTab:
+          g_EnableSwitchTab = cmd.value.enable_switch_tab;
+          break;
         case Cmd_Update_TabCount:
           {  
             ChromeWindowIdMap::iterator iter;
@@ -427,6 +432,7 @@ DWORD ConveniencePlugin::Server_Thread(void* param) {
     pPlugin->UpdateDBClick_CloseTab(g_DBClickCloseTab);
     pPlugin->UpdateCloseChromePromptFlag(g_CloseChrome_Prompt);
     pPlugin->UpdateCloseLastTab(g_Close_Last_Tab);
+    pPlugin->EnableMouseSwitchTab(g_EnableSwitchTab);
     ChromeWindowIdMap::iterator iter;
     for (iter = g_ChromeWindowMap.begin(); iter != g_ChromeWindowMap.end();
          iter++) {
@@ -493,6 +499,10 @@ DWORD ConveniencePlugin::Server_Thread(void* param) {
         case Cmd_KeyUp:
           PostMessage(pPlugin->hwnd_, WM_KEYUP, cmd.value.key_down.wparam,
                       cmd.value.key_down.lparam);
+          break;
+        case Cmd_MouseRotated:
+          PostMessage(pPlugin->hwnd_, WM_CHROMEMOUSEWHEEL, 
+                      0, cmd.value.rotatedcount);
           break;
         case Cmd_ClientShutDown:
           if (pPlugin->memory_file_handle_)
@@ -716,6 +726,34 @@ bottom=%ld,is_only_one_tab=%d",
   return CallNextHookEx(g_GetMsgHook, code, wParam, lParam);
 }
 
+LRESULT CALLBACK CallWndProcHook(int code, WPARAM wParam, LPARAM lParam){
+  CWPSTRUCT* msg = (CWPSTRUCT*)lParam;
+
+  ChromeWindowIdMap::iterator iter = g_ChromeWindowMap.find(msg->hwnd);
+  if (g_EnableSwitchTab && iter != g_ChromeWindowMap.end()) {
+    switch(msg->message) {
+      case WM_MOUSEWHEEL:
+        {
+          RECT window_rect = {0};
+          POINT pt;
+          pt.x = LOWORD(msg->lParam);
+          pt.y = HIWORD(msg->lParam);
+          GetWindowRect(msg->hwnd, &window_rect);
+          if (PtInRect(&window_rect, pt)) {
+            Cmd_Msg_Item item;
+            item.cmd = Cmd_MouseRotated;
+            item.value.rotatedcount = ((short)HIWORD(msg->wParam) / WHEEL_DELTA);
+            WriteToServer(item);
+          }
+        }
+        break;
+      default:
+        break;
+    }
+  }
+  return CallNextHookEx(g_CallWndHook, code, wParam, lParam);
+}
+
 ConveniencePlugin::ConveniencePlugin(void) {
   memory_file_handle_ = NULL;
   server_thread_handle_ = NULL;
@@ -761,9 +799,11 @@ NPError ConveniencePlugin::Init(NPP instance, uint16_t mode, int16_t argc,
                                         g_ChromeMainThread);
       g_GetMsgHook = SetWindowsHookEx(WH_GETMESSAGE, GetMsgProc, g_hMod, 
                                       g_ChromeMainThread);
-      if (!g_KeyboardHook || !g_GetMsgHook)
+      g_CallWndHook = SetWindowsHookEx(WH_CALLWNDPROC, CallWndProcHook, g_hMod,
+                                       g_ChromeMainThread);
+      if (!g_KeyboardHook || !g_GetMsgHook || !g_CallWndHook) {
         return NPERR_GENERIC_ERROR;
-      else {
+      } else {
         g_Log.WriteLog("Msg", "ConveniencePlugin Init Success");
         break;
       }
@@ -784,6 +824,7 @@ NPError ConveniencePlugin::UnInit(NPSavedData **save) {
 
   UnhookWindowsHookEx(g_GetMsgHook);
   UnhookWindowsHookEx(g_KeyboardHook);
+  UnhookWindowsHookEx(g_CallWndHook);
 
   if (WaitForSingleObject(server_thread_handle_, 10) == WAIT_TIMEOUT) {
     TerminateThread(server_thread_handle_, 0);
@@ -962,6 +1003,14 @@ void ConveniencePlugin::ChromeWindowRemoved(int windowid) {
   WriteToClient(item);
 }
 
+void ConveniencePlugin::EnableMouseSwitchTab(bool flag) {
+  Cmd_Msg_Item item;
+  item.cmd = Cmd_Update_SwitchTab;
+  item.value.enable_switch_tab = flag;
+  g_EnableSwitchTab = flag;
+  WriteToClient(item);
+}
+
 void ConveniencePlugin::GetLocalMessage() {
   if (get_message_flag_)
     return;
@@ -1022,6 +1071,12 @@ LRESULT ConveniencePlugin::WndProc(HWND hWnd, UINT Msg,
       break;
     case WM_UPDATE_CLOSECHROME_PROMPT:
       pObject->UpdateCloseChromePromptFlag(wParam);
+      break;
+    case WM_CHROMEMOUSEWHEEL:
+      {
+        bool forward = lParam > 0 ? true : false;
+        pObject->TriggerSwitchTab(forward);
+      }
       break;
     case WM_KEYDOWN:
       {

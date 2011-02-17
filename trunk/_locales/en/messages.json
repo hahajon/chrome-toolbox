@@ -1,4 +1,4 @@
-﻿{
+{
   "name": {"message": "Chrome Toolbox (by Google)"},
   "description": {"message": "A quick access tool that allows you to put your favorite browser commands in one drop down menu, save unsubmitted form data, magnify images, view videos in standalone windows, and define shortcuts to open all links in any bookmark folder."},
   "description_linux_and_mac": {"message": "A quick access tool that allows you to save unsubmitted form data and magnify images."},
@@ -39,6 +39,7 @@
   "item_open_in_behind": {"message": "Open in background tab"},
   "item_double_click_close_tab": {"message": "Double click on a tab to close it"},
   "item_close_chrome_prompt": {"message": "Confirm before closing multiple tabs"},
+  "item_mouse_wheel_switch_tab": {"message": "Scroll mouse wheel on the tab strip to switch tabs"},
   "fill_form_url": {"message": "URL"},
   "fill_form_title": {"message": "Title"},
   "fill_form_date": {"message": "Date"},

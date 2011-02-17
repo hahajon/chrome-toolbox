@@ -32,13 +32,17 @@ function setMessage() {
     {id: 'item_openInBehind', message: 'item_open_in_behind'},
     {id: 'item_dbClickCloseTab', message: 'item_double_click_close_tab'},
     {id: 'item_closeChromePrompt', message: 'item_close_chrome_prompt'},
+    {id: 'item_mouseWheelSwitchTab', message: 'item_mouse_wheel_switch_tab'},
     {id: 'fillForm_title', message: 'fill_form_title'},
     {id: 'fillForm_address', message: 'fill_form_url'},
     {id: 'fillForm_date', message: 'fill_form_date'},
     {id: 'fillFrom_delAll', message: 'fill_from_delete_all'},
     {id: 'shortcut_compare', message: 'shortcut_compare'},
     {id: 'quick_launch_selected_folder', message: 'quick_launch_select_folder'},
-    {id: 'quick_launch_manage_bookmark', message: 'quick_launch_manage_bookmark'},
+    {
+      id: 'quick_launch_manage_bookmark', 
+      message: 'quick_launch_manage_bookmark'
+    },
     {id: 'quick_launch_close', message: 'quick_launch_close'},
     {id: 'bookmark_tip', message: 'bookmark_tip'},
     {id: 'shortcut_tip', message: 'tab_shortcut_description'},
@@ -54,7 +58,7 @@ function setMessage() {
     {id: 'form_close', message: 'form_close'},
   ];
   document.title = chrome.i18n.getMessage('option_title');
-  for (var i = 0; i < i18n_map.length; i++) {
+  for (var i = 0, l = i18n_map.length; i < l; i++) {
     var id = i18n_map[i].id;
     var name = i18n_map[i].message;
     i18nReplace(id, name);
@@ -73,6 +77,7 @@ function Option() {
   this.openInBehind = $('openInBehind');
   this.dbclickCloseTab = $('dbclickCloseTab');
   this.closeChromePrompt = $('closeChromePrompt');
+  this.mouseWheelSwitchTab = $('mouseWheelSwitchTab');
   this.isCompare = $('isCompare');
 
   //div element
@@ -135,28 +140,28 @@ function Option() {
 
   this.isCompare.addEventListener('change', function() {
     self.table_shortcut.innerHTML = '';
-    self.table_shortcut.appendChild(
-      shortcut.showTable(categorySelect, browserSelect, self.isCompare.checked));
+    self.table_shortcut.appendChild(shortcut.showTable(
+        categorySelect, browserSelect, self.isCompare.checked));
   }, false);
   categorySelect.addEventListener('change', function() {
     self.table_shortcut.innerHTML = '';
-    self.table_shortcut.appendChild(
-      shortcut.showTable(categorySelect, browserSelect, self.isCompare.checked));
+    self.table_shortcut.appendChild(shortcut.showTable(
+        categorySelect, browserSelect, self.isCompare.checked));
   }, false);
   browserSelect.addEventListener('change', function() {
     self.table_shortcut.innerHTML = '';
-    self.table_shortcut.appendChild(
-      shortcut.showTable(categorySelect, browserSelect, self.isCompare.checked));
+    self.table_shortcut.appendChild(shortcut.showTable(
+        categorySelect, browserSelect, self.isCompare.checked));
   }, false);
-  this.table_shortcut.appendChild(
-      shortcut.showTable(categorySelect, browserSelect, self.isCompare.checked));
+  this.table_shortcut.appendChild(shortcut.showTable(
+      categorySelect, browserSelect, self.isCompare.checked));
   this.setGeneralTabOption();
 
   this.gotoShortcutTab.addEventListener('click', function() {
     categorySelect.value = key_util.category_table.CAT_QUICK_LAUNCH;
     self.table_shortcut.innerHTML = '';
-    self.table_shortcut.appendChild(
-      shortcut.showTable(categorySelect, browserSelect, self.isCompare.checked));
+    self.table_shortcut.appendChild(shortcut.showTable(
+        categorySelect, browserSelect, self.isCompare.checked));
     self.setNavigationBarStatus(self.nav_shortcut);
   }, false)
   createRecommendedContext(this.googleExtensionsRecommended,
@@ -187,7 +192,7 @@ Option.prototype.setNavigationBarStatus = function(element) {
       {menu: 'mQuicklyVisit', tab: 'quicklyVisitTab', isWindowsOnly: true},
       {menu: 'mShortcut', tab: 'shortcutTab', isWindowsOnly: true},
       {menu: 'mRecommended', tab: 'recommendedTab', isWindowsOnly: false}];
-  for (var i = 0; i < navigationBarMap.length; i++) {
+  for (var i = 0, l = navigationBarMap.length; i < l; i++) {
     var navMenu = $(navigationBarMap[i].menu);
     var tab = $(navigationBarMap[i].tab);
     if (navMenu == this_obj) {
@@ -210,6 +215,8 @@ Option.prototype.setGeneralTabOption = function() {
   this.openInBehind.checked = eval(localStorage['openInBehind']);
   this.dbclickCloseTab.checked = eval(localStorage['dbclickCloseTab']);
   this.closeChromePrompt.checked = eval(localStorage['closeChromePrompt']);
+  this.mouseWheelSwitchTab.checked = 
+      eval(localStorage['mouseWheelSwitchTab']);
   disabledRadioOrNOt();
   this.imageBar.addEventListener('change', function() {
     localStorage['imageBar'] = $('imageBar').checked;
@@ -243,6 +250,11 @@ Option.prototype.setGeneralTabOption = function() {
   this.closeChromePrompt.addEventListener('change', function() {
     localStorage['closeChromePrompt'] = $('closeChromePrompt').checked;
     bg.plugin.closeChromePrompt(eval(localStorage['closeChromePrompt']));
+    showSavingSucceedTip();
+  }, false);
+  this.mouseWheelSwitchTab.addEventListener('change', function() {
+    localStorage['mouseWheelSwitchTab'] = $('mouseWheelSwitchTab').checked;
+    bg.mouseWheelSwitchTab();
     showSavingSucceedTip();
   }, false);
 }
@@ -291,7 +303,7 @@ function showSavingFailedTip(msg) {
 function setWindowOnlyElement() {
   if (!isWindowsPlatform()) {
     var elements = document.getElementsByName('isWindowsOnly');
-    for (var i = 0; i < elements.length; i++) {
+    for (var i = 0, l = elements.length; i < l; i++) {
       elements[i].style.display = 'none';
     }
     i18nReplace('item_imageBar', 'item_image_bar_not_windows');
@@ -334,45 +346,57 @@ function createRecommendedContext(googleExtensionsRecommended,
     }
     parent.appendChild(table);
   }
-  var googleExtensionsList = [
-    {name:'recommended_screen_capture',
-        description: 'recommended_screen_capture_desc',
-        icon: 'images/icon_capture_32.png',
-        isWindowsOnly: false,
-        href: 'https://chrome.google.com/extensions/detail/cpngackimfmofbokmjmljamhdncknpmg' },
-    {name:'recommended_download_helper',
-        description: 'recommended_download_helper_desc',
-        icon: 'images/icon_download_32.png',
-        isWindowsOnly: true,
-        href: 'https://chrome.google.com/extensions/detail/mfjkgbjaikamkkojmakjclmkianficch' },
-    {name:'recommended_google_translate',
-        description: 'recommended_google_translate_desc',
-        icon: 'images/icon_translate_32.gif',
-        isWindowsOnly: false,
-        href: 'https://chrome.google.com/extensions/detail/aapbdbdomjkkjkaonfhkkikfgjllcleb' }
-  ];
-  var thirdPartyExtensionsList = [
-    {name:'recommended_proxy_switch',
-        description: 'recommended_proxy_switch_desc',
-        icon: 'images/icon_proxy_32.png',
-        isWindowsOnly: false,
-        href: 'https://chrome.google.com/extensions/detail/caehdcpeofiiigpdhbabniblemipncjj' },
-    {name:'recommended_drag_and_go',
-        description: 'recommended_drag_and_go_desc',
-        icon: 'images/icon_dragandgo_32.png',
-        isWindowsOnly: false,
-        href: 'https://chrome.google.com/extensions/detail/jaikcnhlohebodlpkmjepipngegjbfpg' },
-    {name:'recommended_smooth_gestures',
-        description: 'recommended_smooth_gestures_desc',
-        icon: 'images/icon_gestures_32.png',
-        isWindowsOnly: false,
-        href: 'https://chrome.google.com/extensions/detail/lfkgmnnajiljnolcgolmmgnecgldgeld' },
-    {name:'recommended_tab_menu',
-        description: 'recommended_tab_menu_desc',
-        icon: 'images/icon_tab_menu_35.png',
-        isWindowsOnly: false,
-        href: 'https://chrome.google.com/extensions/detail/galfofdpepkcahkfobimileafiobdplb' }
-  ];
+  var googleExtensionsList = [{
+    name: 'recommended_screen_capture',
+    description: 'recommended_screen_capture_desc',
+    icon: 'images/icon_capture_32.png',
+    isWindowsOnly: false,
+    href: 'https://chrome.google.com/extensions/detail/' + 
+          'cpngackimfmofbokmjmljamhdncknpmg' 
+  }, {
+    name: 'recommended_download_helper',
+    description: 'recommended_download_helper_desc',
+    icon: 'images/icon_download_32.png',
+    isWindowsOnly: true,
+    href: 'https://chrome.google.com/extensions/detail/' + 
+          'mfjkgbjaikamkkojmakjclmkianficch' 
+  }, {
+    name: 'recommended_google_translate',
+    description: 'recommended_google_translate_desc',
+    icon: 'images/icon_translate_32.gif',
+    isWindowsOnly: false,
+    href: 'https://chrome.google.com/extensions/detail/' + 
+          'aapbdbdomjkkjkaonfhkkikfgjllcleb' 
+  }];
+  var thirdPartyExtensionsList = [{
+    name: 'recommended_proxy_switch',
+    description: 'recommended_proxy_switch_desc',
+    icon: 'images/icon_proxy_32.png',
+    isWindowsOnly: false,
+    href: 'https://chrome.google.com/extensions/detail/' + 
+          'caehdcpeofiiigpdhbabniblemipncjj' 
+  }, {
+    name: 'recommended_drag_and_go',
+    description: 'recommended_drag_and_go_desc',
+    icon: 'images/icon_dragandgo_32.png',
+    isWindowsOnly: false,
+    href: 'https://chrome.google.com/extensions/detail/' + 
+          'jaikcnhlohebodlpkmjepipngegjbfpg' 
+  }, {
+    name: 'recommended_smooth_gestures',
+    description: 'recommended_smooth_gestures_desc',
+    icon: 'images/icon_gestures_32.png',
+    isWindowsOnly: false,
+    href: 'https://chrome.google.com/extensions/detail/' + 
+          'lfkgmnnajiljnolcgolmmgnecgldgeld' 
+  }, {
+    name: 'recommended_tab_menu',
+    description: 'recommended_tab_menu_desc',
+    icon: 'images/icon_tab_menu_35.png',
+    isWindowsOnly: false,
+    href: 'https://chrome.google.com/extensions/detail/' + 
+          'galfofdpepkcahkfobimileafiobdplb' 
+  }];
   createTable(googleExtensionsList, googleExtensionsRecommended);
   createTable(thirdPartyExtensionsList, thirdPartyExtensionsRecommended);
 }
@@ -380,5 +404,3 @@ function createRecommendedContext(googleExtensionsRecommended,
 function init() {
   new Option();
 }
-
-

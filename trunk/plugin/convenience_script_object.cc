@@ -7,7 +7,7 @@ extern Log g_Log;
 extern const TCHAR* kChromeClassName;
 extern DWORD g_ChromeMainThread;
 extern Local_Message_Item g_Local_Message;
-bool g_DBClickCloseTab = false;
+extern bool g_DBClickCloseTab;
 
 ConvenienceScriptObject::ConvenienceScriptObject(void) {
   shortcuts_list_ = NULL;
@@ -69,6 +69,10 @@ NPObject* ConvenienceScriptObject::Allocate(NPP npp, NPClass *aClass) {
     strcpy(item.function_name, "ChromeWindowRemoved");
     item.function_pointer = ON_INVOKEHELPER(&ConvenienceScriptObject::
         ChromeWindowRemoved);
+    pRet->AddFunction(item);
+    strcpy(item.function_name, "EnableMouseSwitchTab");
+    item.function_pointer = ON_INVOKEHELPER(&ConvenienceScriptObject::
+        EnableMouseSwitchTab);
     pRet->AddFunction(item);
   }
   return pRet;
@@ -370,11 +374,30 @@ void ConvenienceScriptObject::TriggerCloseCurrentTab() {
   NPN_ReleaseVariantValue(&result);
 }
 
-void ConvenienceScriptObject::TriggerShortcuts(UINT modify, UINT vk) {
+void ConvenienceScriptObject::TriggerSwitchTab(bool forward) {
+  g_Log.WriteLog("Invoke", "TriggerSwitchTab");
+
+  NPObject* window;
+  NPN_GetValue(plugin_->get_npp(), NPNVWindowNPObject, &window);
+  NPIdentifier id;
+  id = NPN_GetStringIdentifier("wheelSwitchTab");
+  NPVariant result;
+  VOID_TO_NPVARIANT(result);
+  if (id) {
+    NPVariant param;
+    BOOLEAN_TO_NPVARIANT(forward, param);
+    NPN_Invoke(plugin_->get_npp(), window, id, &param, 1, &result);
+  }
+  NPN_ReleaseVariantValue(&result);
+}
+
+void ConvenienceScriptObject::TriggerShortcuts(UINT modify, UINT vk, 
+                                               bool issleep /* = true */) {
   INPUT inputs[4] = { 0 };
   int keycount = 0;
 
-  Sleep(100);
+  if (issleep)
+    Sleep(100);
 
   if (modify & MOD_CONTROL) {
     inputs[keycount].type = INPUT_KEYBOARD;
@@ -607,6 +630,17 @@ bool ConvenienceScriptObject::ChromeWindowRemoved(const NPVariant *args,
   ConveniencePlugin* plugin = (ConveniencePlugin*)plugin_;
   plugin->ChromeWindowRemoved(windowid);
 
+  return true;
+}
+
+bool ConvenienceScriptObject::EnableMouseSwitchTab(const NPVariant* args, 
+                                                   uint32_t argCount, 
+                                                   NPVariant* result) {
+  if (argCount != 1 || !NPVARIANT_IS_BOOLEAN(args[0]))
+    return false;
+
+  ConveniencePlugin* plugin = (ConveniencePlugin*)plugin_;
+  plugin->EnableMouseSwitchTab(NPVARIANT_TO_BOOLEAN(args[0]));
   return true;
 }
 
