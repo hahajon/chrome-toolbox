@@ -64,6 +64,10 @@ public:
   bool ChromeWindowRemoved(const NPVariant *args, uint32_t argCount,
                            NPVariant *result);
 
+  bool EnableMouseSwitchTab(const NPVariant* args, uint32_t argCount,
+                            NPVariant* result);
+
+
   // For plugin object used. when plugin receive keyboard stroke key, 
   // then call this function to notify frontend some key pressed.
   void OnKeyDown(bool contrl, bool alt, bool shift, WPARAM wParam,
@@ -82,7 +86,9 @@ public:
   // Notify frontend close current tab.
   void TriggerCloseCurrentTab();
   // Send shortcuts to chrome.
-  void TriggerShortcuts(UINT modify, UINT vk);
+  void TriggerShortcuts(UINT modify, UINT vk, bool issleep = true);
+  // Notify frontend switch tab.
+  void TriggerSwitchTab(bool forward);
 
   typedef map<string,ShortCut_Item> ShortCutKeyMap;
   typedef pair<string,ShortCut_Item> ShortCutPair;

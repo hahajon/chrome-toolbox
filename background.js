@@ -26,6 +26,9 @@
     setDBClickCloseTab: function(dbClickFlag) {
       this.convenience.SetDBClickCloseTab(dbClickFlag);
     },
+    setMouseWheelSwitchTab: function(switchTabFlag) {
+      this.convenience.EnableMouseSwitchTab(switchTabFlag);
+    },
     pressBossKey: function() {
       this.convenience.PressBossKey();
     },
@@ -119,6 +122,11 @@
     var flag = eval(localStorage['dbclickCloseTab']) && true;
     plugin.setDBClickCloseTab(flag);
   }
+  
+  function mouseWheelSwitchTab() {
+    var flag = eval(localStorage['mouseWheelSwitchTab']) && true;
+    plugin.setMouseWheelSwitchTab(flag);
+  }
 
   function closeLastTabNotCloseWindow() {
     var closeLastTab = localStorage['closeLastTab'] =
@@ -191,6 +199,8 @@
       localStorage['closeLastTab'] = localStorage['closeLastTab'] || 'true';
       localStorage['videoBar'] = localStorage['videoBar'] || 'true';
       localStorage['browserMute'] = localStorage['browserMute'] || 'false';
+      localStorage['mouseWheelSwitchTab'] = 
+          localStorage['mouseWheelSwitchTab'] || 'true';
       plugin.muteBrowser(eval(localStorage['browserMute']));
       setBadgeTextByMute();
       localStorage['dbclickCloseTab'] =
@@ -202,6 +212,7 @@
       plugin.closeChromePrompt(eval(localStorage['closeChromePrompt']));
       setCloseLastOneTabStatus();
       dbClickCloseTab();
+      mouseWheelSwitchTab();
       chrome.tabs.onCreated.addListener(function(tab) {
         setCloseLastOneTabStatus();
       });
@@ -452,3 +463,26 @@
   }
 
   init();
+
+  function wheelSwitchTab(flag) {
+    chrome.windows.getCurrent(function(window) {
+      var windowId = window.id;
+      chrome.tabs.getSelected(windowId, function(tab) {
+        var tabId = tab.id;
+        var currentTabIndex = tab.index;
+        chrome.tabs.getAllInWindow(windowId, function(tabs) {
+          if (flag) {
+            if (currentTabIndex > 0) {
+              chrome.tabs.update(tabs[currentTabIndex - 1].id, 
+                                 {selected: true});
+            }
+          } else {
+            if (currentTabIndex < tabs.length - 1) {
+              chrome.tabs.update(tabs[currentTabIndex + 1].id, 
+                                 {selected: true});
+            } 
+          }           
+        });
+      });
+    });  
+  }
