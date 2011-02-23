@@ -736,8 +736,8 @@ LRESULT CALLBACK CallWndProcHook(int code, WPARAM wParam, LPARAM lParam){
         {
           RECT window_rect = {0};
           POINT pt;
-          pt.x = LOWORD(msg->lParam);
-          pt.y = HIWORD(msg->lParam);
+          pt.x = GET_X_LPARAM(msg->lParam);
+          pt.y = GET_Y_LPARAM(msg->lParam);
           GetWindowRect(msg->hwnd, &window_rect);
           if (PtInRect(&window_rect, pt)) {
             Cmd_Msg_Item item;
