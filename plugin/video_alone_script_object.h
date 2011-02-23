@@ -19,6 +19,10 @@ public:
   bool ShowVideoAlone(const NPVariant *args, uint32_t argCount,
                       NPVariant *result);
 
+  //get caption height, border width and height of system window
+  bool GetWindowMetric(const NPVariant* args, uint32_t argCount,
+                        NPVariant* result);
+
 public:
   struct WindowID_Item{
     int parent_window_id;

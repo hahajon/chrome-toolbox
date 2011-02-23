@@ -7,6 +7,7 @@
   var isCloseWindow = false;
   var wallpaperWindowId = null;
   var plugin = {
+    CUSTOM_CAPTION_HEIGHT: 40,
     convenience: document.getElementById('plugin_convenience'),
     videoAlone: document.getElementById('plugin_videoAlone'),
     wallpaper: document.getElementById('plugin_wallpaper'),
@@ -40,6 +41,10 @@
     },
     closeChromePrompt: function(flag) {
       this.convenience.CloseChromePrompt(flag);
+    },
+    getWindowMetric: function() {
+      var json_str = this.videoAlone.GetWindowMetric();
+      return JSON.parse(json_str);
     },
     showVideoAlone: function(title, orgTitle, parentWindowId, curWindowId,
                               tabId) {
@@ -308,9 +313,11 @@
   var videoAlone = {
     popupWindow: function(request, sender, width, height) {
       var parentWindowId = sender.tab.windowId;
+      var obj = plugin.getWindowMetric();
       if (!isHighVersion()) {
-        chrome.windows.create({width: width,
-                               height: height + 25,
+        chrome.windows.create({width: width + 2 * obj.borderWidth,
+                               height: height + plugin.CUSTOM_CAPTION_HEIGHT + 
+                                       obj.borderHeight,
                                url: '',
                                type: 'normal'}, function(window) {
           chrome.tabs.move(sender.tab.id, {windowId: window.id,
@@ -325,10 +332,11 @@
           });
         });
       } else {
-        chrome.windows.create({width: width,
-                             height: height + 25,
-                             tabId: sender.tab.id,
-                             type: 'popup'}, function(window) {
+        chrome.windows.create({width: width + 2 * obj.borderWidth,
+                               height: height + obj.captionHeight + 
+                                       2 * obj.borderHeight,
+                               tabId: sender.tab.id,
+                               type: 'popup'}, function(window) {
           chrome.tabs.getAllInWindow(window.id, function(tabs) {
             plugin.showVideoAlone(sender.tab.title, request.orgTitle,
                 parentWindowId, window.id, sender.tab.id);
