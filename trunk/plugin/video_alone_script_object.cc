@@ -92,8 +92,13 @@ NPObject* VideoAloneScriptObject::Allocate(NPP npp, NPClass *aClass) {
   if (pRet != NULL) {
     pRet->SetPlugin((PluginBase*)npp->pdata);
     Function_Item item;
-    strcpy(item.function_name, "ShowVideoAlone");
-    item.function_pointer = ON_INVOKEHELPER(&VideoAloneScriptObject::ShowVideoAlone);
+    strncpy(item.function_name, "ShowVideoAlone", FUNCTION_NAME_LEN);
+    item.function_pointer = ON_INVOKEHELPER(&VideoAloneScriptObject::
+        ShowVideoAlone);
+    pRet->AddFunction(item);
+    strncpy(item.function_name, "GetWindowMetric", FUNCTION_NAME_LEN);
+    item.function_pointer = ON_INVOKEHELPER(&VideoAloneScriptObject::
+        GetWindowMetric);
     pRet->AddFunction(item);
   }
   return pRet;
@@ -105,6 +110,27 @@ void VideoAloneScriptObject::Deallocate() {
 
 void VideoAloneScriptObject::Invalidate() {
 
+}
+
+bool VideoAloneScriptObject::GetWindowMetric(const NPVariant* args, 
+                                             uint32_t argCount, 
+                                             NPVariant* result) {
+  int caption_height = GetSystemMetrics(SM_CYCAPTION);
+  int border_width = GetSystemMetrics(SM_CXFRAME);
+  int border_height = GetSystemMetrics(SM_CYFRAME);
+  
+  char buffer[200] = "";
+  _snprintf(buffer, 200,
+      "{\"captionHeight\": %ld, \"borderWidth\": %ld, \"borderHeight\": %ld}", 
+      caption_height, border_width, border_height);
+  int len = strlen(buffer) + 1;
+  char* json_string = (char*)NPN_MemAlloc(len);
+  if (json_string) {
+    strncpy(json_string, buffer, len);
+    STRINGZ_TO_NPVARIANT(json_string, *result);
+  }
+
+  return true;
 }
 
 bool VideoAloneScriptObject::ShowVideoAlone(const NPVariant *args,
