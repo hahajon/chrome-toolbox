@@ -739,6 +739,12 @@ LRESULT CALLBACK CallWndProcHook(int code, WPARAM wParam, LPARAM lParam){
           pt.x = GET_X_LPARAM(msg->lParam);
           pt.y = GET_Y_LPARAM(msg->lParam);
           GetWindowRect(msg->hwnd, &window_rect);
+          if (IsMaximized(msg->hwnd)) {
+            window_rect.bottom = window_rect.top + 
+                GetSystemMetrics(SM_CYCAPTION) + GetSystemMetrics(SM_CYFRAME);
+          } else {
+            window_rect.bottom = window_rect.top + CONST_FRAME_CAPTION_HEIGHT;
+          }
           if (PtInRect(&window_rect, pt)) {
             Cmd_Msg_Item item;
             item.cmd = Cmd_MouseRotated;
@@ -1067,7 +1073,7 @@ LRESULT ConveniencePlugin::WndProc(HWND hWnd, UINT Msg,
       pObject->TriggerTabClose();
       break;
     case WM_CLOSE_CURRENT_TAB:
-      pObject->TriggerShortcuts(MOD_CONTROL, VK_F4);
+      pObject->TriggerCloseCurrentTab();
       break;
     case WM_UPDATE_CLOSECHROME_PROMPT:
       pObject->UpdateCloseChromePromptFlag(wParam);
