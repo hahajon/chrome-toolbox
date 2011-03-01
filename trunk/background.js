@@ -101,10 +101,12 @@
   function setCloseLastOneTabStatus() {
     var isCloseWindow = eval(localStorage['closeLastTab']) && true;
     plugin.updateCloseLastTab(isCloseWindow);
-    chrome.windows.getCurrent(function(win) {
-      chrome.tabs.getAllInWindow(win.id, function(tabs) {
-        plugin.updateTabCount(win.id, tabs.length);
-      });
+  }
+  
+  function updateTabCount(windowId) {
+    chrome.tabs.getAllInWindow(windowId, function(tabs) {
+      if (tabs)
+        plugin.updateTabCount(windowId, tabs.length);
     });
   }
 
@@ -219,20 +221,35 @@
       dbClickCloseTab();
       mouseWheelSwitchTab();
       chrome.tabs.onCreated.addListener(function(tab) {
-        setCloseLastOneTabStatus();
+        updateTabCount(tab.windowId);
       });
-      chrome.tabs.onRemoved.addListener(function(tabId) {
-        setCloseLastOneTabStatus();
+      chrome.tabs.onAttached.addListener(function(tabId, attachInfo) {
+        updateTabCount(attachInfo.newWindowId);
+      });
+      chrome.tabs.onDetached.addListener(function(tabId, detachInfo) {
+        updateTabCount(detachInfo.oldWindowId);
+      });
+      chrome.tabs.onRemoved.addListener(function(tabId, removeInfo) {
+        if (!removeInfo.isWindowClosing) {
+          chrome.windows.getCurrent(function(window) {
+            updateTabCount(window.id);
+          });
+        }
       });
       chrome.windows.onCreated.addListener(function(window) {
-        if (window.type == 'normal')
-          plugin.chromeWindowCreated(window.id);
+        if (window.type == 'normal') {
+          setTimeout(function() {
+            plugin.chromeWindowCreated(window.id);
+            updateTabCount(window.id);
+          }, 1000);
+        }
       });
       chrome.windows.onRemoved.addListener(function(windowid) {
         plugin.chromeWindowRemoved(windowid);
       });
       chrome.windows.getCurrent(function(window) {
         plugin.chromeWindowCreated(window.id);
+        updateTabCount(window.id);
       });
     }
   }
