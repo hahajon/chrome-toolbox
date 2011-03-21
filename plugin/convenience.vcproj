@@ -45,7 +45,7 @@
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
-				UsePrecompiledHeader="1"
+				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="4"
 			/>
@@ -60,9 +60,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="gdiplus.lib comctl32.lib psapi.lib version.lib dwmapi.lib"
+				AdditionalDependencies="gdiplus.lib comctl32.lib psapi.lib version.lib dwmapi.lib uxtheme.lib"
 				LinkIncremental="2"
 				ModuleDefinitionFile="convenience.def"
+				DelayLoadDLLs="dwmapi.dll;uxtheme.dll"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				TargetMachine="1"
@@ -123,6 +124,7 @@
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="3"
+				ForcedIncludeFiles="stdafx.h"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -193,6 +195,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\client_process_functions.cc"
+				>
+			</File>
+			<File
 				RelativePath=".\convenience.def"
 				>
 			</File>
@@ -241,6 +247,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\utils.cc"
+				>
+			</File>
+			<File
 				RelativePath=".\video_alone_plugin.cc"
 				>
 			</File>
@@ -276,6 +286,10 @@
 			</File>
 			<File
 				RelativePath=".\browser_mute_script_object.h"
+				>
+			</File>
+			<File
+				RelativePath=".\client_process_functions.h"
 				>
 			</File>
 			<File
@@ -316,6 +330,10 @@
 			</File>
 			<File
 				RelativePath=".\stdafx.h"
+				>
+			</File>
+			<File
+				RelativePath=".\utils.h"
 				>
 			</File>
 			<File

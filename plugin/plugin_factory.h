@@ -1,24 +1,36 @@
-#pragma once
+#ifndef PLUGIN_FACTORY_H_
+#define PLUGIN_FACTORY_H_
+
+#include <map>
+#include <string>
 
 #include "plugin_base.h"
 
 typedef PluginBase* (*ConstructorPtr)();
-#define MAX_PLUGIN_TYPE_COUNT 10
 
-class PluginFactory
-{
-public:
+// It is used for creating new plugin according MIMEType.
+// This class can not be instanced
+class PluginFactory {
+private:
   PluginFactory(void);
   ~PluginFactory(void);
 
-  PluginBase* NewPlugin(NPMIMEType pluginType);
+public:
+  static void Init();
 
-private:
-  struct Plugin_Type_Item {
-    char mime_type[128];
+  // create plugin according MIMEType
+  static PluginBase* NewPlugin(NPMIMEType pluginType);
+
+public:
+  struct PluginTypeItem {
+    std::string mime_type;
     ConstructorPtr constructor;
   };
 
-  Plugin_Type_Item plugin_type_list_[MAX_PLUGIN_TYPE_COUNT];
+  typedef std::map<std::string, PluginTypeItem> PluginTypeMap;
 
+private:
+  static PluginTypeMap plugin_type_map_;
 };
+
+#endif

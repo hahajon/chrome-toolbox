@@ -1,39 +1,50 @@
-#pragma once
-#include "script_object_base.h"
+#ifndef VIDEO_ALONE_SCRIPT_OBJECT_H_
+#define VIDEO_ALONE_SCRIPT_OBJECT_H_
+
 #include <map>
 
-using namespace std;
+#include "script_object_base.h"
 
+// Video alone script object, providing methods to find the video window.
 class VideoAloneScriptObject : public ScriptObjectBase {
-public:
-  VideoAloneScriptObject(void);
-  virtual ~VideoAloneScriptObject(void);
+private:
+  VideoAloneScriptObject(void) {}
+  virtual ~VideoAloneScriptObject(void) {}
 
+public:
   static NPObject* Allocate(NPP npp, NPClass *aClass); 
 
-  void Deallocate();
-  void Invalidate();
-  bool Construct(const NPVariant *args, uint32_t argCount,
-                 NPVariant *result);
+  void InitHandler();
 
+  void Deallocate();
+  void Invalidate() {}
+  bool Construct(const NPVariant *args, uint32_t argCount,
+                 NPVariant *result) { return true; }
+
+  // Find the specified video window and hook it's window procedure.
   bool ShowVideoAlone(const NPVariant *args, uint32_t argCount,
                       NPVariant *result);
 
-  //get caption height, border width and height of system window
+  // Get caption height, border width and height of system window.
   bool GetWindowMetric(const NPVariant* args, uint32_t argCount,
                         NPVariant* result);
 
 public:
-  struct WindowID_Item{
+  struct WindowIDItem{
     int parent_window_id;
     int window_id;
     int tab_id;
   };
 
-  typedef map<HWND, WindowID_Item> WindowMap;
-  typedef std::pair<HWND, WindowID_Item> WindowMapPair;
+  typedef std::map<HWND, WindowIDItem> WindowMap;
+  typedef std::pair<HWND, WindowIDItem> WindowMapPair;
 
-public:
-  WindowMap window_list_;
+  static WindowMap* get_video_alone_list() { return &window_list_; }
+
+private:
+  // A set of video stand-alone window.
+  static WindowMap window_list_;
 
 };
+
+#endif

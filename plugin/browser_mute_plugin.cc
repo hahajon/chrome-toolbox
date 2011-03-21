@@ -1,77 +1,73 @@
-#include "stdafx.h"
 #include "browser_mute_plugin.h"
-#include "log.h"
-#include "script_object_factory.h"
-#include "browser_mute_script_object.h"
-#include <TlHelp32.h>
-#include <Psapi.h>
-#include <Mmdeviceapi.h>
-#include <Audiopolicy.h>
+
 #include <map>
 
-extern Log g_Log;
-extern HMODULE g_hMod;
+#include <Audiopolicy.h>
+#include <Mmdeviceapi.h>
+#include <Psapi.h>
+#include <TlHelp32.h>
+
+#include "browser_mute_script_object.h"
+#include "log.h"
+#include "script_object_factory.h"
+#include "utils.h"
+
+extern Log g_log;
+extern HMODULE g_module;
 
 #define CHECK_RESULT(hr)     if (FAILED(hr)) {\
   Sleep(100);\
   continue;\
 }
 
-BrowserMutePlugin::BrowserMutePlugin(void) {
-}
-
-BrowserMutePlugin::~BrowserMutePlugin(void) {
-}
-
-void InjectIntoProcess(HANDLE hprocess) {
-  LPVOID p = VirtualAllocEx(hprocess, NULL, 
-                            MAX_PATH*sizeof(TCHAR), 
-                            MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+bool BrowserMutePlugin::InjectIntoProcess(HANDLE hprocess) {
+  // allocate remote process memory address
+  TCHAR dllpath[MAX_PATH];
+  LPVOID memory_pointer = VirtualAllocEx(
+      hprocess, NULL, sizeof(dllpath), MEM_COMMIT | MEM_RESERVE, 
+      PAGE_READWRITE);
 
   char logs[256];
-  if (p) {
-    g_Log.WriteLog("Msg", "VirtualAllocEx");
-    TCHAR dllpath[MAX_PATH];
-    GetModuleFileName(g_hMod, dllpath, MAX_PATH);
+  if (memory_pointer) {
+    // get absolute path of mutechrome.dll 
+    GetModuleFileName(g_module, dllpath, MAX_PATH);
     TCHAR* postfix = _tcsrchr(dllpath, '\\');
-    if (postfix != NULL) {
-      *(postfix+1) = 0;
-      _tcscat(dllpath, _T("mutechrome.dll"));
-    } else {
-      g_Log.WriteLog("Error", "postfix==NULL");
-      return;
-    }
-    SIZE_T n ;
-    g_Log.WriteLog("Msg", "WriteProcessMemory");
-    BOOL ret = WriteProcessMemory(hprocess, p, dllpath, 
-                                  MAX_PATH*sizeof(TCHAR), &n);
+    if (postfix == NULL)
+      return false;
+    *(postfix + 1) = 0;
+    _tcscat(dllpath, _T("mutechrome.dll"));
+
+    BOOL ret = WriteProcessMemory(hprocess, memory_pointer, dllpath, 
+                                  sizeof(dllpath), NULL);
     if (!ret) {
       sprintf(logs, "WriteProcessMemory Failed,GetLastError=%ld", 
               GetLastError());
-      g_Log.WriteLog("Error", logs);
+      g_log.WriteLog("Error", logs);
+      return false;
     }
-    g_Log.WriteLog("Msg", "CreateRemoteThread");
-    HANDLE h = CreateRemoteThread(hprocess, NULL, 0,
-                                  (LPTHREAD_START_ROUTINE)LoadLibrary, p, 0, 
-                                  NULL);
-    if (h) {
-      g_Log.WriteLog("Msg", "CreateRemoteThread Success");
-      CloseHandle(h);
+    HANDLE remote_thread = CreateRemoteThread(
+        hprocess, NULL, 0, (LPTHREAD_START_ROUTINE)LoadLibrary, 
+        memory_pointer, 0, NULL);
+    if (remote_thread) {
+      g_log.WriteLog("Msg", "CreateRemoteThread Success");
+      CloseHandle(remote_thread);
+      return true;
     } else {
       sprintf(logs, "CreateRemoteThread Failed,GetLastError=%ld", 
               GetLastError());
-      g_Log.WriteLog("Error", logs);
+      g_log.WriteLog("Error", logs);
     }
   } else {
     sprintf(logs, "VirtualAllocEx Failed,GetLastError=%ld", GetLastError());
-    g_Log.WriteLog("Error", logs);
+    g_log.WriteLog("Error", logs);
   }
+  return false;
 }
 
-void RenameApiHookDll() {
+void BrowserMutePlugin::RenameApiHookDll() {
   TCHAR dllpath[MAX_PATH] = _T("");
   TCHAR newdllpath[MAX_PATH] = _T("");
-  GetModuleFileName(g_hMod, dllpath, MAX_PATH);
+  GetModuleFileName(g_module, dllpath, MAX_PATH);
   _tcscpy(newdllpath, dllpath);
   TCHAR* postfix = _tcsrchr(newdllpath, '\\');
   if (postfix != NULL) {
@@ -97,40 +93,9 @@ void RenameApiHookDll() {
   }
 }
 
-bool GetProdcutVersion(LPCTSTR filename, DWORD* mostversion, 
-                       DWORD* leastversion) {
-  DWORD infosize_handle = 0;
-  DWORD version_info_size = ::GetFileVersionInfoSize(filename, 
-                                                     &infosize_handle);
-  if(version_info_size) {
-    unsigned int info_size = 0;
-    VS_FIXEDFILEINFO* file_info;
-    
-    BYTE* version_buffer = new BYTE[version_info_size];
-    GetFileVersionInfo(filename, infosize_handle, version_info_size,
-                       version_buffer);
-    if (VerQueryValue(version_buffer, _T("\\"), (void**)&file_info, &info_size)) {
-      *mostversion = file_info->dwProductVersionMS;
-      *leastversion = file_info->dwProductVersionLS;
-      delete[] version_buffer;
-      return true;
-    } else {
-      char logs[256];
-      sprintf(logs, "GetLastError1=%ld", GetLastError());
-      g_Log.WriteLog("error", logs);
-    }
-    delete[] version_buffer;
-  } else {
-    char logs[512];
-    sprintf(logs, "GetLastError2=%ld,%S", GetLastError(), filename);
-    g_Log.WriteLog("error", logs);
-  }
-  return false;
-}
-
 DWORD BrowserMutePlugin::Mute_Thread(void* param) {
   BrowserMutePlugin* plugin = (BrowserMutePlugin*)param;
-  g_Log.WriteLog("msg", "Start Mute_Thread");
+  g_log.WriteLog("msg", "Start Mute_Thread");
   CoInitialize(NULL);
 
   HRESULT hr = E_FAIL;
@@ -140,14 +105,15 @@ DWORD BrowserMutePlugin::Mute_Thread(void* param) {
   IAudioSessionEnumerator* audio_session_enumerator;
   ISimpleAudioVolume* simple_audio_volume;
   BOOL mute_flag = FALSE;
-  map<DWORD,DWORD> chrome_process_map;
+  std::map<DWORD,DWORD> chrome_process_map;
   DWORD parent_pid = 0;
   TCHAR exe_name[MAX_PATH];
   TCHAR chrome_exe_path[MAX_PATH];
-  GetModuleBaseName(GetCurrentProcess(), GetModuleHandle(NULL), exe_name, MAX_PATH);
+  GetModuleBaseName(GetCurrentProcess(), GetModuleHandle(NULL), 
+                    exe_name, MAX_PATH);
   GetModuleFileName(GetModuleHandle(NULL), chrome_exe_path, MAX_PATH);
 
-  //GetParentProcessID
+  // get parent process id
   HANDLE hprocess = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
   PROCESSENTRY32 process = { sizeof(PROCESSENTRY32) };
   BOOL find_same_chrome_version = FALSE;
@@ -162,8 +128,9 @@ DWORD BrowserMutePlugin::Mute_Thread(void* param) {
   if (hprocess != INVALID_HANDLE_VALUE)
     CloseHandle(hprocess);
 
-  hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL,
-    CLSCTX_ALL, __uuidof(IMMDeviceEnumerator), (void**)&device_enumerator);
+  hr = CoCreateInstance(
+      __uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL, 
+      __uuidof(IMMDeviceEnumerator), (void**)&device_enumerator);
   if (FAILED(hr))
     return hr;
 
@@ -182,22 +149,23 @@ DWORD BrowserMutePlugin::Mute_Thread(void* param) {
     while (ret) {
       if (process.th32ParentProcessID == parent_pid || 
           process.th32ProcessID == parent_pid) {
-        chrome_process_map.insert(make_pair(process.th32ProcessID, 
-            process.th32ProcessID));
+        chrome_process_map.insert(std::make_pair(
+            process.th32ProcessID, process.th32ProcessID));
       }
       ret = Process32Next(hprocess, &process);
     }
     if (hprocess != INVALID_HANDLE_VALUE)
       CloseHandle(hprocess);
 
-    CHECK_RESULT(device_enumerator->GetDefaultAudioEndpoint(eRender, eConsole, 
-      &defaultdevice));
+    CHECK_RESULT(device_enumerator->GetDefaultAudioEndpoint(
+        eRender, eConsole, &defaultdevice));
 
-    CHECK_RESULT(defaultdevice->Activate(__uuidof(IAudioSessionManager2), 
-      CLSCTX_ALL, NULL, (void**)&audio_session_mamanger2));
+    CHECK_RESULT(defaultdevice->Activate(
+        __uuidof(IAudioSessionManager2), CLSCTX_ALL, NULL, 
+        (void**)&audio_session_mamanger2));
 
     CHECK_RESULT(audio_session_mamanger2->
-      GetSessionEnumerator(&audio_session_enumerator));
+        GetSessionEnumerator(&audio_session_enumerator));
 
     int count;
     CHECK_RESULT(audio_session_enumerator->GetCount(&count));
@@ -206,16 +174,14 @@ DWORD BrowserMutePlugin::Mute_Thread(void* param) {
       IAudioSessionControl* audio_session_control;
       IAudioSessionControl2* audio_session_control2;
       CHECK_RESULT(audio_session_enumerator->
-        GetSession(i, &audio_session_control));
-      CHECK_RESULT(audio_session_control->
-        QueryInterface(__uuidof(IAudioSessionControl2), 
-        (void**)&audio_session_control2));
+          GetSession(i, &audio_session_control));
+      CHECK_RESULT(audio_session_control->QueryInterface(
+          __uuidof(IAudioSessionControl2), (void**)&audio_session_control2));
       DWORD processid;
       CHECK_RESULT(audio_session_control2->GetProcessId(&processid));
       if (chrome_process_map.find(processid) != chrome_process_map.end()) {
-        CHECK_RESULT(audio_session_control2->
-          QueryInterface(__uuidof(ISimpleAudioVolume), 
-          (void**) &simple_audio_volume));
+        CHECK_RESULT(audio_session_control2->QueryInterface(
+            __uuidof(ISimpleAudioVolume), (void**)&simple_audio_volume));
         CHECK_RESULT(simple_audio_volume->SetMute(mute_flag, NULL));
         simple_audio_volume->Release();
       }
@@ -228,7 +194,7 @@ DWORD BrowserMutePlugin::Mute_Thread(void* param) {
     defaultdevice->Release();
   }
   CoUninitialize();
-  g_Log.WriteLog("msg", "Stop Mute_Thread");
+  g_log.WriteLog("msg", "Stop Mute_Thread");
 
   return 0;
 }
@@ -240,7 +206,8 @@ void BrowserMutePlugin::ScanAndInject() {
   HANDLE hprocess = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
   PROCESSENTRY32 process = { sizeof(PROCESSENTRY32) };
   TCHAR exe_name[MAX_PATH];
-  GetModuleBaseName(GetCurrentProcess(), GetModuleHandle(NULL), exe_name, MAX_PATH);
+  GetModuleBaseName(
+      GetCurrentProcess(), GetModuleHandle(NULL), exe_name, MAX_PATH);
   BOOL find_same_chrome_version = FALSE;
   BOOL ret = Process32First(hprocess, &process);
   while (ret) {
@@ -274,16 +241,18 @@ void BrowserMutePlugin::ScanAndInject() {
         ret = Process32Next(hprocess, &process);
         continue;
       }
-      HANDLE process_handle = OpenProcess(PROCESS_CREATE_THREAD | 
-        PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION | PROCESS_VM_WRITE |
-        PROCESS_VM_READ, FALSE, process.th32ProcessID);
+      HANDLE process_handle = OpenProcess(
+          PROCESS_CREATE_THREAD | PROCESS_QUERY_INFORMATION | 
+          PROCESS_VM_OPERATION | PROCESS_VM_WRITE | PROCESS_VM_READ, 
+          FALSE, process.th32ProcessID);
       char logs[256];
       if (!process_handle) {
         sprintf(logs, "OpenProcess GetLastError=%ld", GetLastError());
-        g_Log.WriteLog("Error", logs);
+        g_log.WriteLog("Error", logs);
       } else {
-        sprintf(logs, "InjectIntoProcess, ProcessId=%ld", process.th32ProcessID);
-        g_Log.WriteLog("Msg", logs);
+        sprintf(logs, "InjectIntoProcess, ProcessId=%ld", 
+                process.th32ProcessID);
+        g_log.WriteLog("Msg", logs);
       }
       InjectIntoProcess(process_handle);
       if (process_handle)
@@ -299,15 +268,11 @@ NPError BrowserMutePlugin::Init(NPP instance, uint16_t mode, int16_t argc,
                                 char *argn[], char *argv[],
                                 NPSavedData *saved) {
   script_object_ = NULL;
-  g_Log.WriteLog("Msg", "BrowserMutePlugin Init");
+  g_log.WriteLog("Msg", "BrowserMutePlugin Init");
   instance->pdata = this;
   use_apihook_flag_ = TRUE;
 
-  OSVERSIONINFO versionInfo = { 0 };
-  versionInfo.dwOSVersionInfoSize = sizeof(versionInfo);
-  GetVersionEx(&versionInfo);
-  if (versionInfo.dwMajorVersion > 6 || (versionInfo.dwMajorVersion == 6 && 
-      versionInfo.dwMinorVersion > 0)) {
+  if (utils::GetWinVersion() == utils::WINVERSION_WIN7) {
     use_apihook_flag_ = FALSE;
     stop_event_ = CreateEvent(NULL, FALSE, FALSE, NULL);
     mute_thread_handle_ = CreateThread(NULL, 0, Mute_Thread, this, 0, 0);
@@ -321,7 +286,7 @@ NPError BrowserMutePlugin::Init(NPP instance, uint16_t mode, int16_t argc,
 NPError BrowserMutePlugin::UnInit(NPSavedData **save) {
   PluginBase::UnInit(save);
   script_object_ = NULL;
-  g_Log.WriteLog("Msg", "BrowserMutePlugin UnInit");
+  g_log.WriteLog("Msg", "BrowserMutePlugin UnInit");
   if (!use_apihook_flag_) {
     SetEvent(stop_event_);
     if (WaitForSingleObject(mute_thread_handle_, 10) == WAIT_TIMEOUT) {
@@ -336,10 +301,10 @@ NPError BrowserMutePlugin::UnInit(NPSavedData **save) {
 NPError BrowserMutePlugin::GetValue(NPPVariable variable, void *value) {
   switch(variable) {
     case NPPVpluginScriptableNPObject:
-      g_Log.WriteLog("GetValue", "GetValue");
+      g_log.WriteLog("GetValue", "GetValue");
       if (script_object_ == NULL) {
-        script_object_ = ScriptObjectFactory::CreateObject(npp_,
-            BrowserMuteScriptObject::Allocate);
+        script_object_ = ScriptObjectFactory::CreateObject(
+            get_npp(), BrowserMuteScriptObject::Allocate);
         NPN_RetainObject(script_object_);
       }
       if (script_object_ != NULL) {
