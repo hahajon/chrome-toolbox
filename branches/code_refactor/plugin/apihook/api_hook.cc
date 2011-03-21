@@ -1,46 +1,29 @@
-#include "stdafx.h"
 #include "api_hook.h"
-#include "log.h"
+
 #include <ImageHlp.h>
-#pragma comment(lib, "ImageHlp")
 #include <TlHelp32.h>
 
-extern Log g_Log;
-extern HMODULE g_hMod;
-extern CRITICAL_SECTION g_CS;
+#include "log.h"
 
-// When an application runs on Windows 98 under a debugger, the debugger
-// makes the module's import section point to a stub that calls the desired 
-// function. To account for this, the code in this module must do some crazy 
-// stuff. These variables are needed to help with the crazy stuff.
-
-
-// The highest private memory address (used for Windows 98 only)
-PVOID ApiHook::max_app_addr_ = NULL;
-const BYTE cPushOpCode = 0x68;   // The PUSH opcode on x86 platforms
-
+extern Log g_log;
+extern HMODULE g_module;
 
 ///////////////////////////////////////////////////////////////////////////////
 
 
 // The head of the linked-list of ApiHook objects
 ApiHook* ApiHook::head_pointer_ = NULL;
+ApiHook* ApiHook::load_libraray_a_ = NULL;
+ApiHook* ApiHook::load_libraray_w_ = NULL;
+ApiHook* ApiHook::load_libraray_ex_a_ = NULL;
+ApiHook* ApiHook::load_libraray_ex_w_ = NULL;
+ApiHook* ApiHook::create_process_a_ = NULL;
+ApiHook* ApiHook::create_process_w_ = NULL;
+ApiHook* ApiHook::get_proc_address_ = NULL;
 
 ///////////////////////////////////////////////////////////////////////////////
-BOOL g_IsInited = FALSE;
 
 ApiHook::ApiHook(PSTR calleemodname, PSTR funcname, PROC pfnhook, BOOL flag) {
-  if (!g_IsInited) {
-    g_IsInited = TRUE;
-    InitializeCriticalSection(&g_CS);
-  }
-  if (max_app_addr_ == NULL) {
-    // Functions with address above lpMaximumApplicationAddress require
-    // special processing (Windows 98 only)
-    SYSTEM_INFO si;
-    GetSystemInfo(&si);
-    max_app_addr_ = si.lpMaximumApplicationAddress;
-  }
 
   next_pointer_  = head_pointer_;    // The next node was at the head
   head_pointer_ = this;              // This node is now at the head
@@ -52,16 +35,6 @@ ApiHook::ApiHook(PSTR calleemodname, PSTR funcname, PROC pfnhook, BOOL flag) {
   exclude_hook_module_ = flag;
   pfn_orig_ = GetProcAddressRaw(GetModuleHandleA(callee_module_name_),
                                 func_name_);
-  
-  if (pfn_orig_ > max_app_addr_) {
-    // The address is in a shared DLL; the address needs fixing up 
-    PBYTE pb = (PBYTE) pfn_orig_;
-    if (pb[0] == cPushOpCode) {
-      // Skip over the PUSH op code and grab the real address
-      PVOID pv = * (PVOID*) &pb[1];
-      pfn_orig_ = (PROC) pv;
-    }
-  }
 
   // Hook this function in all currently loaded modules
   ReplaceIATEntryInAllMods(callee_module_name_, pfn_orig_, pfn_hook_, 
@@ -74,7 +47,7 @@ ApiHook::~ApiHook() {
   // Unhook this function from all modules
   if (pfn_orig_)
     ReplaceIATEntryInAllMods(callee_module_name_, pfn_hook_, pfn_orig_, 
-        exclude_hook_module_);
+                             exclude_hook_module_);
 
   // Remove this object from the linked list
   ApiHook* p = head_pointer_; 
@@ -120,7 +93,7 @@ void ApiHook::ReplaceIATEntryInAllMods(PCSTR calleemodulename, PROC pfnorig,
   HANDLE h = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, 
                                       GetCurrentProcessId());
   if (h == INVALID_HANDLE_VALUE) {
-    g_Log.WriteLog("Error", "CreateToolhelp32Snapshot Failed.");
+    g_log.WriteLog("Error", "CreateToolhelp32Snapshot Failed.");
     return;
   }
 
@@ -131,9 +104,7 @@ void ApiHook::ReplaceIATEntryInAllMods(PCSTR calleemodulename, PROC pfnorig,
       // Hook this function in this module
       if (_tcsicmp(me.szModule, _T("convenience.dll")) == 0)
         continue;
-      EnterCriticalSection(&g_CS);
       ReplaceIATEntryInOneMod(calleemodulename, pfnorig, pfnhook, me.hModule);
-      LeaveCriticalSection(&g_CS);
     }
   }
 }
@@ -169,40 +140,30 @@ void ApiHook::ReplaceIATEntryInOneMod(PCSTR calleemodulename, PROC pfnorig,
     PROC* ppfn = (PROC*) &pThunk->u1.Function;
     // Is this the function we're looking for?
     BOOL fFound = (*ppfn == pfnorig);
-    if (!fFound && (*ppfn > max_app_addr_)) {
-      // If this is not the function and the address is in a shared DLL, 
-      // then maybe we're running under a debugger on Windows 98. In this 
-      // case, this address points to an instruction that may have the 
-      // correct address.
-      PBYTE pbInFunc = (PBYTE) *ppfn;
-      if (pbInFunc[0] == cPushOpCode) {
-        // We see the PUSH instruction, the real function address follows
-        ppfn = (PROC*) &pbInFunc[1];
-        // Is this the function we're looking for?
-        fFound = (*ppfn == pfnorig);
-      }
-    }
 
     if (fFound) {
       // The addresses match, change the import section address
       DWORD oldAccess, newAccess;
-      if (VirtualProtect(ppfn, sizeof(pfnhook), PAGE_EXECUTE_READWRITE, &oldAccess)) {
+      if (VirtualProtect(ppfn, sizeof(pfnhook), 
+                         PAGE_EXECUTE_READWRITE, &oldAccess)) {
         if (!WriteProcessMemory(GetCurrentProcess(), ppfn, &pfnhook, 
             sizeof(pfnhook), NULL)) {
           char logs[256];
           sprintf(logs, "WriteProcessMemory Failed,GetLastError=%ld, ppfn=%ld",
               GetLastError(),ppfn);
-          g_Log.WriteLog("ReplaceIATError", logs);
+          g_log.WriteLog("ReplaceIATError", logs);
         }
         if (!VirtualProtect(ppfn, sizeof(pfnhook), oldAccess, &newAccess)) {
           char logs[256];
-          sprintf(logs, "VirtualProtect Failed 1, GetLastError=%ld", GetLastError());
-          g_Log.WriteLog("Error", logs);
+          sprintf(logs, "VirtualProtect Failed 1, GetLastError=%ld", 
+                  GetLastError());
+          g_log.WriteLog("Error", logs);
         }
       } else {
         char logs[256];
-        sprintf(logs, "VirtualProtect Failed 2, GetLastError=%ld", GetLastError());
-        g_Log.WriteLog("Error", logs);
+        sprintf(logs, "VirtualProtect Failed 2, GetLastError=%ld", 
+                GetLastError());
+        g_log.WriteLog("Error", logs);
       }
       return;  // We did it, get out
     }
@@ -210,31 +171,36 @@ void ApiHook::ReplaceIATEntryInOneMod(PCSTR calleemodulename, PROC pfnorig,
   // If we get to here, the function is not in the caller's import section
 }
 
-ApiHook ApiHook::sm_LoadLibraryA("Kernel32.dll", "LoadLibraryA",   
-                                 (PROC) ApiHook::LoadLibraryA, TRUE);
+void ApiHook::Init() {
+  load_libraray_a_ = new ApiHook("Kernel32.dll", "LoadLibraryA",
+                                 (PROC)ApiHook::LoadLibraryA, TRUE);
+  load_libraray_w_ = new ApiHook("Kernel32.dll", "LoadLibraryW",
+                                 (PROC)ApiHook::LoadLibraryW, TRUE);
+  load_libraray_ex_a_ = new ApiHook("Kernel32.dll", "LoadLibraryExA",
+                                    (PROC)ApiHook::LoadLibraryExA, TRUE);
+  load_libraray_ex_w_ = new ApiHook("Kernel32.dll", "LoadLibraryExW", 
+                                  (PROC) ApiHook::LoadLibraryExW, TRUE);
+  get_proc_address_ = new ApiHook("Kernel32.dll", "GetProcAddress", 
+                                  (PROC) ApiHook::GetProcAddress, TRUE);
+  create_process_a_ = new ApiHook("Kernel32.dll", "CreateProcessA", 
+                                  (PROC) ApiHook::CreateProcessA, TRUE);
+  create_process_w_ = new ApiHook("Kernel32.dll", "CreateProcessW", 
+                                  (PROC) ApiHook::CreateProcessW, TRUE);
+}
 
-ApiHook ApiHook::sm_LoadLibraryW("Kernel32.dll", "LoadLibraryW",   
-                                 (PROC) ApiHook::LoadLibraryW, TRUE);
-
-ApiHook ApiHook::sm_LoadLibraryExA("Kernel32.dll", "LoadLibraryExA", 
-                                   (PROC) ApiHook::LoadLibraryExA, TRUE);
-
-ApiHook ApiHook::sm_LoadLibraryExW("Kernel32.dll", "LoadLibraryExW", 
-                                   (PROC) ApiHook::LoadLibraryExW, TRUE);
-
-ApiHook ApiHook::sm_GetProcAddress("Kernel32.dll", "GetProcAddress", 
-                                   (PROC) ApiHook::GetProcAddress, TRUE);
-
-ApiHook ApiHook::sm_CreateProcessA("Kernel32.dll", "CreateProcessA", 
-                                   (PROC) ApiHook::CreateProcessA, TRUE);
-
-ApiHook ApiHook::sm_CreateProcessW("Kernel32.dll", "CreateProcessW", 
-                                   (PROC) ApiHook::CreateProcessW, TRUE);
+void ApiHook::UnInit() {
+  delete load_libraray_a_;
+  delete load_libraray_w_;
+  delete load_libraray_ex_a_;
+  delete load_libraray_ex_w_;
+  delete get_proc_address_;
+  delete create_process_a_;
+  delete create_process_w_;
+}
 
 void ApiHook::FixupNewlyLoadedModule(HMODULE hmod, DWORD dwFlags) {
 
   // If a new module is loaded, hook the hooked functions
-  EnterCriticalSection(&g_CS);
   if ((hmod != NULL) && ((dwFlags & LOAD_LIBRARY_AS_DATAFILE) == 0)) {
     for (ApiHook* p = head_pointer_; p != NULL; p = p->next_pointer_) {
       if (!p->pfn_orig_) {
@@ -247,7 +213,6 @@ void ApiHook::FixupNewlyLoadedModule(HMODULE hmod, DWORD dwFlags) {
       }
     }
   }
-  LeaveCriticalSection(&g_CS);
 }
 
 HMODULE WINAPI ApiHook::LoadLibraryA(PCSTR pszModulePath) {
@@ -284,37 +249,38 @@ HMODULE WINAPI ApiHook::LoadLibraryExW(PCWSTR pszModulePath,
   return(hmod);
 }
 
-void InjectIntoProcess(HANDLE hprocess) {
-  LPVOID p = VirtualAllocEx(hprocess, NULL, 
-      MAX_PATH*sizeof(TCHAR), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+void WINAPI InjectIntoProcess(HANDLE hprocess) {
+  TCHAR dllpath[MAX_PATH];
+  LPVOID memory_pointer = VirtualAllocEx(hprocess, NULL, 
+      sizeof(dllpath), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
   char logs[256];
-  if (p) {
-    g_Log.WriteLog("Msg", "VirtualAllocEx");
-    TCHAR dllpath[MAX_PATH];
-    GetModuleFileName(g_hMod, dllpath, MAX_PATH);
-    SIZE_T n ;
-    g_Log.WriteLog("Msg", "WriteProcessMemory");
-    BOOL ret = WriteProcessMemory(hprocess, p, dllpath, 
-                                  MAX_PATH*sizeof(TCHAR), &n);
+  if (memory_pointer) {
+    if (!g_module)
+      g_module = ModuleFromAddress(InjectIntoProcess);
+    GetModuleFileName(g_module, dllpath, MAX_PATH);
+    BOOL ret = WriteProcessMemory(hprocess, memory_pointer, dllpath, 
+                                  sizeof(dllpath), NULL);
     if (!ret) {
       sprintf(logs, "WriteProcessMemory Failed,GetLastError=%ld", 
               GetLastError());
-      g_Log.WriteLog("Error", logs);
+      g_log.WriteLog("Error", logs);
+      return;
     }
-    g_Log.WriteLog("Msg", "CreateRemoteThread");
-    HANDLE h = CreateRemoteThread(hprocess, NULL, 0,
-        (LPTHREAD_START_ROUTINE)LoadLibrary, p, 0, NULL);
-    if (h) {
-      g_Log.WriteLog("Msg", "CreateRemoteThread Success");
-      CloseHandle(h);
+    
+    HANDLE remote_thread = CreateRemoteThread(hprocess, NULL, 0,
+        (LPTHREAD_START_ROUTINE)LoadLibrary, memory_pointer, 0, NULL);
+    if (remote_thread) {
+      g_log.WriteLog("Msg", "CreateRemoteThread Success");
+      CloseHandle(remote_thread);
     } else {
-      sprintf(logs, "CreateRemoteThread Failed,GetLastError=%ld", GetLastError());
-      g_Log.WriteLog("Error", logs);
+      sprintf(logs, "CreateRemoteThread Failed, GetLastError=%ld", 
+              GetLastError());
+      g_log.WriteLog("Error", logs);
     }
   } else {
     sprintf(logs, "VirtualAllocEx Failed,GetLastError=%ld", GetLastError());
-    g_Log.WriteLog("Error", logs);
+    g_log.WriteLog("Error", logs);
   }
 }
 
@@ -334,9 +300,11 @@ BOOL WINAPI ApiHook::CreateProcessA(LPCSTR lpApplicationName,
       lpProcessInformation);
   if (ret) {
     char logs[256];
-    sprintf(logs, "CreateProcessA, ProcessID=%ld", lpProcessInformation->dwProcessId);
-    g_Log.WriteLog("Msg", logs);
-    if (lpCommandLine != NULL && strstr(lpCommandLine, "--type=plugin") != 0)
+    sprintf(logs, "CreateProcessA, ProcessID=%ld", 
+            lpProcessInformation->dwProcessId);
+    g_log.WriteLog("Msg", logs);
+    if (lpCommandLine != NULL && strstr(lpCommandLine, "--type=plugin") != 0 &&
+        !strstr(lpCommandLine, "npaliedit.dll"))
       InjectIntoProcess(lpProcessInformation->hProcess);
   }
   return ret;
@@ -358,9 +326,11 @@ BOOL WINAPI ApiHook::CreateProcessW(LPCWSTR lpApplicationName,
       lpProcessInformation);
   if (ret) {
     char logs[256];
-    sprintf(logs, "CreateProcessW, ProcessID=%ld", lpProcessInformation->dwProcessId);
-    g_Log.WriteLog("Msg", logs);
-    if (lpCommandLine != NULL && wcsstr(lpCommandLine, L"--type=plugin") != 0)
+    sprintf(logs, "CreateProcessW, ProcessID=%ld", 
+            lpProcessInformation->dwProcessId);
+    g_log.WriteLog("Msg", logs);
+    if (lpCommandLine != NULL && wcsstr(lpCommandLine, L"--type=plugin") != 0 &&
+        !wcsstr(lpCommandLine, L"npaliedit.dll"))
       InjectIntoProcess(lpProcessInformation->hProcess);
   }
   return ret;

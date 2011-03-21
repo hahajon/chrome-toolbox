@@ -1,11 +1,9 @@
-#include "stdafx.h"
-
 #include "npfunctions.h"
+
+#include "log.h"
 #include "plugin_base.h"
 #include "plugin_factory.h"
-#include "log.h"
 
-PluginFactory g_PluginFactory;
 extern Log g_Log;
 
 #ifdef XP_UNIX
@@ -19,13 +17,12 @@ NPError NP_LOADDS NPP_Initialize() {
 }
 
 void NP_LOADDS NPP_Shutdown() {
-
 }
 
 NPError NP_LOADDS NPP_New(NPMIMEType pluginType, NPP instance,
                           uint16_t mode, int16_t argc, char* argn[],
                           char* argv[], NPSavedData* saved) {
-  PluginBase* pPlugin = g_PluginFactory.NewPlugin(pluginType);
+  PluginBase* pPlugin = PluginFactory::NewPlugin(pluginType);
   if (pPlugin == NULL)
     return NPERR_OUT_OF_MEMORY_ERROR;
   else
@@ -89,8 +86,19 @@ void    NP_LOADDS NPP_URLNotify(NPP instance, const char* url,
 }
 
 NPError NP_LOADDS NPP_GetValue(NPP instance, NPPVariable variable, void *value) {
-  PluginBase* pPlugin = (PluginBase*)instance->pdata;
-  return pPlugin->GetValue(variable, value);
+  if (instance == NULL) {
+    if (variable == NPPVpluginNameString)
+      *((const char **)value) = "Download Helper";
+    else if (variable == NPPVpluginDescriptionString)
+      *((const char **)value) = "Download Helper Plugin";
+    else
+      return NPERR_GENERIC_ERROR;
+  } else {
+    PluginBase* pPlugin = (PluginBase*)instance->pdata;
+    if (pPlugin != NULL)
+      return pPlugin->GetValue(variable, value);
+  }
+  return NPERR_NO_ERROR;
 }
 
 NPError NP_LOADDS NPP_SetValue(NPP instance, NPNVariable variable, void *value) {

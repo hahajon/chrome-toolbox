@@ -1,5 +1,3 @@
-#include "stdafx.h"
-
 #include "log.h"
 
 Log::Log(void) {

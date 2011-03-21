@@ -1,19 +1,25 @@
-#pragma once
+#ifndef BROWSER_MUTE_SCRIPT_OBJECT_H_
+#define BROWSER_MUTE_SCRIPT_OBJECT_H_
+
 #include "script_object_base.h"
 
 typedef void (*Pfn_SetBrowserMute)(BOOL flag);
 
+// Script object for browser mute feature.
 class BrowserMuteScriptObject : public ScriptObjectBase {
-public:
-  BrowserMuteScriptObject(void);
-  virtual ~BrowserMuteScriptObject(void);
+private:
+  BrowserMuteScriptObject(void) : api_hook_module_(NULL) {}
+  virtual ~BrowserMuteScriptObject(void) {}
 
-  static NPObject* Allocate(NPP npp, NPClass *aClass); 
+public:
+  static NPObject* Allocate(NPP npp, NPClass *aClass);
+
+  void InitHandler();
 
   void Deallocate();
-  void Invalidate();
+  void Invalidate() {}
   bool Construct(const NPVariant *args, uint32_t argCount,
-                 NPVariant *result);
+                 NPVariant *result) { return true; }
 
   // Mute browser interface for frontend.
   bool MuteBrowser(const NPVariant *args, uint32_t argCount,
@@ -22,10 +28,14 @@ public:
   BOOL get_mute_flag() { return mute_flag_; }
 
 private:
-  // apihook.dll module hanlde.
+  // The apihook.dll module hanlde.
   HMODULE api_hook_module_;
-  // The function address of SetBrowseMute function in apihook.dll
+
+  // The function address of SetBrowseMute function in apihook.dll.
   Pfn_SetBrowserMute set_browser_mute_;
+
   BOOL mute_flag_;
 
 };
+
+#endif

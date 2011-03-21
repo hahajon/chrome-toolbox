@@ -1,30 +1,28 @@
-#include "stdafx.h"
-
 #include "npfunctions.h"
+
+#include "client_process_functions.h"
 #include "log.h"
+#include "plugin_factory.h"
 
-HMODULE g_hMod;
-Log g_Log;
-extern HANDLE client_thread_handle;
+HMODULE g_module = NULL;
+Log g_log;
 
-extern NPNetscapeFuncs* g_NpnFuncs;
+extern NPNetscapeFuncs* g_npn_funcs;
 
 BOOL OSCALL DllMain(HMODULE hModule, DWORD reason, LPVOID lpReserved) {
-  g_hMod = hModule;
+  g_module = hModule;
   switch(reason) {
     case DLL_PROCESS_ATTACH:
-      g_Log.OpenLog("NPAPI");
-      g_Log.WriteLog("Msg","DLL_PROCESS_ATTACH");
+      g_log.OpenLog("NPAPI");
+      g_log.WriteLog("Msg","DLL_PROCESS_ATTACH");
       break;
     case DLL_THREAD_ATTACH:
       break;
     case DLL_THREAD_DETACH:
       break;
     case DLL_PROCESS_DETACH:
-      g_Log.WriteLog("Msg","DLL_PROCESS_DETACH");
-      if (WaitForSingleObject(client_thread_handle, 10) == WAIT_TIMEOUT) {
-        TerminateThread(client_thread_handle, 0);
-      }
+      g_log.WriteLog("Msg","DLL_PROCESS_DETACH");
+      client_process_unit::ExitClientThread();
       break;
   }
   return TRUE;
@@ -60,6 +58,7 @@ NPError OSCALL NP_Initialize(NPNetscapeFuncs* npnf
                , NPPluginFuncs *nppfuncs) {
 #else
                ) {
+                 PluginFactory::Init();
 #endif
                  if(npnf == NULL) {
                    return NPERR_INVALID_FUNCTABLE_ERROR;
@@ -67,7 +66,7 @@ NPError OSCALL NP_Initialize(NPNetscapeFuncs* npnf
                  if(HIBYTE(npnf->version) > NP_VERSION_MAJOR) {
                    return NPERR_INCOMPATIBLE_VERSION_ERROR;
                  }
-                 g_NpnFuncs = npnf;
+                 g_npn_funcs = npnf;
 #if !defined(_WINDOWS) && !defined(WEBKIT_DARWIN_SDK)
                  NP_GetEntryPoints(nppfuncs);
 #endif

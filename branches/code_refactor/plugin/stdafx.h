@@ -1,8 +1,10 @@
-#pragma once
+#ifndef STDAFX_H_
+#define STDAFX_H_
 
 #define _CRT_SECURE_NO_WARNINGS
 #define _CRT_NON_CONFORMING_SWPRINTFS
 
+#include <map>
 #include <tchar.h>
 #include <windows.h>
 #include <windowsx.h>
@@ -21,6 +23,7 @@
 #define WM_CLOSE_CURRENT_TAB          WM_USER+104
 #define WM_UPDATE_CLOSECHROME_PROMPT  WM_USER+105
 #define WM_CHROMEMOUSEWHEEL           WM_USER+106
+#define WM_FLASH_FULLSCREEN_STATUS    WM_USER+107
 
 #define EVENTID_FRESH   3456
 
@@ -40,13 +43,14 @@
 #define MSG_CLOSECHROME_OK            MSG_BASE+4
 #define MSG_CLOSECHROME_CANCEL        MSG_BASE+5
 #define MSG_CLOSECHROME_NOALERT       MSG_BASE+6
+#define MSG_BOSSKEY_NOALERT           MSG_BASE+7
 
-struct KeyStoke_Item {
+struct KeyStokeItem {
   WORD virual_key;
   BOOL is_pressed;
 };
 
-struct Local_Message_Item {
+struct LocalMessageItem {
   TCHAR msg_bosskey_defined[256];
   TCHAR msg_always_on_top[256]; 
   TCHAR msg_closechrome_title[256]; 
@@ -54,9 +58,10 @@ struct Local_Message_Item {
   TCHAR msg_closechrome_ok[256]; 
   TCHAR msg_closechrome_cancel[256]; 
   TCHAR msg_closechrome_noalert[256];
+  TCHAR msg_bosskey_noalert[256];
 };
 
-struct ShortCut_Item {
+struct ShortCutItem {
   char shortcuts_key[MAX_KEY_LEN];
   char function[MAX_FUNCTION_LEN];
   BOOL ishotkey;
@@ -64,33 +69,33 @@ struct ShortCut_Item {
   void* object;
 };
 
-enum Cmd_Msg_Type {
-  Cmd_Update_Shortcuts,
-  Cmd_Request_Update,
-  Cmd_Response_Update,
-  Cmd_Update_DBClick_CloseTab,
-  Cmd_Update_Is_Listening,
-  Cmd_Update_TabCount,
-  Cmd_Update_Local_Message,
-  Cmd_Update_CloseChrome_Prompt,
-  Cmd_Update_CloseLastTab,
-  Cmd_Update_SwitchTab,
-  Cmd_KeyDown,
-  Cmd_KeyUp,
-  Cmd_Event,
-  Cmd_MouseRotated,
-  Cmd_ChromeClose,
-  Cmd_TabClose,
-  Cmd_DBClick_CloseTab,
-  Cmd_ServerShutDown,
-  Cmd_ClientShutDown,
-  Cmd_ChromeWindowCreated,
-  Cmd_ChromeWindowRemoved,
+enum CmdMsgType {
+  kCmdUpdateShortcuts = 0,
+  kCmdRequestUpdate,
+  kCmdResponseUpdate,
+  kCmdUpdateDBClickCloseTab,
+  kCmdUpdateIsListening,
+  kCmdUpdateTabCount,
+  kCmdUpdateLocalMessage,
+  kCmdUpdateCloseChromePrompt,
+  kCmdUpdateCloseLastTab,
+  kCmdUpdateSwitchTab,
+  kCmdKeyDown,
+  kCmdKeyUp,
+  kCmdEvent,
+  kCmdMouseRotated,
+  kCmdChromeClose,
+  kCmdTabClose,
+  kCmdDBClickCloseTab,
+  kCmdServerShutDown,
+  kCmdClientShutDown,
+  kCmdChromeWindowCreated,
+  kCmdChromeWindowRemoved,
 };
 
-struct Cmd_Msg_Item {
-  Cmd_Msg_Type cmd;
-  union Cmd_Msg_Value{
+struct CmdMsgItem {
+  CmdMsgType cmd;
+  union CmdMsgValue{
     UINT shortcuts_Id;
     bool double_click_closetab;
     bool is_listening;
@@ -112,3 +117,7 @@ struct Cmd_Msg_Item {
     }tabcount;
   }value;
 };
+
+typedef std::map<HWND, CmdMsgItem::CmdMsgValue::TabCount> ChromeWindowIdMap;
+
+#endif
