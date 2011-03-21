@@ -16,15 +16,15 @@
     }
   ],
   "browser_action": {
-    "default_icon": "images/logo_19.png",
+    "default_icon": "images/icon_19.png",
     "default_title": "__MSG_default_title__",
     "popup": "popup.html"
   },
   "icons": {
-    "16": "images/logo_16.png",
-    "19": "images/logo_19.png",
-    "48": "images/logo_48.png",
-    "128": "images/logo_128.png"
+    "16": "images/icon_16.png",
+    "19": "images/icon_19.png",
+    "48": "images/icon_48.png",
+    "128": "images/icon_128.png"
   },
   "plugins": [
     { "path": "plugin/convenience.dll"}
