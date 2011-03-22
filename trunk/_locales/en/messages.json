@@ -70,7 +70,7 @@
   "recommended_from_third_party": {"message": "You can also try these extensions from third-parties"},
   "recommended_screen_capture": {"message": "Screen Capture"},
   "recommended_screen_capture_desc": {"message": "Webpage Capture"},
-  "recommended_download_helper": {"message": "Download Helper"},
+  "recommended_download_helper": {"message": "Download Assistant"},
   "recommended_download_helper_desc": {"message": "Downloader Integration"},
   "recommended_google_translate": {"message": "Google Translate"},
   "recommended_google_translate_desc": {"message": "Webpage Translation"},
