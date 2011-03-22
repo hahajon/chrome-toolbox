@@ -70,13 +70,18 @@
       this.convenience.ChromeWindowRemoved(windowid);
     }
   }
-  chrome.extension.onRequest.addListener(function(request, sender, sendResponse) {
+  chrome.extension.onRequest.addListener(function(
+      request, sender, sendResponse) {
     switch(request.msg) {
       case 'popupVideoWindow':
-        videoAlone.popupWindow(request, sender, request.width, request.height);
+        videoAlone.popupWindow(
+            request, sender, request.width, request.height);
         break;
       case 'desktopImage':
         wallpaper.openPreviewWindow(request.imageSrc);
+        break;
+      case 'saveImage':
+        plugin.wallpaper.SaveImage(request.imageSrc);
         break;
       case 'getStatus':
         sendResponse({msg: 'status', imageBar: localStorage['imageBar'],
@@ -483,7 +488,8 @@
       1003: 'np_message_1003',
       1004: 'np_message_1004',
       1005: 'np_message_1005',
-      1006: 'np_message_1006'
+      1006: 'np_message_1006',
+      1007: 'np_message_1007'
     };
     var message = '';
     if (npMessage[messageId]) {
