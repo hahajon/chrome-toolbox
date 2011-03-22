@@ -114,12 +114,16 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
+				AdditionalIncludeDirectories="$(SolutionDir)"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;APIHOOK_EXPORTS;_EXPORT_APIHOOK_INCLUDE_"
+				GeneratePreprocessedFile="0"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
+				PrecompiledHeaderThrough=""
 				WarningLevel="3"
 				DebugInformationFormat="3"
+				ForcedIncludeFiles="stdafx.h"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -132,6 +136,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="ImageHlp.lib"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				SubSystem="2"
@@ -173,13 +178,21 @@
 			<File
 				RelativePath=".\api_hook.cc"
 				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="1"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\dll_entry.cc"
 				>
 			</File>
 			<File
-				RelativePath=".\log.cc"
+				RelativePath="..\log.cc"
 				>
 			</File>
 		</Filter>
@@ -197,7 +210,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\log.h"
+				RelativePath="..\log.h"
 				>
 			</File>
 			<File

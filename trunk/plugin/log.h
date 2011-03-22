@@ -1,6 +1,8 @@
-#pragma once
+#ifndef LOG_H_
+#define LOG_H_
 
 #include <stdio.h>
+
 #include <windows.h>
 
 class Log {
@@ -16,3 +18,5 @@ private:
   FILE* file_;
   SYSTEMTIME time_;
 };
+
+#endif

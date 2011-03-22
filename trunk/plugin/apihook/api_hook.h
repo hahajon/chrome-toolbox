@@ -1,5 +1,14 @@
-#pragma once
+#ifndef APIHOOK_API_HOOK_H_
+#define APIHOOK_API_HOOK_H_
 
+// Modify IAT entry of the dll by using the new function address
+// example: 
+// ApiHook* g_wave_out_write = new ApiHook("winmm.dll", "waveOutWrite", 
+//                                         (PROC)HookWaveOutWrite, TRUE);
+// g_wave_out_write hooks the waveOutWrite function in every active Chrome
+// processes, so when a process calls its waveOutWrite function, 
+// it actually calls the HookWaveOutWrite function, in which we modify 
+// the audio data to implement the mute feature.
 class ApiHook {
 public:
   // Hook a function in all modules
@@ -11,14 +20,14 @@ public:
 
   // Returns the original address of the hooked function
   operator PROC() { return(pfn_orig_); }
-
+  static void Init();
+  static void UnInit();
 
 public:
   // Calls the real GetProcAddress 
   static FARPROC WINAPI GetProcAddressRaw(HMODULE hmod, PCSTR procname);
 
 private:
-  static PVOID max_app_addr_;       // Maximum private memory address
   static ApiHook* head_pointer_;    // Address of first object
   ApiHook* next_pointer_;            // Address of next  object
 
@@ -64,14 +73,14 @@ private:
 
 private:
   // Instantiates hooks on these functions
-  static ApiHook sm_LoadLibraryA;
-  static ApiHook sm_LoadLibraryW;
-  static ApiHook sm_LoadLibraryExA;
-  static ApiHook sm_LoadLibraryExW;
-  static ApiHook sm_CreateProcessA;
-  static ApiHook sm_CreateProcessW;
-  static ApiHook sm_GetProcAddress;
+  static ApiHook* load_libraray_a_;
+  static ApiHook* load_libraray_w_;
+  static ApiHook* load_libraray_ex_a_;
+  static ApiHook* load_libraray_ex_w_;
+  static ApiHook* create_process_a_;
+  static ApiHook* create_process_w_;
+  static ApiHook* get_proc_address_;
 
 };
 
-void InjectIntoProcess(HANDLE hprocess);
+#endif

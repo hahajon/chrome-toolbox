@@ -1,9 +1,15 @@
+#ifndef APIHOOK_MYDSOUND_H_
+#define APIHOOK_MYDSOUND_H_
+
 #include <dsound.h>
+
 #include "log.h"
 
-extern BOOL g_BrowserMute;
-extern Log g_Log;
+extern BOOL g_browser_mute;
+extern Log g_log;
 
+// it's a wapper of IDirectSoundBuffer interface for mute some audio
+// played by dsound
 class MyDirectSoundBuffer : public IDirectSoundBuffer {
   // IUnknown methods
   STDMETHOD(QueryInterface)       (THIS_ __in REFIID iid, __deref_out LPVOID* lpout) {
@@ -69,7 +75,7 @@ class MyDirectSoundBuffer : public IDirectSoundBuffer {
   }
   STDMETHOD(Unlock)               (THIS_ __in_bcount(dwAudioBytes1) LPVOID pvAudioPtr1, DWORD dwAudioBytes1,
     __in_bcount_opt(dwAudioBytes2) LPVOID pvAudioPtr2, DWORD dwAudioBytes2) {
-      if (g_BrowserMute) {
+      if (g_browser_mute) {
         if (pvAudioPtr1) {
           memset(pvAudioPtr1, 0, dwAudioBytes1);
         }
@@ -87,6 +93,8 @@ public:
   IDirectSoundBuffer* directsound_buffer_;
 };
 
+// it's a wapper of IDirectSound interface for mute some audio
+// played by dsound
 class MyDirectSound : public IDirectSound {
 
   // IUnknown methods
@@ -104,7 +112,7 @@ class MyDirectSound : public IDirectSound {
   STDMETHOD(CreateSoundBuffer)    (THIS_ __in LPCDSBUFFERDESC pcDSBufferDesc, __deref_out LPDIRECTSOUNDBUFFER *ppDSBuffer, __null LPUNKNOWN pUnkOuter) {
     HRESULT hr = direct_sound_->CreateSoundBuffer(pcDSBufferDesc, ppDSBuffer, pUnkOuter);
     if (SUCCEEDED(hr)) {
-      g_Log.WriteLog("msg", "CreateSoundBuffer Success");
+      g_log.WriteLog("msg", "CreateSoundBuffer Success");
       MyDirectSoundBuffer* p = new MyDirectSoundBuffer;
       p->directsound_buffer_ = *ppDSBuffer;
       *ppDSBuffer = p;
@@ -153,7 +161,7 @@ class MyDirectSound8 : public IDirectSound8 {
   STDMETHOD(CreateSoundBuffer)    (THIS_ __in LPCDSBUFFERDESC pcDSBufferDesc, __deref_out LPDIRECTSOUNDBUFFER *ppDSBuffer, __null LPUNKNOWN pUnkOuter) {
     HRESULT hr = direct_sound_->CreateSoundBuffer(pcDSBufferDesc, ppDSBuffer, pUnkOuter);
     if (SUCCEEDED(hr)) {
-      g_Log.WriteLog("msg", "CreateSoundBuffer Success");
+      g_log.WriteLog("msg", "CreateSoundBuffer Success");
       MyDirectSoundBuffer* p = new MyDirectSoundBuffer;
       p->directsound_buffer_ = *ppDSBuffer;
       *ppDSBuffer = p;
@@ -191,3 +199,5 @@ public:
   IDirectSound8* direct_sound_;
 
 };
+
+#endif

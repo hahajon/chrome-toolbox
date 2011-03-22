@@ -53,8 +53,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,0,10
- PRODUCTVERSION 1,0,0,10
+ FILEVERSION 1,0,0,12
+ PRODUCTVERSION 1,0,0,12
  FILEFLAGSMASK 0x17L
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -71,13 +71,13 @@ BEGIN
         BEGIN
             VALUE "FileDescription", "This is a npapi plugin built for Chrome on Windows."
             VALUE "FileOpenName", "Convenience Plugin|Set WallPaper Plugin|Stand Video Alone Plugin|Browser Mute Plugin"
-            VALUE "FileVersion", "1, 0, 0, 10"
+            VALUE "FileVersion", "1, 0, 0, 12"
             VALUE "InternalName", "convenience"
             VALUE "LegalCopyright", "Copyright (C) 2010"
             VALUE "MIMEType", "application/x-npconvenience|application/x-npwallpaper|application/x-npvideoalone|application/x-browsermute"
             VALUE "OriginalFilename", "convenience.dll"
             VALUE "ProductName", "Chrome Toolbox Plugin"
-            VALUE "ProductVersion", "1, 0, 0, 10"
+            VALUE "ProductVersion", "1, 0, 0, 12"
         END
     END
     BLOCK "VarFileInfo"
@@ -103,6 +103,17 @@ BEGIN
     CONTROL         "Check1",IDC_NOALERT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,13,26,228,10
 END
 
+IDD_BOSSKEY DIALOGEX 0, 0, 259, 62
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Dialog"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "确定",IDOK,149,43,50,14
+    PUSHBUTTON      "取消",IDCANCEL,202,43,50,14
+    CONTROL         "Check1",IDC_NOALERT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,13,28,228,10
+    LTEXT           "",IDC_MESSAGE,13,8,228,17
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -116,6 +127,14 @@ BEGIN
     BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 248
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 55
+    END
+
+    IDD_BOSSKEY, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 252
         TOPMARGIN, 7
         BOTTOMMARGIN, 55
     END

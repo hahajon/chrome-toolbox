@@ -1,19 +1,20 @@
-#include "stdafx.h"
 #include "video_alone_script_object.h"
-#include "log.h"
-#include "video_window_manager.h"
 
 #include <dwmapi.h>
 
+#include "log.h"
+#include "utils.h"
+#include "video_window_manager.h"
+
 HHOOK hCallWndProcHook = NULL;
-extern Log g_Log;
-extern HMODULE g_hMod;
-VideoWindowManager g_VideoWinMan;
+extern Log g_log;
+extern HMODULE g_module;
+VideoWindowManager g_video_win_man;
 
-int g_Chrome_MajorVersion = 0;
-BOOL g_Enable_DWM = FALSE;
+int g_chrome_major_version = 0;
+BOOL g_enable_dwm = FALSE;
 
-WNDPROC g_OldProc = NULL;
+WNDPROC g_old_proc = NULL;
 
 int ReadChromeMajorVersion() {
   TCHAR current_path[MAX_PATH];
@@ -29,7 +30,7 @@ void WriteChromeMajorVersion() {
   TCHAR file_name[MAX_PATH];
   _stprintf(file_name, _T("%s\\convenience.ini"), current_path);
   TCHAR value[32];
-  _stprintf(value, _T("%ld"), g_Chrome_MajorVersion);
+  _stprintf(value, _T("%ld"), g_chrome_major_version);
   WritePrivateProfileString(_T("CFG"), _T("MAJORVERSION"), value, file_name);
 }
 
@@ -37,11 +38,11 @@ LRESULT CALLBACK NewWndProc(HWND hWnd, UINT Msg, WPARAM wParam,
                             LPARAM lParam) {
   LRESULT ret = 0;
   if (Msg == WM_PAINT) {
-    ret = CallWindowProc(g_OldProc, hWnd, Msg, wParam, lParam);
-    g_VideoWinMan.WndProc(hWnd, Msg, wParam, lParam);
+    ret = CallWindowProc(g_old_proc, hWnd, Msg, wParam, lParam);
+    g_video_win_man.WndProc(hWnd, Msg, wParam, lParam);
   } else {
-    ret = g_VideoWinMan.WndProc(hWnd, Msg, wParam, lParam);
-    ret = CallWindowProc(g_OldProc, hWnd, Msg, wParam, lParam);
+    ret = g_video_win_man.WndProc(hWnd, Msg, wParam, lParam);
+    ret = CallWindowProc(g_old_proc, hWnd, Msg, wParam, lParam);
     if (Msg == WM_NCHITTEST && ret == HTCLIENT)
       ret = HTCAPTION;
   }
@@ -52,27 +53,27 @@ LRESULT CALLBACK CallWndProc(int nCode, WPARAM wParam, LPARAM lParam) {
   CWPSTRUCT * pRet = (CWPSTRUCT *)lParam;
 
   if (pRet->message == WM_CHROMEHWND) {
-    if (g_Chrome_MajorVersion == 0)
-      g_Chrome_MajorVersion = ReadChromeMajorVersion();
+    if (g_chrome_major_version == 0)
+      g_chrome_major_version = ReadChromeMajorVersion();
 
     HMODULE h = LoadLibrary(_T("dwmapi.dll"));
     if (h) {
-      DwmIsCompositionEnabled(&g_Enable_DWM);
+      DwmIsCompositionEnabled(&g_enable_dwm);
       FreeLibrary(h);
     }
 
-    g_VideoWinMan.AddNewVideoWindow((HWND)pRet->wParam, (HWND)pRet->lParam);
-    g_OldProc = SubclassWindow((HWND)pRet->wParam, NewWndProc);
+    g_video_win_man.AddNewVideoWindow((HWND)pRet->wParam, (HWND)pRet->lParam);
+    g_old_proc = SubclassWindow((HWND)pRet->wParam, NewWndProc);
 
 
-    if (g_Chrome_MajorVersion >= MINIMUM_VERSION_SUPPORT_POPUP && 
-        g_Enable_DWM) {
+    if (g_chrome_major_version >= MINIMUM_VERSION_SUPPORT_POPUP && 
+        g_enable_dwm) {
       DwmSetWindowAttribute((HWND)pRet->wParam, DWMWA_ALLOW_NCPAINT, 
-                            &g_Enable_DWM, sizeof(g_Enable_DWM));
+                            &g_enable_dwm, sizeof(g_enable_dwm));
       SendMessage((HWND)pRet->wParam, WM_NCPAINT, 0, 0);
     }
 
-    if (g_Chrome_MajorVersion < MINIMUM_VERSION_SUPPORT_POPUP) {
+    if (g_chrome_major_version < MINIMUM_VERSION_SUPPORT_POPUP) {
       SetTimer((HWND)pRet->wParam, EVENTID_FRESH, 100, NULL);
     }
   }
@@ -80,36 +81,30 @@ LRESULT CALLBACK CallWndProc(int nCode, WPARAM wParam, LPARAM lParam) {
   return CallNextHookEx(hCallWndProcHook, nCode, wParam, lParam);
 }
 
-VideoAloneScriptObject::VideoAloneScriptObject(void) {
-}
-
-VideoAloneScriptObject::~VideoAloneScriptObject(void) {
-  
-}
+VideoAloneScriptObject::WindowMap VideoAloneScriptObject::window_list_;
 
 NPObject* VideoAloneScriptObject::Allocate(NPP npp, NPClass *aClass) {
-  VideoAloneScriptObject* pRet = new VideoAloneScriptObject;
-  if (pRet != NULL) {
-    pRet->SetPlugin((PluginBase*)npp->pdata);
-    Function_Item item;
-    strncpy(item.function_name, "ShowVideoAlone", FUNCTION_NAME_LEN);
-    item.function_pointer = ON_INVOKEHELPER(&VideoAloneScriptObject::
-        ShowVideoAlone);
-    pRet->AddFunction(item);
-    strncpy(item.function_name, "GetWindowMetric", FUNCTION_NAME_LEN);
-    item.function_pointer = ON_INVOKEHELPER(&VideoAloneScriptObject::
-        GetWindowMetric);
-    pRet->AddFunction(item);
+  VideoAloneScriptObject* script_object = new VideoAloneScriptObject;
+  if (script_object != NULL) {
+    script_object->set_plugin((PluginBase*)npp->pdata);
   }
-  return pRet;
+  return script_object;
+}
+
+void VideoAloneScriptObject::InitHandler() {
+  FunctionItem item;
+  item.function_name = "ShowVideoAlone";
+  item.function_pointer = ON_INVOKEHELPER(&VideoAloneScriptObject::
+      ShowVideoAlone);
+  AddFunction(item);
+  item.function_name = "GetWindowMetric";
+  item.function_pointer = ON_INVOKEHELPER(&VideoAloneScriptObject::
+      GetWindowMetric);
+  AddFunction(item);
 }
 
 void VideoAloneScriptObject::Deallocate() {
   delete this;
-}
-
-void VideoAloneScriptObject::Invalidate() {
-
 }
 
 bool VideoAloneScriptObject::GetWindowMetric(const NPVariant* args, 
@@ -153,85 +148,83 @@ bool VideoAloneScriptObject::ShowVideoAlone(const NPVariant *args,
     }
   }
 
-  if (g_Chrome_MajorVersion == 0) {
-    string user_agent = NPN_UserAgent(plugin_->get_npp());
+  if (g_chrome_major_version == 0) {
+    std::string user_agent = NPN_UserAgent(get_plugin()->get_npp());
     int index = user_agent.find("Chrome/");
-    if (index != string::npos) {
+    if (index != std::string::npos) {
       int last_index = user_agent.find('.', index);
-      if (last_index != string::npos) {
-        string majorversion = user_agent.substr(index+7, last_index-index-7);
-        g_Chrome_MajorVersion = atoi(majorversion.c_str());
+      if (last_index != std::string::npos) {
+        std::string majorversion = user_agent.substr(index + 7, 
+                                                     last_index - index - 7);
+        g_chrome_major_version = atoi(majorversion.c_str());
         WriteChromeMajorVersion();
       }
     }
   }
 
-  TCHAR szWinText[512];
-  MultiByteToWideChar(CP_UTF8, 0, NPVARIANT_TO_STRING(args[0]).UTF8Characters,
-                      -1, szWinText, 512);
+  utils::Utf8ToUnicode title(NPVARIANT_TO_STRING(args[0]).UTF8Characters);
 
-  int nLoop = 0;
-  HWND hParentWnd = NULL;
+  int loop = 0;
+  HWND parent_hwnd = NULL;
   HWND hwnd;
-  while(nLoop < 100) {
-    hParentWnd = FindWindowEx(NULL, hParentWnd, _T("Chrome_WidgetWin_0"), NULL);
-    if (hParentWnd != NULL) {
-      hwnd = FindWindowEx(hParentWnd, NULL, _T("Chrome_WidgetWin_0"), szWinText);
+  while(loop < 100) {
+    parent_hwnd = FindWindowEx(NULL, parent_hwnd, 
+                               _T("Chrome_WidgetWin_0"), NULL);
+    if (parent_hwnd != NULL) {
+      hwnd = FindWindowEx(parent_hwnd, NULL, _T("Chrome_WidgetWin_0"), title);
       if (hwnd)
         break;
     }
     sprintf(szLog, "WindowText=%s,Len=%ld,hParentWnd=0x%X",
             NPVARIANT_TO_STRING(args[0]).UTF8Characters,
             NPVARIANT_TO_STRING(args[0]).UTF8Length,
-            hParentWnd);
-    g_Log.WriteLog("Loop", szLog);
-    nLoop++;
+            parent_hwnd);
+    g_log.WriteLog("Loop", szLog);
+    loop++;
     Sleep(10);
   }
 
-  if (hwnd == NULL) {
-    g_Log.WriteLog("Error", "No Find Window");
+  if (!hwnd) {
+    g_log.WriteLog("Error", "No Find Window");
     return false;
   }
 
-  MultiByteToWideChar(CP_UTF8, 0, NPVARIANT_TO_STRING(args[1]).UTF8Characters,
-                      -1, szWinText, 512);
+  utils::Utf8ToUnicode original_title
+      (NPVARIANT_TO_STRING(args[1]).UTF8Characters);
 
-  SetWindowText(hwnd, szWinText);
+  SetWindowText(hwnd, original_title);
   if (GetFirstChild(hwnd))
-    SetWindowText(GetFirstChild(hwnd), szWinText);
-  if (!SetWindowText(hParentWnd, szWinText)) {
+    SetWindowText(GetFirstChild(hwnd), original_title);
+  if (!SetWindowText(parent_hwnd, original_title)) {
     sprintf(szLog, "SetWindowText GetLastError=%ld", GetLastError());
-    g_Log.WriteLog("Error", szLog);
+    g_log.WriteLog("Error", szLog);
   }
-  SetWindowText(hParentWnd, szWinText);
 
-  hwnd = hParentWnd;
-
+  hwnd = parent_hwnd;
   if (!hwnd) {
     sprintf(szLog, "WindowText=%s,Len=%ld,hParentWnd=0x%X",
             NPVARIANT_TO_STRING(args[0]).UTF8Characters,
             NPVARIANT_TO_STRING(args[0]).UTF8Length,
-            hParentWnd);
-    g_Log.WriteLog("ShowVideoAlone4", szLog);
+            parent_hwnd);
+    g_log.WriteLog("ShowVideoAlone4", szLog);
     return false;
   }
 
   DWORD threadid = GetWindowThreadProcessId(hwnd, NULL);
-
   sprintf(szLog, "Chrome hwnd=0x%x,threadid=%ld", hwnd, threadid);
-  g_Log.WriteLog("Msg", szLog);
+  g_log.WriteLog("Msg", szLog);
 
   if (!hCallWndProcHook)
     hCallWndProcHook = SetWindowsHookEx(WH_CALLWNDPROC, CallWndProc,
-                                        g_hMod, threadid);
+                                        g_module, threadid);
   if (!hCallWndProcHook) {
     sprintf(szLog, "SetWindowsHookEx Failed,GetLastError=%ld",
             GetLastError());
-    g_Log.WriteLog("Error", szLog);
+    g_log.WriteLog("Error", szLog);
   } else {
-    g_Log.WriteLog("Msg", "SetWindowsHookEx Success");
-    SendMessage(hwnd, WM_CHROMEHWND, (WPARAM)hwnd, (LPARAM)plugin_->get_hwnd());
+    g_log.WriteLog("Msg", "SetWindowsHookEx Success");
+    SendMessage(hwnd, WM_CHROMEHWND, (WPARAM)hwnd, 
+                (LPARAM)get_plugin()->get_hwnd());
   }
 
   HWND hEditHwnd = GetWindow(hwnd, GW_CHILD);
@@ -242,7 +235,7 @@ bool VideoAloneScriptObject::ShowVideoAlone(const NPVariant *args,
     break;
   }
 
-  WindowID_Item item = { 0 };
+  WindowIDItem item = { 0 };
   item.parent_window_id = NPVARIANT_IS_INT32(args[2]) ? 
       NPVARIANT_TO_INT32(args[2]) : NPVARIANT_TO_DOUBLE(args[2]);
   item.window_id = NPVARIANT_IS_INT32(args[3]) ? 
@@ -253,10 +246,5 @@ bool VideoAloneScriptObject::ShowVideoAlone(const NPVariant *args,
 
   BOOLEAN_TO_NPVARIANT(true, *result);
 
-  return true;
-}
-
-bool VideoAloneScriptObject::Construct(const NPVariant *args,uint32_t argCount,
-                                       NPVariant *result) {
   return true;
 }
