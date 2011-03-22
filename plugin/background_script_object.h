@@ -1,47 +1,64 @@
-#pragma once
-#include "script_object_base.h"
+#ifndef BACKGROUND_SCRIPT_OBJECT_H_
+#define BACKGROUND_SCRIPT_OBJECT_H_
+
 #include <comdef.h>
 #include <GdiPlus.h>
 #include <WinInet.h>
 #include <shlobj.h>
 
+#include "script_object_base.h"
+
 using namespace Gdiplus;
 
+// Script object for saving image and setting wallpaper.
 class BackgroundScriptObject : public ScriptObjectBase {
-public:
-  BackgroundScriptObject(void);
-  virtual ~BackgroundScriptObject(void);
+private:
+  BackgroundScriptObject(void) : image_(NULL), stream_(NULL) {}
+  virtual ~BackgroundScriptObject(void) {}
 
-  //Chrome call this function to init object.
+public:
+  // Chrome call this function to init object.
   static NPObject* Allocate(NPP npp, NPClass *aClass); 
 
   void Deallocate();
-  void Invalidate();
+  void Invalidate() {}
   bool Construct(const NPVariant *args, uint32_t argCount,
-                 NPVariant *result);
+                 NPVariant *result) { return true; }
 
-  //some interface for frontend.
+  void InitHandler();
 
-  //notify npapi plugin that frontend will open a popup window to 
-  //set wallpaper. this function save original wallpaper option for restore.
+  // Some interface for front-end.
+
+  // Notify NPAPI plugin that front-end will open a popup window to 
+  // set wallpaper.
+  // Save original wallpaper option for restoration.
   bool SetWallPaper(const NPVariant *args, uint32_t argCount,
                     NPVariant *result);
 
-  //apply selected type and picture as wallpaper.
+  // Apply selected type and picture as wallpaper.
   bool ApplyWallPaper(const NPVariant *args, uint32_t argCount,
                       NPVariant *result);
-  //restore saved original wallpaper.
+
+  // Restore saved original wallpaper.
   bool RestoreWallPaper(const NPVariant *args, uint32_t argCount,
                         NPVariant *result);
 
+  // Request image data.
+  bool SaveImage(const NPVariant* args, uint32_t argCount, NPVariant* result);
+
 private:
-  //image object for generate picture file.
+  // Image object for generate picture file.
   Image* image_;
-  //stream object for load image binary data frontend delivered
+
+  // Stream object for load image binary data front-end delivered.
   IStream* stream_;
-  //for save original wallpaper picture path.
+
+  // For save original wallpaper picture path.
   TCHAR ori_wallpaper_[MAX_PATH];
-  //original wallpaper option.
+
+  // Original wallpaper option.
   WALLPAPEROPT ori_opt_;
 
 };
+
+#endif

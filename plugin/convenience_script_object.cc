@@ -1,106 +1,135 @@
-#include "stdafx.h"
 #include "convenience_script_object.h"
-#include "log.h"
+
 #include "convenience_plugin.h"
+#include "log.h"
+#include "resource.h"
+#include "utils.h"
 
-extern Log g_Log;
+extern Log g_log;
+extern HMODULE g_module;
 extern const TCHAR* kChromeClassName;
-extern DWORD g_ChromeMainThread;
-extern Local_Message_Item g_Local_Message;
-extern bool g_DBClickCloseTab;
+extern DWORD g_chrome_main_thread;
+extern LocalMessageItem g_local_message;
 
-ConvenienceScriptObject::ConvenienceScriptObject(void) {
-  shortcuts_list_ = NULL;
-  shortcuts_object_ = NULL;
-  is_listened_ = false;
-}
+// the dialog procedure for bosskey redefined
+BOOL CALLBACK BosskeyDlgProc(HWND dlg, UINT message, WPARAM wParam, 
+                             LPARAM lParam) {
+  switch (message) { 
+    case WM_INITDIALOG: {
+      NONCLIENTMETRICS metrics;
+      utils::GetNonClientMetrics(&metrics);
+      HFONT font = CreateFontIndirect(&(metrics.lfMenuFont));
+      SendMessage(GetDlgItem(dlg, IDC_NOALERT), WM_SETFONT, 
+                  (WPARAM)font, TRUE);
+      SendMessage(GetDlgItem(dlg, IDC_MESSAGE), WM_SETFONT, 
+                  (WPARAM)font, TRUE);
+      SendMessage(GetDlgItem(dlg, IDOK), WM_SETFONT, (WPARAM)font, TRUE);
+      SendMessage(GetDlgItem(dlg, IDCANCEL), WM_SETFONT, (WPARAM)font, TRUE);
+      SetWindowText(dlg, g_local_message.msg_closechrome_title);
+      SetDlgItemText(dlg, IDOK, g_local_message.msg_closechrome_ok);
+      SetDlgItemText(dlg, IDCANCEL, g_local_message.msg_closechrome_cancel);
+      SetDlgItemText(dlg, IDC_MESSAGE, g_local_message.msg_bosskey_defined);
+      SetDlgItemText(dlg, IDC_NOALERT, g_local_message.msg_bosskey_noalert);
+      break;
+    }
+    case WM_COMMAND: {
+      if (LOWORD(wParam) == IDOK) {
+        INT_PTR result = IDOK;
+        if (Button_GetCheck(GetDlgItem(dlg, IDC_NOALERT)) == BST_CHECKED) {
+          result = IDIGNORE;
+        }
+        HFONT font = (HFONT)SendMessage(GetDlgItem(dlg, IDC_MESSAGE), 
+                                        WM_GETFONT, 0, 0);
+        if (font)
+          DeleteObject(font);
+        EndDialog(dlg, result);
+      }
+      else if (LOWORD(wParam) == IDCANCEL)
+        EndDialog(dlg, IDCANCEL);
+      break;
+    }
+  }
+  return FALSE; 
+} 
 
-ConvenienceScriptObject::~ConvenienceScriptObject(void) {
-}
 
 NPObject* ConvenienceScriptObject::Allocate(NPP npp, NPClass *aClass) {
-  ConvenienceScriptObject* pRet = new ConvenienceScriptObject;
-  char szLog[256];
-  sprintf(szLog, "CConvenienceScriptObject this=%ld", pRet);
-  g_Log.WriteLog("Allocate", szLog);
-  if (pRet != NULL) {
-    pRet->SetPlugin((PluginBase*)npp->pdata);
-    Function_Item item;
-    strcpy(item.function_name, "UpdateShortCutList");
-    item.function_pointer = ON_INVOKEHELPER(&ConvenienceScriptObject::
-        UpdateShortCutList);
-    pRet->AddFunction(item);
-    strcpy(item.function_name, "TriggerChromeShortcuts");
-    item.function_pointer = ON_INVOKEHELPER(&ConvenienceScriptObject::
-        TriggerChromeShortcuts);
-    pRet->AddFunction(item);    
-    strcpy(item.function_name, "PressBossKey");
-    item.function_pointer = ON_INVOKEHELPER(&ConvenienceScriptObject::
-        PressBossKey);
-    pRet->AddFunction(item);
-    strcpy(item.function_name, "SetDBClickCloseTab");
-    item.function_pointer = ON_INVOKEHELPER(&ConvenienceScriptObject::
-        SetDBClickCloseTab);
-    pRet->AddFunction(item);  
-    strcpy(item.function_name, "AddListener");
-    item.function_pointer = ON_INVOKEHELPER(&ConvenienceScriptObject::
-        AddListener);
-    pRet->AddFunction(item);    
-    strcpy(item.function_name, "RemoveListener");
-    item.function_pointer = ON_INVOKEHELPER(&ConvenienceScriptObject::
-        RemoveListener);
-    pRet->AddFunction(item);    
-    strcpy(item.function_name, "UpdateTabCount");
-    item.function_pointer = ON_INVOKEHELPER(&ConvenienceScriptObject::
-        UpdateTabCount);
-    pRet->AddFunction(item);
-    strcpy(item.function_name, "CloseLastTab");
-    item.function_pointer = ON_INVOKEHELPER(&ConvenienceScriptObject::
-        CloseLastTab);
-    pRet->AddFunction(item);
-    strcpy(item.function_name, "CloseChromePrompt");
-    item.function_pointer = ON_INVOKEHELPER(&ConvenienceScriptObject::
-        CloseChromePrompt);
-    pRet->AddFunction(item);
-    strcpy(item.function_name, "ChromeWindowCreated");
-    item.function_pointer = ON_INVOKEHELPER(&ConvenienceScriptObject::
-        ChromeWindowCreated);
-    pRet->AddFunction(item);
-    strcpy(item.function_name, "ChromeWindowRemoved");
-    item.function_pointer = ON_INVOKEHELPER(&ConvenienceScriptObject::
-        ChromeWindowRemoved);
-    pRet->AddFunction(item);
-    strcpy(item.function_name, "EnableMouseSwitchTab");
-    item.function_pointer = ON_INVOKEHELPER(&ConvenienceScriptObject::
-        EnableMouseSwitchTab);
-    pRet->AddFunction(item);
+  ConvenienceScriptObject* script_object = new ConvenienceScriptObject;
+  char logs[256];
+  sprintf(logs, "CConvenienceScriptObject this=%ld", script_object);
+  g_log.WriteLog("Allocate", logs);
+  if (script_object != NULL) {
+    script_object->set_plugin((PluginBase*)npp->pdata);
   }
-  return pRet;
+  return script_object;
+}
+
+void ConvenienceScriptObject::InitHandler() {
+  FunctionItem item;
+  item.function_name = "UpdateShortCutList";
+  item.function_pointer = ON_INVOKEHELPER(&ConvenienceScriptObject::
+      UpdateShortCutList);
+  AddFunction(item);
+  item.function_name = "TriggerChromeShortcuts";
+  item.function_pointer = ON_INVOKEHELPER(&ConvenienceScriptObject::
+      TriggerChromeShortcuts);
+  AddFunction(item);
+  item.function_name = "PressBossKey";
+  item.function_pointer = ON_INVOKEHELPER(&ConvenienceScriptObject::
+      PressBossKey);
+  AddFunction(item);
+  item.function_name = "SetDBClickCloseTab";
+  item.function_pointer = ON_INVOKEHELPER(&ConvenienceScriptObject::
+      SetDBClickCloseTab);
+  AddFunction(item);  
+  item.function_name = "AddListener";
+  item.function_pointer = ON_INVOKEHELPER(&ConvenienceScriptObject::
+      AddListener);
+  AddFunction(item);    
+  item.function_name = "RemoveListener";
+  item.function_pointer = ON_INVOKEHELPER(&ConvenienceScriptObject::
+      RemoveListener);
+  AddFunction(item);    
+  item.function_name = "UpdateTabCount";
+  item.function_pointer = ON_INVOKEHELPER(&ConvenienceScriptObject::
+      UpdateTabCount);
+  AddFunction(item);
+  item.function_name = "CloseLastTab";
+  item.function_pointer = ON_INVOKEHELPER(&ConvenienceScriptObject::
+      CloseLastTab);
+  AddFunction(item);
+  item.function_name = "CloseChromePrompt";
+  item.function_pointer = ON_INVOKEHELPER(&ConvenienceScriptObject::
+      CloseChromePrompt);
+  AddFunction(item);
+  item.function_name = "ChromeWindowCreated";
+  item.function_pointer = ON_INVOKEHELPER(&ConvenienceScriptObject::
+      ChromeWindowCreated);
+  AddFunction(item);
+  item.function_name = "ChromeWindowRemoved";
+  item.function_pointer = ON_INVOKEHELPER(&ConvenienceScriptObject::
+      ChromeWindowRemoved);
+  AddFunction(item);
+  item.function_name = "EnableMouseSwitchTab";
+  item.function_pointer = ON_INVOKEHELPER(&ConvenienceScriptObject::
+      EnableMouseSwitchTab);
+  AddFunction(item);
 }
 
 void ConvenienceScriptObject::Deallocate() {
   char szLog[256];
   sprintf(szLog, "CConvenienceScriptObject this=%ld", this);
-  g_Log.WriteLog("Deallocate", szLog);
+  g_log.WriteLog("Deallocate", szLog);
   delete this;
-}
-
-void ConvenienceScriptObject::Invalidate() {
-
-}
-
-bool ConvenienceScriptObject::Construct(const NPVariant *args,
-                                        uint32_t argCount,
-                                        NPVariant *result) {
-  return true;
 }
 
 bool ConvenienceScriptObject::UpdateShortCutList(const NPVariant *args,
                                                  uint32_t argCount,
                                                  NPVariant *result) {
   NPObject* window;
-  ((ConveniencePlugin*)plugin_)->GetLocalMessage();
-  NPN_GetValue(plugin_->get_npp(), NPNVWindowNPObject, &window);
+  ConveniencePlugin* plugin = (ConveniencePlugin*)get_plugin();
+  plugin->GetLocalMessage();
+  NPN_GetValue(plugin->get_npp(), NPNVWindowNPObject, &window);
 
   if (argCount != 1 || !NPVARIANT_IS_OBJECT(args[0])) {
     NPN_SetException(this, "parameter is invalid");
@@ -120,7 +149,7 @@ bool ConvenienceScriptObject::UpdateShortCutList(const NPVariant *args,
     return false;
   }
 
-  if (NPN_GetProperty(plugin_->get_npp(), shortcuts_object_, id, &length)) {
+  if (NPN_GetProperty(plugin->get_npp(), shortcuts_object_, id, &length)) {
     int len = 0;
     if (NPVARIANT_IS_INT32(length))
       len = NPVARIANT_TO_INT32(length);
@@ -143,17 +172,17 @@ bool ConvenienceScriptObject::UpdateShortCutList(const NPVariant *args,
     if (shortcuts_list_ != NULL)
       delete[] shortcuts_list_;
 
-    shortcuts_list_ = new ShortCut_Item[len];
+    shortcuts_list_ = new ShortCutItem[len];
 
     for (int i = 0; i < len; i++) {
-      ShortCut_Item item = { 0 };
+      ShortCutItem item = { 0 };
       item.index = i;
       id = NPN_GetIntIdentifier(i);
-      NPN_GetProperty(plugin_->get_npp(), shortcuts_object_, id, &array_item);
+      NPN_GetProperty(plugin->get_npp(), shortcuts_object_, id, &array_item);
       array_object = NPVARIANT_TO_OBJECT(array_item);
       id = NPN_GetStringIdentifier("shortcut");
       if (id) {
-        NPN_GetProperty(plugin_->get_npp(), array_object,
+        NPN_GetProperty(plugin->get_npp(), array_object,
                         id, &property_value);
         if (NPVARIANT_IS_STRING(property_value))
           strcpy(item.shortcuts_key,
@@ -161,7 +190,7 @@ bool ConvenienceScriptObject::UpdateShortCutList(const NPVariant *args,
       }
       id = NPN_GetStringIdentifier("operation");
       if (id) {
-        NPN_GetProperty(plugin_->get_npp(), array_object,
+        NPN_GetProperty(plugin->get_npp(), array_object,
                         id, &property_value);
         if (NPVARIANT_IS_STRING(property_value))
           strcpy(item.function,
@@ -169,7 +198,7 @@ bool ConvenienceScriptObject::UpdateShortCutList(const NPVariant *args,
       }
       id = NPN_GetStringIdentifier("type");
       if (id) {
-        NPN_GetProperty(plugin_->get_npp(), array_object, id, &property_value);
+        NPN_GetProperty(plugin->get_npp(), array_object, id, &property_value);
         if (NPVARIANT_IS_BOOLEAN(property_value))
           item.ishotkey = NPVARIANT_TO_BOOLEAN(property_value);
       }
@@ -178,14 +207,13 @@ bool ConvenienceScriptObject::UpdateShortCutList(const NPVariant *args,
       shortcuts_list_[i] = item;
     }
 
-    ConveniencePlugin* pPlugin = (ConveniencePlugin*)plugin_;
-    pPlugin->SetShortcutsToMemory(shortcuts_list_, len);
+    plugin->SetShortcutsToMemory(shortcuts_list_, len);
     
     ShortCutKeyMap::iterator iter;
     for (iter = key_map_old->begin(); iter != key_map_old->end(); iter++) {
       if (iter->second.ishotkey) {
         ATOM atom = GlobalFindAtomA(iter->second.shortcuts_key);
-        UnregisterHotKey(plugin_->get_hwnd(), atom);
+        UnregisterHotKey(plugin->get_hwnd(), atom);
         GlobalDeleteAtom(atom);
       }
     }
@@ -196,13 +224,34 @@ bool ConvenienceScriptObject::UpdateShortCutList(const NPVariant *args,
         ATOM atom = GlobalAddAtomA(iter->second.shortcuts_key);
         UINT vk = 0, modify = 0;
         GetShortCutsKey(iter->second.shortcuts_key, &modify, &vk);
-        BOOL register_ret = RegisterHotKey(plugin_->get_hwnd(), 
+        BOOL register_ret = RegisterHotKey(plugin->get_hwnd(), 
                                            atom, modify, vk);
         if (!register_ret && !errorflag) {
           errorflag = true;
-          if (MessageBox(NULL, g_Local_Message.msg_bosskey_defined, 
-                         0, MB_OK) == IDOK) {
-            RedefineBossKey();
+          NPVariant ret;
+          VOID_TO_NPVARIANT(ret);
+          NPString str;
+          str.UTF8Characters = "eval(localStorage['alertBosskeyRedefined'])";
+          str.UTF8Length = strlen(str.UTF8Characters);
+          NPN_Evaluate(get_plugin()->get_npp(), window, &str, &ret);
+          bool flag = true;
+          if (NPVARIANT_IS_BOOLEAN(ret)) {
+            flag = NPVARIANT_TO_BOOLEAN(ret);
+          }
+          NPN_ReleaseVariantValue(&ret);
+          if (flag) {  // need alert user
+            INT_PTR dlg_result = DialogBox(
+                g_module, MAKEINTRESOURCE(IDD_BOSSKEY), 
+                get_plugin()->get_hwnd(), BosskeyDlgProc);
+            if (dlg_result == IDOK) {
+              InvokeJSMethod("redefineBossKey");
+            } else if (dlg_result == IDIGNORE) {
+              str.UTF8Characters = 
+                  "localStorage['alertBosskeyRedefined'] = false";
+              str.UTF8Length = strlen(str.UTF8Characters);
+              NPN_Evaluate(get_plugin()->get_npp(), window, &str, &ret);
+              NPN_ReleaseVariantValue(&ret);
+            }
           }
         } else if (register_ret) {
           errorflag = false;
@@ -275,21 +324,8 @@ void ConvenienceScriptObject::GetShortCutsKey(char* shortcuts, UINT* modify,
   }
 }
 
-void ConvenienceScriptObject::RedefineBossKey() {
-  NPObject* window;
-  NPN_GetValue(plugin_->get_npp(), NPNVWindowNPObject, &window);
-  NPIdentifier id;
-  id = NPN_GetStringIdentifier("redefineBossKey");
-  NPVariant result;
-  VOID_TO_NPVARIANT(result);
-  if (id) {
-    if (NPN_Invoke(plugin_->get_npp(), window, id, NULL, 0, &result))
-      NPN_ReleaseVariantValue(&result);
-  }
-}
-
 void ConvenienceScriptObject::TriggerEvent(const char* shortcuts) {
-  g_Log.WriteLog("TriggerEvent", shortcuts);
+  g_log.WriteLog("TriggerEvent", shortcuts);
   ShortCutKeyMap* shortcut_map;
   if (shortcuts_used_flag_ == 1)
     shortcut_map = &map_one_;
@@ -298,97 +334,27 @@ void ConvenienceScriptObject::TriggerEvent(const char* shortcuts) {
 
   ShortCutKeyMap::iterator iter = shortcut_map->find(shortcuts);
   if (iter != shortcut_map->end()) {
-    NPObject* window;
-    NPN_GetValue(plugin_->get_npp(), NPNVWindowNPObject, &window);
-    NPIdentifier id;
-    id = NPN_GetStringIdentifier("executeShortcut");
-    NPVariant result;
-    VOID_TO_NPVARIANT(result);
-    if (id) {
-      NPVariant param;
-      OBJECT_TO_NPVARIANT((NPObject*)iter->second.object, param);
-      NPN_Invoke(plugin_->get_npp(), window, id, &param, 1, &result);
-      NPN_ReleaseVariantValue(&result);
-    }
+    NPVariant param;
+    OBJECT_TO_NPVARIANT((NPObject*)iter->second.object, param);
+    InvokeJSMethod("executeShortcut", &param, 1);
   }
 }
 
 void ConvenienceScriptObject::TriggerEvent(int index) {
-  g_Log.WriteLog("TriggerEvent", "index");
+  g_log.WriteLog("TriggerEvent", "index");
   if (shortcuts_list_[index].ishotkey)
     return;
 
-  NPObject* window;
-  NPN_GetValue(plugin_->get_npp(), NPNVWindowNPObject, &window);
-  NPIdentifier id;
-  id = NPN_GetStringIdentifier("executeShortcut");
-  NPVariant result;
-  VOID_TO_NPVARIANT(result);
-  if (id) {
-    NPVariant param;
-    OBJECT_TO_NPVARIANT((NPObject*)shortcuts_list_[index].object, param);
-    NPN_Invoke(plugin_->get_npp(), window, id, &param, 1, &result);
-    NPN_ReleaseVariantValue(&result);
-  }
-}
-
-void ConvenienceScriptObject::TriggerChromeClose() {
-  g_Log.WriteLog("Invoke", "TriggerChromeClose");
-
-  NPObject* window;
-  NPN_GetValue(plugin_->get_npp(), NPNVWindowNPObject, &window);
-  NPIdentifier id;
-  id = NPN_GetStringIdentifier("chromeBeforeClose");
-  NPVariant result;
-  VOID_TO_NPVARIANT(result);
-  if (id)
-    NPN_Invoke(plugin_->get_npp(), window, id, NULL, 0, &result);
-  NPN_ReleaseVariantValue(&result);
-}
-
-void ConvenienceScriptObject::TriggerTabClose() {
-  g_Log.WriteLog("Invoke", "TriggerTabClose");
-
-  NPObject* window;
-  NPN_GetValue(plugin_->get_npp(), NPNVWindowNPObject, &window);
-  NPIdentifier id;
-  id = NPN_GetStringIdentifier("beforeLastTabClose");
-  NPVariant result;
-  VOID_TO_NPVARIANT(result);
-  if (id)
-    NPN_Invoke(plugin_->get_npp(), window, id, NULL, 0, &result);
-  NPN_ReleaseVariantValue(&result);
-}
-
-void ConvenienceScriptObject::TriggerCloseCurrentTab() {
-  g_Log.WriteLog("Invoke", "TriggerCloseCurrentTab");
-
-  NPObject* window;
-  NPN_GetValue(plugin_->get_npp(), NPNVWindowNPObject, &window);
-  NPIdentifier id;
-  id = NPN_GetStringIdentifier("closeCurrentTab");
-  NPVariant result;
-  VOID_TO_NPVARIANT(result);
-  if (id)
-    NPN_Invoke(plugin_->get_npp(), window, id, NULL, 0, &result);
-  NPN_ReleaseVariantValue(&result);
+  NPVariant param;
+  OBJECT_TO_NPVARIANT((NPObject*)shortcuts_list_[index].object, param);
+  InvokeJSMethod("executeShortcut", &param, 1);
 }
 
 void ConvenienceScriptObject::TriggerSwitchTab(bool forward) {
-  g_Log.WriteLog("Invoke", "TriggerSwitchTab");
-
-  NPObject* window;
-  NPN_GetValue(plugin_->get_npp(), NPNVWindowNPObject, &window);
-  NPIdentifier id;
-  id = NPN_GetStringIdentifier("wheelSwitchTab");
-  NPVariant result;
-  VOID_TO_NPVARIANT(result);
-  if (id) {
-    NPVariant param;
-    BOOLEAN_TO_NPVARIANT(forward, param);
-    NPN_Invoke(plugin_->get_npp(), window, id, &param, 1, &result);
-  }
-  NPN_ReleaseVariantValue(&result);
+  g_log.WriteLog("Invoke", "TriggerSwitchTab");
+  NPVariant param;
+  BOOLEAN_TO_NPVARIANT(forward, param);
+  InvokeJSMethod("wheelSwitchTab", &param, 1);
 }
 
 void ConvenienceScriptObject::TriggerShortcuts(UINT modify, UINT vk, 
@@ -430,7 +396,7 @@ void ConvenienceScriptObject::TriggerShortcuts(UINT modify, UINT vk,
   keycount++;
   char logs[256];
   sprintf(logs, "keycount=%d, vk=%d", keycount, vk);
-  g_Log.WriteLog("SendInput start", logs);
+  g_log.WriteLog("SendInput start", logs);
   SendInput(keycount, inputs, sizeof(INPUT));
 
   for (int i = 0; i < keycount; i++) {
@@ -438,35 +404,35 @@ void ConvenienceScriptObject::TriggerShortcuts(UINT modify, UINT vk,
   }
   SendInput(keycount, inputs, sizeof(INPUT));
   sprintf(logs, "keycount=%d", keycount);
-  g_Log.WriteLog("SendInput end", logs);
+  g_log.WriteLog("SendInput end", logs);
 }
 
 bool ConvenienceScriptObject::PressBossKey(const NPVariant *args,
                                            uint32_t argCount,
                                            NPVariant *result) {
   static BOOL bosskey_state = FALSE;
-  static vector<HWND> window_list;
+  static std::vector<HWND> window_list;
   HWND chrome_hwnd;
   if (bosskey_state){
     bosskey_state = FALSE;
     chrome_hwnd = FindWindowEx(NULL, NULL, kChromeClassName, NULL);
     while(chrome_hwnd) {
       if (IsWindowVisible(chrome_hwnd) && 
-          GetWindowThreadProcessId(chrome_hwnd, NULL) == g_ChromeMainThread) {
+          GetWindowThreadProcessId(chrome_hwnd, NULL) == g_chrome_main_thread) {
         window_list.insert(window_list.begin(), chrome_hwnd);
         bosskey_state = TRUE;
       }
       chrome_hwnd = FindWindowEx(NULL, chrome_hwnd, kChromeClassName, NULL);
     }
     if (bosskey_state) {
-      vector<HWND>::iterator iter;
+      std::vector<HWND>::iterator iter;
       for (iter = window_list.begin(); iter != window_list.end(); iter++) {
         ShowWindow(*iter, SW_HIDE);
       }
       return true;
     }
 
-    vector<HWND>::iterator iter;
+    std::vector<HWND>::iterator iter;
     for (iter = window_list.begin(); iter != window_list.end(); iter++) {
       ShowWindow(*iter, SW_SHOW);
     }
@@ -476,12 +442,12 @@ bool ConvenienceScriptObject::PressBossKey(const NPVariant *args,
     chrome_hwnd = FindWindowEx(NULL, NULL, kChromeClassName, NULL);
     while(chrome_hwnd) {
       if (IsWindowVisible(chrome_hwnd) && 
-          GetWindowThreadProcessId(chrome_hwnd, NULL) == g_ChromeMainThread) {
+          GetWindowThreadProcessId(chrome_hwnd, NULL) == g_chrome_main_thread) {
         window_list.insert(window_list.begin(), chrome_hwnd);
       }
       chrome_hwnd = FindWindowEx(NULL, chrome_hwnd, kChromeClassName,NULL);
     }
-    vector<HWND>::iterator iter;
+    std::vector<HWND>::iterator iter;
     for (iter = window_list.begin(); iter != window_list.end(); iter++) {
       ShowWindow(*iter, SW_HIDE);
     }
@@ -498,7 +464,7 @@ bool ConvenienceScriptObject::TriggerChromeShortcuts(const NPVariant *args,
     return false;
 
   char* shortcuts = (char*)NPVARIANT_TO_STRING(args[0]).UTF8Characters;
-  g_Log.WriteLog("Shortcuts", shortcuts);
+  g_log.WriteLog("Shortcuts", shortcuts);
 
   UINT modify, vk, keycount = 0;
   GetShortCutsKey(shortcuts, &modify, &vk);
@@ -511,7 +477,7 @@ bool ConvenienceScriptObject::TriggerChromeShortcuts(const NPVariant *args,
   inputs[0].ki.dwFlags = KEYEVENTF_KEYUP;
   SendInput(1, inputs, sizeof(INPUT));
 
-  PostMessage(plugin_->get_hwnd(), WM_TRIGGER_CHROME_SHORTCUTS, modify, vk);
+  PostMessage(get_plugin()->get_hwnd(), WM_TRIGGER_CHROME_SHORTCUTS, modify, vk);
 
   BOOLEAN_TO_NPVARIANT(TRUE, *result);
 
@@ -525,9 +491,8 @@ bool ConvenienceScriptObject::SetDBClickCloseTab(const NPVariant *args,
   if (argCount != 1 || !NPVARIANT_IS_BOOLEAN(args[0]))
     return true;
   
-  g_DBClickCloseTab = NPVARIANT_TO_BOOLEAN(args[0]);
-  ConveniencePlugin* plugin = (ConveniencePlugin*)plugin_;
-  plugin->UpdateDBClick_CloseTab(g_DBClickCloseTab);
+  ConveniencePlugin* plugin = (ConveniencePlugin*)get_plugin();
+  plugin->UpdateDBClick_CloseTab(NPVARIANT_TO_BOOLEAN(args[0]));
   BOOLEAN_TO_NPVARIANT(TRUE, *result);
   return true;
 }
@@ -541,10 +506,10 @@ bool ConvenienceScriptObject::AddListener(const NPVariant *args,
   char logs[256];
   input_object_ = NPVARIANT_TO_OBJECT(args[0]);
   sprintf(logs, "input_object_=%ld", input_object_);
-  g_Log.WriteLog("AddListener", logs);
+  g_log.WriteLog("AddListener", logs);
   NPN_RetainObject(input_object_);
   is_listened_ = true;
-  ConveniencePlugin* plugin = (ConveniencePlugin*)plugin_;
+  ConveniencePlugin* plugin = (ConveniencePlugin*)get_plugin();
   plugin->UpdateIsListening(is_listened_);
   return true;
 }
@@ -559,8 +524,8 @@ bool ConvenienceScriptObject::RemoveListener(const NPVariant *args,
   NPN_ReleaseObject(input_object_);
   char logs[256];
   sprintf(logs, "input_object_=%ld", input_object_);
-  g_Log.WriteLog("RemoveListener", logs);
-  ConveniencePlugin* plugin = (ConveniencePlugin*)plugin_;
+  g_log.WriteLog("RemoveListener", logs);
+  ConveniencePlugin* plugin = (ConveniencePlugin*)get_plugin();
   plugin->UpdateIsListening(is_listened_);
   return true;
 }
@@ -575,7 +540,7 @@ bool ConvenienceScriptObject::UpdateTabCount(const NPVariant *args,
       NPVARIANT_TO_DOUBLE(args[0]);
   int tabcount = NPVARIANT_IS_INT32(args[1]) ? NPVARIANT_TO_INT32(args[1]) :
       NPVARIANT_TO_DOUBLE(args[1]);
-  ConveniencePlugin* plugin = (ConveniencePlugin*)plugin_;
+  ConveniencePlugin* plugin = (ConveniencePlugin*)get_plugin();
   plugin->UpdateTabCount(windowid, tabcount);
   return true;
 }
@@ -587,7 +552,7 @@ bool ConvenienceScriptObject::CloseChromePrompt(const NPVariant *args,
     return false;
 
   bool prompt  = NPVARIANT_TO_BOOLEAN(args[0]);
-  ConveniencePlugin* plugin = (ConveniencePlugin*)plugin_;
+  ConveniencePlugin* plugin = (ConveniencePlugin*)get_plugin();
   plugin->UpdateCloseChromePromptFlag(prompt);
   return true;
 }
@@ -599,7 +564,7 @@ bool ConvenienceScriptObject::CloseLastTab(const NPVariant *args,
     return false;
 
   bool close_last_tab  = NPVARIANT_TO_BOOLEAN(args[0]);
-  ConveniencePlugin* plugin = (ConveniencePlugin*)plugin_;
+  ConveniencePlugin* plugin = (ConveniencePlugin*)get_plugin();
   plugin->UpdateCloseLastTab(close_last_tab);
   return true;
 }
@@ -612,7 +577,7 @@ bool ConvenienceScriptObject::ChromeWindowCreated(const NPVariant *args,
 
   int windowid = NPVARIANT_IS_INT32(args[0]) ? NPVARIANT_TO_INT32(args[0]) :
       NPVARIANT_TO_DOUBLE(args[0]);
-  ConveniencePlugin* plugin = (ConveniencePlugin*)plugin_;
+  ConveniencePlugin* plugin = (ConveniencePlugin*)get_plugin();
   plugin->ChromeWindowCreated(windowid);
 
   return true;
@@ -627,7 +592,7 @@ bool ConvenienceScriptObject::ChromeWindowRemoved(const NPVariant *args,
   int windowid = NPVARIANT_IS_INT32(args[0]) ? NPVARIANT_TO_INT32(args[0]) :
       NPVARIANT_TO_DOUBLE(args[0]);
 
-  ConveniencePlugin* plugin = (ConveniencePlugin*)plugin_;
+  ConveniencePlugin* plugin = (ConveniencePlugin*)get_plugin();
   plugin->ChromeWindowRemoved(windowid);
 
   return true;
@@ -639,38 +604,38 @@ bool ConvenienceScriptObject::EnableMouseSwitchTab(const NPVariant* args,
   if (argCount != 1 || !NPVARIANT_IS_BOOLEAN(args[0]))
     return false;
 
-  ConveniencePlugin* plugin = (ConveniencePlugin*)plugin_;
+  ConveniencePlugin* plugin = (ConveniencePlugin*)get_plugin();
   plugin->EnableMouseSwitchTab(NPVARIANT_TO_BOOLEAN(args[0]));
   return true;
 }
 
 void ConvenienceScriptObject::UpdateCloseChromePromptFlag(BOOL flag) {
+  NPVariant param;
+  BOOLEAN_TO_NPVARIANT(flag, param);
+  InvokeJSMethod("updateCloseChromePromptFlag", &param, 1);
+}
+
+void ConvenienceScriptObject::InvokeJSMethod(const char* method_name, 
+                                             NPVariant* args /* = NULL */, 
+                                             uint32_t argCount /* = 0 */) {
   NPObject* window;
-  NPN_GetValue(plugin_->get_npp(), NPNVWindowNPObject, &window);
+  PluginBase* plugin = get_plugin();
+  NPN_GetValue(plugin->get_npp(), NPNVWindowNPObject, &window);
   NPIdentifier id;
-  id = NPN_GetStringIdentifier("updateCloseChromePromptFlag");
+  id = NPN_GetStringIdentifier(method_name);
   NPVariant result;
   VOID_TO_NPVARIANT(result);
   if (id) {
-    NPVariant param;
-    BOOLEAN_TO_NPVARIANT(flag, param);
-    NPN_Invoke(plugin_->get_npp(), window, id, &param, 1, &result);
+    NPN_Invoke(plugin->get_npp(), window, id, args, argCount, &result);
     NPN_ReleaseVariantValue(&result);
   }
 }
 
 void ConvenienceScriptObject::OnKeyDown(bool contrl, bool alt, bool shift,
                                         WPARAM wParam, LPARAM lParam) {
-  g_Log.WriteLog("msg", "OnKeyDown");
+  g_log.WriteLog("msg", "OnKeyDown");
   if (is_listened_) {
-    NPObject* window;
-    NPN_GetValue(plugin_->get_npp(), NPNVWindowNPObject, &window);
-    NPIdentifier id;
-    id = NPN_GetStringIdentifier("setShortcutsToInputBox");
-    NPVariant result;
-    VOID_TO_NPVARIANT(result);
-
-    string keys = "";
+    std::string keys = "";
     if (contrl)
       keys += "17+";
     if (alt)
@@ -684,15 +649,10 @@ void ConvenienceScriptObject::OnKeyDown(bool contrl, bool alt, bool shift,
       keys += key;
     }
 
-    g_Log.WriteLog("keyvalue", keys.c_str());
+    g_log.WriteLog("keyvalue", keys.c_str());
     NPVariant params[2];
     OBJECT_TO_NPVARIANT(input_object_, params[0]);
     STRINGZ_TO_NPVARIANT(keys.c_str(), params[1]);
-
-    g_Log.WriteLog("msg", "NPN_Invoke Start");
-    if (id)
-      NPN_Invoke(plugin_->get_npp(), window, id, params, 2, &result);
-    NPN_ReleaseVariantValue(&result);
-    g_Log.WriteLog("msg", "NPN_Invoke End");
+    InvokeJSMethod("setShortcutsToInputBox", params, 2);
   }
 }

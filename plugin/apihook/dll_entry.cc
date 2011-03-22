@@ -1,86 +1,15 @@
-#include "stdafx.h"
-#include "log.h"
 #include "api_hook.h"
-#include "mydsound.h"
 #include "apihook.h"
-#include <Mmdeviceapi.h>
-#include <Audiopolicy.h>
+#include "log.h"
+#include "mydsound.h"
 
-HMODULE g_hMod;
-Log g_Log;
+HMODULE g_module;
+Log g_log;
 
 #pragma data_seg("Shared")
-BOOL g_BrowserMute = FALSE;
+BOOL g_browser_mute = FALSE;
 #pragma data_seg()
 #pragma comment(linker, "/Section:Shared,rws")
-
-BOOL g_exist = FALSE;
-CRITICAL_SECTION g_CS;
-
-#define CHECK_RESULT(hr)     if (FAILED(hr)) {\
-  Sleep(100);\
-  continue;\
-}
-
-HANDLE muter_thread_handle = NULL;
-
-DWORD WINAPI Muter_Thread(void* param) {
-  CoInitialize(NULL);
-
-  HRESULT hr = E_FAIL;
-  IMMDeviceEnumerator* device_enumerator;
-  IMMDevice* defaultdevice;
-  IAudioSessionManager2* audio_session_mamanger2;
-  IAudioSessionEnumerator* audio_session_enumerator;
-  ISimpleAudioVolume* simple_audio_volume;
-
-  hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL,
-    CLSCTX_ALL, __uuidof(IMMDeviceEnumerator), (void**)&device_enumerator);
-  if (FAILED(hr))
-    return hr;
-
-  while(!g_exist) {
-    CHECK_RESULT(device_enumerator->GetDefaultAudioEndpoint(eRender, eConsole, 
-        &defaultdevice));
-
-    CHECK_RESULT(defaultdevice->Activate(__uuidof(IAudioSessionManager2), 
-        CLSCTX_ALL, NULL, (void**)&audio_session_mamanger2));
-
-    CHECK_RESULT(audio_session_mamanger2->
-        GetSessionEnumerator(&audio_session_enumerator));
-
-    int count;
-    CHECK_RESULT(audio_session_enumerator->GetCount(&count));
-
-    for (int i = 0; i < count; i++) {
-      IAudioSessionControl* audio_session_control;
-      IAudioSessionControl2* audio_session_control2;
-      CHECK_RESULT(audio_session_enumerator->
-          GetSession(i, &audio_session_control));
-      CHECK_RESULT(audio_session_control->
-          QueryInterface(__uuidof(IAudioSessionControl2), 
-                         (void**)&audio_session_control2));
-      DWORD processid;
-      CHECK_RESULT(audio_session_control2->GetProcessId(&processid));
-      if (processid == GetCurrentProcessId()) {
-        CHECK_RESULT(audio_session_control2->
-            QueryInterface(__uuidof(ISimpleAudioVolume), 
-                           (void**) &simple_audio_volume));
-        CHECK_RESULT(simple_audio_volume->SetMute(g_BrowserMute, NULL));
-        simple_audio_volume->Release();
-      }
-      audio_session_control->Release();
-      audio_session_control2->Release();
-    }
-
-    audio_session_mamanger2->Release();
-    audio_session_enumerator->Release();
-    defaultdevice->Release();
-    Sleep(1000);
-  }
-
-  return 0;
-}
 
 typedef int (WINAPI* PfnWaveOutWrite)(HWAVEOUT hwo, LPWAVEHDR pwh, 
                                       UINT cbwh);
@@ -93,102 +22,91 @@ typedef int (WINAPI* PfnDirectSoundCreate8)(LPCGUID pcGuidDevice,
                                             LPDIRECTSOUND8 *ppDS, 
                                             LPUNKNOWN pUnkOuter);
 
-ApiHook* g_DirectSoundCreate;
-ApiHook* g_DirectSoundCreate8;
-ApiHook* g_waveOutWrite;
-ApiHook* g_midiStreamOut;
+ApiHook* g_direct_sound_create;
+ApiHook* g_direct_sound_create_8;
+ApiHook* g_wave_out_write;
+ApiHook* g_midi_stream_out;
 
-MMRESULT WINAPI Hook_waveOutWrite(HWAVEOUT hwo, LPWAVEHDR pwh, UINT cbwh) {
-  if (g_BrowserMute) {
+MMRESULT WINAPI HookWaveOutWrite(HWAVEOUT hwo, LPWAVEHDR pwh, UINT cbwh) {
+  if (g_browser_mute) {
     memset(pwh->lpData, 0 , pwh->dwBufferLength);
   }
 
-  MMRESULT result = ((PfnWaveOutWrite)(PROC)*g_waveOutWrite)(hwo, pwh, cbwh);
+  MMRESULT result = ((PfnWaveOutWrite)(PROC)*g_wave_out_write)(hwo, pwh, cbwh);
   return result;
 }
 
-HRESULT WINAPI Hook_DirectSoundCreate(LPCGUID pcGuidDevice, 
-                                      LPDIRECTSOUND *ppDS, 
-                                      LPUNKNOWN pUnkOuter) {
-  g_Log.WriteLog("msg", "Hook_DirectSoundCreate");
-  HRESULT hr = ((PfnDirectSoundCreate)(PROC)*g_DirectSoundCreate)
-      (pcGuidDevice, ppDS, pUnkOuter);
+HRESULT WINAPI HookDirectSoundCreate(LPCGUID pcGuidDevice, 
+                                     LPDIRECTSOUND *ppDS, 
+                                     LPUNKNOWN pUnkOuter) {
+  g_log.WriteLog("msg", "Hook_DirectSoundCreate");
+  HRESULT hr = ((PfnDirectSoundCreate)(PROC)*g_direct_sound_create)(
+      pcGuidDevice, ppDS, pUnkOuter);
 
   if (SUCCEEDED(hr)) {
     MyDirectSound* p = new MyDirectSound;
     p->direct_sound_ = *ppDS;
     *ppDS = p;
-    g_Log.WriteLog("msg", "Hook_DirectSoundCreate Success");
+    g_log.WriteLog("msg", "Hook_DirectSoundCreate Success");
   }
   return hr;
 }
 
-HRESULT WINAPI Hook_DirectSoundCreate8(LPCGUID pcGuidDevice, 
-                                       LPDIRECTSOUND8 *ppDS, 
-                                       LPUNKNOWN pUnkOuter) {
-  g_Log.WriteLog("msg", "Hook_DirectSoundCreate8");
-  HRESULT hr = ((PfnDirectSoundCreate8)(PROC)*g_DirectSoundCreate8)
-      (pcGuidDevice, ppDS, pUnkOuter);
+HRESULT WINAPI HookDirectSoundCreate8(LPCGUID pcGuidDevice, 
+                                      LPDIRECTSOUND8 *ppDS, 
+                                      LPUNKNOWN pUnkOuter) {
+  g_log.WriteLog("msg", "Hook_DirectSoundCreate8");
+  HRESULT hr = ((PfnDirectSoundCreate8)(PROC)*g_direct_sound_create_8)(
+      pcGuidDevice, ppDS, pUnkOuter);
 
   if (SUCCEEDED(hr)) {
     MyDirectSound8* p = new MyDirectSound8;
     p->direct_sound_ = *ppDS;
     *ppDS = p;
-    g_Log.WriteLog("msg", "Hook_DirectSoundCreate8 Success");
+    g_log.WriteLog("msg", "Hook_DirectSoundCreate8 Success");
   }
   return hr;
 }
 
-MMRESULT WINAPI Hook_midiStreamOut(HMIDISTRM hms, LPMIDIHDR pmh, UINT cbmh) {
-  if (g_BrowserMute) {
+MMRESULT WINAPI HookMidiStreamOut(HMIDISTRM hms, LPMIDIHDR pmh, UINT cbmh) {
+  if (g_browser_mute) {
     memset(pmh->lpData, 0 , pmh->dwBufferLength);
   }
 
-  MMRESULT result = ((PfnMidiStreamOut)(PROC)*g_midiStreamOut)(hms, pmh, cbmh);
+  MMRESULT result = ((PfnMidiStreamOut)(PROC)*g_midi_stream_out)(
+      hms, pmh, cbmh);
   return result;
 }
 
 void Init() {
-  OSVERSIONINFO versionInfo = {0};
-  versionInfo.dwOSVersionInfoSize = sizeof (OSVERSIONINFO);
-  GetVersionEx(&versionInfo);
-  if (versionInfo.dwMajorVersion >= 6) {
-    muter_thread_handle = CreateThread(NULL, 0, Muter_Thread, 0, 0, NULL);
-  }
-  g_DirectSoundCreate = new ApiHook("dsound.dll", "DirectSoundCreate", 
-                                    (PROC)Hook_DirectSoundCreate, TRUE);
-  g_DirectSoundCreate8 = new ApiHook("dsound.dll", "DirectSoundCreate8", 
-                                     (PROC)Hook_DirectSoundCreate8, TRUE);
-  g_waveOutWrite = new ApiHook("winmm.dll", "waveOutWrite", 
-                               (PROC) Hook_waveOutWrite, TRUE);
-  g_midiStreamOut = new ApiHook("winmm.dll", "midiStreamOut", 
-                                (PROC)Hook_midiStreamOut, TRUE);
+  ApiHook::Init();
+  g_direct_sound_create = new ApiHook("dsound.dll", "DirectSoundCreate", 
+                                      (PROC)HookDirectSoundCreate, TRUE);
+  g_direct_sound_create_8 = new ApiHook("dsound.dll", "DirectSoundCreate8", 
+                                        (PROC)HookDirectSoundCreate8, TRUE);
+  g_wave_out_write = new ApiHook("winmm.dll", "waveOutWrite", 
+                                 (PROC) HookWaveOutWrite, TRUE);
+  g_midi_stream_out = new ApiHook("winmm.dll", "midiStreamOut", 
+                                  (PROC)HookMidiStreamOut, TRUE);
   
 }
 
 void UnInit() {
-  OSVERSIONINFO versionInfo = {0};
-  versionInfo.dwOSVersionInfoSize = sizeof (OSVERSIONINFO);
-  GetVersionEx(&versionInfo);
-  if (versionInfo.dwMajorVersion >= 6 && !muter_thread_handle) {
-    TerminateThread(muter_thread_handle, 0);
-  }
-  delete g_DirectSoundCreate;
-  delete g_DirectSoundCreate8;
-  delete g_waveOutWrite;
-  delete g_midiStreamOut;
-  
-  g_exist = TRUE;
+  ApiHook::UnInit();
+  delete g_direct_sound_create;
+  delete g_direct_sound_create_8;
+  delete g_wave_out_write;
+  delete g_midi_stream_out;
 }
 
 BOOL WINAPI DllMain(HMODULE hModule, DWORD reason, LPVOID lpReserved) {
-  g_hMod = hModule;
+  g_module = hModule;
 
   switch(reason) {
     case DLL_PROCESS_ATTACH:
       //g_Log.OpenLog("APIHOOK");
       Init();
-      g_Log.WriteLog("Msg", "DLL_PROCESS_ATTACH");
+      g_log.WriteLog("Msg", "DLL_PROCESS_ATTACH");
       break;
     case DLL_THREAD_ATTACH:
       break;
@@ -196,12 +114,12 @@ BOOL WINAPI DllMain(HMODULE hModule, DWORD reason, LPVOID lpReserved) {
       break;
     case DLL_PROCESS_DETACH:
       UnInit();
-      g_Log.WriteLog("Msg", "DLL_PROCESS_DETACH");
+      g_log.WriteLog("Msg", "DLL_PROCESS_DETACH");
       break;
   }
   return TRUE;
 }
 
 void SetBrowserMute(BOOL flag) {
-  g_BrowserMute = flag;
+  g_browser_mute = flag;
 }

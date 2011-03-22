@@ -1,15 +1,16 @@
-#pragma once
+#ifndef PLUGIN_BASE_H_
+#define PLUGIN_BASE_H_
 
 #include "npapi.h"
 
-class PluginBase
-{
+// Base class of plugins.
+class PluginBase {
 public:
-  PluginBase(void);
-  virtual ~PluginBase(void);
+  PluginBase(void) {}
+  virtual ~PluginBase(void) {}
 
   virtual NPError Init(NPP instance, uint16_t mode, int16_t argc, char* argn[],
-                       char* argv[], NPSavedData* saved);
+                       char* argv[], NPSavedData* saved) = 0;
   virtual NPError UnInit(NPSavedData** save);
   virtual NPError SetWindow(NPWindow* window);
   virtual NPError NewStream(NPMIMEType type, NPStream* stream, NPBool seekable,
@@ -28,11 +29,13 @@ public:
   NPP get_npp() const { return npp_; }
   void set_npp(NPP npp) { npp_ = npp; }
 
-  HWND get_hwnd() const { return hwnd_; }
-  void set_hwnd(HWND hwnd) { hwnd_ = hwnd; }
-
-protected:
+  HWND get_hwnd() const { return window_; }
+  void set_hwnd(HWND window) { window_ = window; }
+  
+private:
   NPP npp_;
-  HWND hwnd_;
-
+  HWND window_;
+  
 };
+
+#endif

@@ -70,13 +70,18 @@
       this.convenience.ChromeWindowRemoved(windowid);
     }
   }
-  chrome.extension.onRequest.addListener(function(request, sender, sendResponse) {
+  chrome.extension.onRequest.addListener(function(
+      request, sender, sendResponse) {
     switch(request.msg) {
       case 'popupVideoWindow':
-        videoAlone.popupWindow(request, sender, request.width, request.height);
+        videoAlone.popupWindow(
+            request, sender, request.width, request.height);
         break;
       case 'desktopImage':
         wallpaper.openPreviewWindow(request.imageSrc);
+        break;
+      case 'saveImage':
+        plugin.wallpaper.SaveImage(request.imageSrc);
         break;
       case 'getStatus':
         sendResponse({msg: 'status', imageBar: localStorage['imageBar'],
@@ -332,13 +337,17 @@
       var parentWindowId = sender.tab.windowId;
       var obj = plugin.getWindowMetric();
       if (!isHighVersion()) {
-        chrome.windows.create({width: width + 2 * obj.borderWidth,
-                               height: height + plugin.CUSTOM_CAPTION_HEIGHT + 
-                                       obj.borderHeight,
-                               url: '',
-                               type: 'normal'}, function(window) {
-          chrome.tabs.move(sender.tab.id, {windowId: window.id,
-                                           index:1}, function(){
+        chrome.windows.create({
+          width: width + 2 * obj.borderWidth,
+          height: height + plugin.CUSTOM_CAPTION_HEIGHT + obj.borderHeight,
+          url: '',
+          incognito: sender.tab.incognito,
+          type: 'normal'
+        }, function(window) {
+          chrome.tabs.move(sender.tab.id, {
+            windowId: window.id,
+            index:1
+          }, function(){
             chrome.tabs.getAllInWindow(window.id, function(tabs) {
               chrome.tabs.remove(tabs[0].id);
               plugin.showVideoAlone(sender.tab.title, request.orgTitle,
@@ -349,11 +358,13 @@
           });
         });
       } else {
-        chrome.windows.create({width: width + 2 * obj.borderWidth,
-                               height: height + obj.captionHeight + 
-                                       2 * obj.borderHeight,
-                               tabId: sender.tab.id,
-                               type: 'popup'}, function(window) {
+        chrome.windows.create({
+          width: width + 2 * obj.borderWidth,
+          height: height + obj.captionHeight + 2 * obj.borderHeight,
+          tabId: sender.tab.id,
+          incognito: sender.tab.incognito,
+          type: 'popup'
+        }, function(window) {
           chrome.tabs.getAllInWindow(window.id, function(tabs) {
             plugin.showVideoAlone(sender.tab.title, request.orgTitle,
                 parentWindowId, window.id, sender.tab.id);
@@ -382,16 +393,22 @@
               });
             });
           } else {
-            chrome.windows.create({type: 'normal'}, function(window) {
-              newWindow = window;
-              restoreNoParentWindow(tabs, window.id, count);
+            chrome.tabs.get(tabId, function(tab) {
+              chrome.windows.create({
+                incognito: tab.incognito,
+                type: 'normal'
+              }, function(window) {
+                newWindow = window;
+                restoreNoParentWindow(tabs, window.id, count);
+              });
             });
           }
         });
       }
 
       var restoreNoParentWindow = function(tabs, parentWindowId, count) {
-        chrome.tabs.move(tabs[count].id, {windowId: parentWindowId, index:0}, function(){
+        chrome.tabs.move(tabs[count].id, 
+          {windowId: parentWindowId, index:0}, function(){
           count++;
           if (tabs.length > count) {
             restoreNoParentWindow(tabs, parentWindowId, count);
@@ -401,7 +418,8 @@
 
       chrome.tabs.getAllInWindow(curWindowId, function(tabs) {
         restoreAllTabs(tabs, 0);
-        chrome.tabs.sendRequest(tabId, {msg: 'restoreVideoAlone'}, function(response) {
+        chrome.tabs.sendRequest(tabId,
+          {msg: 'restoreVideoAlone'}, function(response) {
           if (response && response.msg == 'restoreVideoWindow') {
             chrome.windows.get(parentWindowId, function(window){
               if (window) {
@@ -414,18 +432,25 @@
               } else {
                 // if parent window closed, create a new window
                 if (newWindow) {
-                  chrome.tabs.move(tabId, {windowId: newWindow.id, index:1}, function(){
+                  chrome.tabs.move(tabId,
+                    {windowId: newWindow.id, index:1}, function(){
                     chrome.tabs.update(tabId, {selected:true});
                     chrome.tabs.getAllInWindow(newWindow.id, function(tabs) {
                       chrome.tabs.remove(tabs[0].id);
                     });
                   });
                 } else {
-                  chrome.windows.create({type: 'normal'}, function(window) {
-                    chrome.tabs.move(tabId, {windowId: window.id, index:1}, function(){
-                      chrome.tabs.update(tabId, {selected:true});
-                      chrome.tabs.getAllInWindow(window.id, function(tabs) {
-                        chrome.tabs.remove(tabs[0].id);
+                  chrome.tabs.get(tabId, function(tab) {
+                    chrome.windows.create({
+                      incognito: tab.incognito,
+                      type: 'normal'
+                    }, function(window) {
+                      chrome.tabs.move(tabId,
+                        {windowId: window.id, index:1}, function(){
+                        chrome.tabs.update(tabId, {selected:true});
+                        chrome.tabs.getAllInWindow(window.id, function(tabs) {
+                          chrome.tabs.remove(tabs[0].id);
+                        });
                       });
                     });
                   });
@@ -463,7 +488,8 @@
       1003: 'np_message_1003',
       1004: 'np_message_1004',
       1005: 'np_message_1005',
-      1006: 'np_message_1006'
+      1006: 'np_message_1006',
+      1007: 'np_message_1007'
     };
     var message = '';
     if (npMessage[messageId]) {
