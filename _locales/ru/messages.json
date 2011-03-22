@@ -1,4 +1,4 @@
-﻿{
+{
    "address_bar_shortcuts": {
       "message": "Адресная строка"
    },
@@ -436,7 +436,7 @@
       "message": "Быстрый запуск"
    },
    "recommended_download_helper": {
-      "message": "Download Helper"
+      "message": "Помощник загрузки"
    },
    "recommended_download_helper_desc": {
       "message": "Интеграция загрузчика"
