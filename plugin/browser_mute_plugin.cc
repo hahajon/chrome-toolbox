@@ -5,6 +5,7 @@
 #include <Audiopolicy.h>
 #include <Mmdeviceapi.h>
 #include <Psapi.h>
+#include <winternl.h>
 #include <TlHelp32.h>
 
 #include "browser_mute_script_object.h"
@@ -19,6 +20,15 @@ extern HMODULE g_module;
   Sleep(100);\
   continue;\
 }
+
+#define MAX_PROCESS_COUNT   1024
+
+typedef NTSTATUS (NTAPI *pfnNtQueryInformationProcess)(
+    IN  HANDLE ProcessHandle,
+    IN  PROCESSINFOCLASS ProcessInformationClass,
+    OUT PVOID ProcessInformation,
+    IN  ULONG ProcessInformationLength,
+    OUT PULONG ReturnLength OPTIONAL);
 
 bool BrowserMutePlugin::InjectIntoProcess(HANDLE hprocess) {
   // allocate remote process memory address
@@ -134,6 +144,8 @@ DWORD BrowserMutePlugin::Mute_Thread(void* param) {
   if (FAILED(hr))
     return hr;
 
+  DWORD process_list[MAX_PROCESS_COUNT], needed, process_count;
+
   while(WaitForSingleObject(plugin->stop_event_, 1000) == WAIT_TIMEOUT) {
     if (plugin->script_object_ == NULL)
       continue;
@@ -142,20 +154,37 @@ DWORD BrowserMutePlugin::Mute_Thread(void* param) {
 
     chrome_process_map.clear();
 
-    HANDLE hprocess = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-    PROCESSENTRY32 process = { sizeof(PROCESSENTRY32) };
-    BOOL find_same_chrome_version = FALSE;
-    BOOL ret = Process32First(hprocess, &process);
-    while (ret) {
-      if (process.th32ParentProcessID == parent_pid || 
-          process.th32ProcessID == parent_pid) {
-        chrome_process_map.insert(std::make_pair(
-            process.th32ProcessID, process.th32ProcessID));
+    if (!EnumProcesses(process_list, sizeof(process_list), &needed))
+      continue;
+    process_count = needed / sizeof(DWORD);
+    
+    PROCESS_BASIC_INFORMATION process_info;
+    pfnNtQueryInformationProcess pfnQIP = (pfnNtQueryInformationProcess)
+        GetProcAddress(plugin->ntdll_handle_, "NtQueryInformationProcess");
+    if (!pfnQIP)
+      continue;
+
+    for (int i = 0; i < process_count; i++) {
+      if(process_list[i] == 0)
+        continue;
+      TCHAR process_name[MAX_PATH] = _T("");
+      ULONG return_len;
+      HANDLE hprocess = OpenProcess(PROCESS_QUERY_INFORMATION |
+                                    PROCESS_VM_READ, FALSE, process_list[i]);
+
+      if (hprocess != NULL) {
+        NTSTATUS status = pfnQIP(hprocess, ProcessBasicInformation, 
+                                 &process_info, sizeof(process_info), 
+                                 &return_len);
+        DWORD parentid = (DWORD)process_info.Reserved3;
+        if (status >= 0 && (parentid == parent_pid || 
+            process_info.UniqueProcessId == parent_pid)) {
+          chrome_process_map.insert(std::make_pair(
+              process_info.UniqueProcessId, process_info.UniqueProcessId));
+        }
+        CloseHandle(hprocess);
       }
-      ret = Process32Next(hprocess, &process);
     }
-    if (hprocess != INVALID_HANDLE_VALUE)
-      CloseHandle(hprocess);
 
     CHECK_RESULT(device_enumerator->GetDefaultAudioEndpoint(
         eRender, eConsole, &defaultdevice));
@@ -271,6 +300,9 @@ NPError BrowserMutePlugin::Init(NPP instance, uint16_t mode, int16_t argc,
   g_log.WriteLog("Msg", "BrowserMutePlugin Init");
   instance->pdata = this;
   use_apihook_flag_ = TRUE;
+  ntdll_handle_ = LoadLibrary(_T("ntdll.dll"));
+  if (!ntdll_handle_)
+    return NPERR_GENERIC_ERROR;
 
   if (utils::GetWinVersion() == utils::WINVERSION_WIN7) {
     use_apihook_flag_ = FALSE;
@@ -286,6 +318,9 @@ NPError BrowserMutePlugin::Init(NPP instance, uint16_t mode, int16_t argc,
 NPError BrowserMutePlugin::UnInit(NPSavedData **save) {
   PluginBase::UnInit(save);
   script_object_ = NULL;
+  if (ntdll_handle_)
+    FreeLibrary(ntdll_handle_);
+
   g_log.WriteLog("Msg", "BrowserMutePlugin UnInit");
   if (!use_apihook_flag_) {
     SetEvent(stop_event_);

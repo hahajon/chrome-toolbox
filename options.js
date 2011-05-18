@@ -137,6 +137,16 @@ function Option() {
 
   var categorySelect = shortcut.createSelect(key_util.category_table);
   var browserSelect = shortcut.createSelect(key_util.browser);
+  var bg = chrome.extension.getBackgroundPage();
+  var muteAvailable = bg.plugin.checkMuteAvailable();
+  if (muteAvailable == 2) {
+    for(var i = 0; i < categorySelect.options.length; i++) {
+      if (categorySelect.options[i].value == 'mute_shortcuts') {
+        categorySelect.options.remove(categorySelect.options[i]);
+        break;
+      }
+    }
+  }
 
   this.isCompare.addEventListener('change', function() {
     self.table_shortcut.innerHTML = '';

@@ -131,7 +131,7 @@
 <script type="text/javascript">
   var bg = chrome.extension.getBackgroundPage();
   var fillForm = new FillForm();
-
+  
   function setMuteMenu() {
     var muteMenuId = 60;
     var item = key_util.getCustomShortcutItemById(
@@ -139,7 +139,14 @@
     var muteMenu = $('btnMute');
     var muteName = $('muteName');
     var muteShortcut = $('muteShortcut');
-
+    
+    var muteAvailable = bg.checkMuteAvailable();
+    if (muteAvailable == 1) {
+      muteMenu.style.display = 'block';
+    } else if (muteAvailable == 2) {
+      muteMenu.style.display = 'none';
+    }
+    
     var name = eval(localStorage['browserMute'])?
         'unmute_all_tabs' : 'mute_all_tabs';
     var imageUrl = eval(localStorage['browserMute'])?
