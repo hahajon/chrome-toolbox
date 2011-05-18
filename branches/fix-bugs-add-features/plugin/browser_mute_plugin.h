@@ -38,6 +38,9 @@ private:
 private:
   ScriptObjectBase* script_object_;
   
+  // Handle of ntdll.dll
+  HMODULE ntdll_handle_;
+
   // Muting thread handle.
   HANDLE mute_thread_handle_;
 

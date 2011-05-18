@@ -10,6 +10,7 @@
 
 extern Log g_log;
 extern HMODULE g_module;
+extern LocalMessageItem g_local_message;
 
 namespace client_process_unit {
 
@@ -25,10 +26,8 @@ HANDLE client_thread_handle = INVALID_HANDLE_VALUE;
 const TCHAR* kFileMappingName = _T("Convenience_File");
 const TCHAR* kMsgFileMappingName = _T("Convenience_Message_File");
 const TCHAR* kChromeClassName = _T("Chrome_WidgetWin_0");
-const TCHAR* kChromeAddressBar = _T("Chrome_AutocompleteEditView");
 const TCHAR* kPipeName = _T("\\\\.\\pipe\\convenience");
 
-LocalMessageItem local_message;
 ChromeWindowIdMap chrome_window_map;
 
 const int kCloseTabButtonLeftOffset = 186;
@@ -98,7 +97,7 @@ void GetMessageFromMemory() {
   if (memory_file_handle) {
     LPVOID p = MapViewOfFile(memory_file_handle, FILE_MAP_READ, 0, 0, 0);
     if (p) {
-      memcpy(&local_message, p, sizeof(local_message));
+      memcpy(&g_local_message, p, sizeof(g_local_message));
       UnmapViewOfFile(p);
     }
     CloseHandle(memory_file_handle);
@@ -119,11 +118,13 @@ BOOL CALLBACK CloseChromeDialgProc(HWND dlg, UINT message, WPARAM wParam,
                   (WPARAM)font, TRUE);
       SendMessage(GetDlgItem(dlg, IDOK), WM_SETFONT, (WPARAM)font, TRUE);
       SendMessage(GetDlgItem(dlg, IDCANCEL), WM_SETFONT, (WPARAM)font, TRUE);
-      SetWindowText(dlg, local_message.msg_closechrome_title);
-      SetDlgItemText(dlg, IDOK, local_message.msg_closechrome_ok);
-      SetDlgItemText(dlg, IDCANCEL, local_message.msg_closechrome_cancel);
-      SetDlgItemText(dlg, IDC_MESSAGE, local_message.msg_closechrome_message);
-      SetDlgItemText(dlg, IDC_NOALERT, local_message.msg_closechrome_noalert);
+      SetWindowText(dlg, g_local_message.msg_closechrome_title);
+      SetDlgItemText(dlg, IDOK, g_local_message.msg_closechrome_ok);
+      SetDlgItemText(dlg, IDCANCEL, g_local_message.msg_closechrome_cancel);
+      SetDlgItemText(dlg, IDC_MESSAGE, 
+                     g_local_message.msg_closechrome_message);
+      SetDlgItemText(dlg, IDC_NOALERT, 
+                     g_local_message.msg_closechrome_noalert);
       break;
     }
     case WM_COMMAND: {
@@ -425,33 +426,17 @@ LRESULT CALLBACK GetMsgProc(int code, WPARAM wParam, LPARAM lParam){
 
   if ((msg->message == WM_NCLBUTTONDOWN && wParam == PM_REMOVE && 
        msg->wParam == HTCLOSE) && close_chrome_prompt && !is_only_one_tab) {
-    TCHAR class_name[256];
-    GetClassName(msg->hwnd, class_name, 256);
-    HWND address_hwnd = FindWindowEx(msg->hwnd, NULL, 
-                                     kChromeAddressBar, NULL);
-    if (_tcscmp(class_name, kChromeClassName) == 0 && 
-        address_hwnd && (GetWindowLong(address_hwnd, GWL_STYLE) & 
-        WS_VISIBLE)) {
-      msg->message = WM_NULL;
-      CmdMsgItem item;
-      item.cmd = kCmdChromeClose;
-      WriteToServer(item);
-    }
+    msg->message = WM_NULL;
+    CmdMsgItem item;
+    item.cmd = kCmdChromeClose;
+    WriteToServer(item);
   }
 
   if ((msg->message == WM_SYSCOMMAND && wParam == PM_REMOVE && 
       msg->wParam == SC_CLOSE) && close_chrome_prompt && !is_only_one_tab) {
-    TCHAR class_name[256];
-    GetClassName(msg->hwnd, class_name, 256);
-    HWND address_hwnd = FindWindowEx(msg->hwnd, NULL, 
-                                     kChromeAddressBar, NULL);
-    if (_tcscmp(class_name, kChromeClassName) == 0 && 
-        address_hwnd && (GetWindowLong(address_hwnd, GWL_STYLE) & 
-        WS_VISIBLE)) {
-      if (DialogBox(g_module, MAKEINTRESOURCE(IDD_CLOSECHROME), msg->hwnd,
-                    CloseChromeDialgProc) != IDOK) {
-        msg->message = WM_NULL;
-      }
+    if (DialogBox(g_module, MAKEINTRESOURCE(IDD_CLOSECHROME), msg->hwnd,
+                  CloseChromeDialgProc) != IDOK) {
+      msg->message = WM_NULL;
     }
   }
 

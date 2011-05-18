@@ -32,5 +32,5 @@
   "default_locale": "en",
   "options_page": "options.html",
   "background_page": "background.html",
-  "permissions": ["tabs", "chrome://favicon/", "bookmarks", "http://*/*", "https://*/*"]
+  "permissions": ["tabs", "chrome://favicon/", "bookmarks", "http://*/*", "https://*/*", "contextMenus"]
 }

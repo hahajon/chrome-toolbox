@@ -54,6 +54,9 @@
     applyWallpaper: function(data, mode) {
       this.wallpaper.ApplyWallPaper(data, mode);
     },
+    applyWallpaperDirect: function(data) {
+      return this.wallpaper.ApplyWallPaper(data);
+    },
     restoreWallpaper: function() {
       this.wallpaper.RestoreWallPaper();
     },
@@ -62,6 +65,9 @@
     },
     muteBrowser: function(muteFlag) {
       this.browserMute.MuteBrowser(muteFlag);
+    },
+    checkMuteAvailable: function() {
+      return this.browserMute.CheckMuteAvailable();
     },
     chromeWindowCreated: function(windowid) {
       this.convenience.ChromeWindowCreated(windowid);
@@ -170,7 +176,8 @@
           openBookmarkFolderLinks(obj.relationId);
           break;
         case 'browserMute':
-          browserMute();
+          if (localStorage['muteAvailable'])
+            browserMute();
           break;
         case 'refreshAllTabs':
           refreshAllTabs();
@@ -199,6 +206,19 @@
   function bossKeyExecute() {
     plugin.pressBossKey();
   }
+  
+  function checkMuteAvailable() {
+    var muteAvailable = plugin.checkMuteAvailable();
+    if (muteAvailable == 1) {  // 1 means enable mute flash plugin.
+      localStorage['muteAvailable'] = true;
+    } else if (muteAvailable == 2) {
+      localStorage['muteAvailable'] = false;
+      localStorage['browserMute'] = false;
+      plugin.muteBrowser(false);  // Mute is diabled, unmute browser.
+      setBadgeTextByMute();
+    }
+    return muteAvailable;
+  }
 
   function init() {
     localStorage['imageBar'] = localStorage['imageBar'] || 'true';
@@ -208,6 +228,13 @@
     localStorage['isFirstInstallThisVer'] =
         localStorage['isFirstInstallThisVer'] || 'true';
     if (isWindowsPlatform()) {
+      chrome.contextMenus.create({
+        title: chrome.i18n.getMessage('set_wallpaper'), contexts: ['image'],
+        onclick: function(info, tab) {
+          wallpaper.setWallPaper(info.srcUrl);
+        }
+      });
+      
       localStorage['closeLastTab'] = localStorage['closeLastTab'] || 'true';
       localStorage['videoBar'] = localStorage['videoBar'] || 'true';
       localStorage['browserMute'] = localStorage['browserMute'] || 'false';
@@ -256,6 +283,14 @@
         plugin.chromeWindowCreated(window.id);
         updateTabCount(window.id);
       });
+      
+      (function check() {
+        if (checkMuteAvailable() == 3) {
+          setTimeout(function() {
+            check();
+          }, 1000);
+        }
+      })();
     }
   }
 
@@ -280,6 +315,19 @@
   var wallpaper = {
     orgImage: {data: '', width:0, height: 0},
     compressiveImage: {data: '', width:0, height: 0},
+    
+    setWallPaper: function(imageSrc) {
+      var image = new Image();
+      image.onload = function() {
+        var canvas = document.createElement('canvas');
+        canvas.width = image.width;
+        canvas.height = image.height;
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(image, 0, 0, image.width, image.height);
+        plugin.applyWallpaperDirect(canvas.toDataURL('image/png'));
+      }
+      image.src = imageSrc;
+    },
 
     openPreviewWindow: function(imageSrc) {
       var imageToData = function(image, width, height) {
