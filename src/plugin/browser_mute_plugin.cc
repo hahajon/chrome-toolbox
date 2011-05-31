@@ -117,16 +117,10 @@ DWORD BrowserMutePlugin::Mute_Thread(void* param) {
   BOOL mute_flag = FALSE;
   std::map<DWORD,DWORD> chrome_process_map;
   DWORD parent_pid = 0;
-  TCHAR exe_name[MAX_PATH];
-  TCHAR chrome_exe_path[MAX_PATH];
-  GetModuleBaseName(GetCurrentProcess(), GetModuleHandle(NULL), 
-                    exe_name, MAX_PATH);
-  GetModuleFileName(GetModuleHandle(NULL), chrome_exe_path, MAX_PATH);
 
   // get parent process id
   HANDLE hprocess = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
   PROCESSENTRY32 process = { sizeof(PROCESSENTRY32) };
-  BOOL find_same_chrome_version = FALSE;
   BOOL ret = Process32First(hprocess, &process);
   while (ret) {
     if (process.th32ProcessID == GetCurrentProcessId()) {
@@ -229,47 +223,45 @@ DWORD BrowserMutePlugin::Mute_Thread(void* param) {
 }
 
 void BrowserMutePlugin::ScanAndInject() {
-  TCHAR chrome_exe_path[MAX_PATH];
-  GetModuleFileName(GetModuleHandle(NULL), chrome_exe_path, MAX_PATH);
+  DWORD parent_pid = 0;
+  BOOL find_apihook_flag = FALSE;
 
+  // Get parent process id
   HANDLE hprocess = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
   PROCESSENTRY32 process = { sizeof(PROCESSENTRY32) };
-  TCHAR exe_name[MAX_PATH];
-  GetModuleBaseName(
-      GetCurrentProcess(), GetModuleHandle(NULL), exe_name, MAX_PATH);
-  BOOL find_same_chrome_version = FALSE;
   BOOL ret = Process32First(hprocess, &process);
   while (ret) {
-    if (_tcsicmp(process.szExeFile, exe_name) == 0) {
-      HANDLE hmodule = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, 
-          process.th32ProcessID);
+    if (process.th32ProcessID == GetCurrentProcessId()) {
+      parent_pid = process.th32ParentProcessID;
+      HANDLE hmodule = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, parent_pid);
       MODULEENTRY32 mod = { sizeof(MODULEENTRY32) };
-      BOOL find_apihook_flag = FALSE;
       if (Module32First(hmodule, &mod)) {
-        if (_tcsicmp(mod.szExePath, chrome_exe_path) != 0) {
-          CloseHandle(hmodule);
-          ret = Process32Next(hprocess, &process);
-          continue;
-        } else {
-          find_same_chrome_version = TRUE;
-        }
         while(Module32Next(hmodule, &mod)) {
           if (_tcsicmp(mod.szModule, _T("mutechrome.dll")) == 0 ||
-            _tcsicmp(mod.szModule, _T("apihook.dll")) == 0) {
-              find_apihook_flag = TRUE;
-              break;
+              _tcsicmp(mod.szModule, _T("apihook.dll")) == 0) {
+            find_apihook_flag = TRUE;
+            break;
           }
         }
       }
       if (hmodule != INVALID_HANDLE_VALUE)
         CloseHandle(hmodule);
-      if (find_apihook_flag) {
-        if (find_same_chrome_version)
-          break;
+      break;
+    }
+    ret = Process32Next(hprocess, &process);
+  }
+  if (hprocess != INVALID_HANDLE_VALUE)
+    CloseHandle(hprocess);
 
-        ret = Process32Next(hprocess, &process);
-        continue;
-      }
+  // If the main chrome process has been injected then return directly.
+  if (find_apihook_flag)
+    return;
+
+  hprocess = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+  ret = Process32First(hprocess, &process);
+  while (ret) {
+    if (process.th32ProcessID == parent_pid ||
+        process.th32ParentProcessID == parent_pid) {
       HANDLE process_handle = OpenProcess(
           PROCESS_CREATE_THREAD | PROCESS_QUERY_INFORMATION | 
           PROCESS_VM_OPERATION | PROCESS_VM_WRITE | PROCESS_VM_READ, 
