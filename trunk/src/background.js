@@ -219,6 +219,19 @@
     }
     return muteAvailable;
   }
+  
+  function enableContextMenu() {
+    if (eval(localStorage['enableContextMenu'])) {
+      chrome.contextMenus.create({
+        title: chrome.i18n.getMessage('set_wallpaper'), contexts: ['image'],
+        onclick: function(info, tab) {
+          wallpaper.setWallPaper(info.srcUrl);
+        }
+      });
+    } else {
+      chrome.contextMenus.removeAll();
+    }
+  }
 
   function init() {
     localStorage['imageBar'] = localStorage['imageBar'] || 'true';
@@ -228,12 +241,9 @@
     localStorage['isFirstInstallThisVer'] =
         localStorage['isFirstInstallThisVer'] || 'true';
     if (isWindowsPlatform()) {
-      chrome.contextMenus.create({
-        title: chrome.i18n.getMessage('set_wallpaper'), contexts: ['image'],
-        onclick: function(info, tab) {
-          wallpaper.setWallPaper(info.srcUrl);
-        }
-      });
+      localStorage['enableContextMenu'] = 
+          localStorage['enableContextMenu'] || 'true';
+      enableContextMenu();
       
       localStorage['closeLastTab'] = localStorage['closeLastTab'] || 'true';
       localStorage['videoBar'] = localStorage['videoBar'] || 'true';

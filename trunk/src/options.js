@@ -24,6 +24,7 @@ function setMessage() {
     {id: 'mRecommended', message: 'tab_recommended'},
     {id: 'title_floatingBar', message: 'title_floating_bar'},
     {id: 'title_tab', message: 'title_tab'},
+    {id: 'title_contextMenu', message: 'title_context_menu'},
     {id: 'item_imageBar', message: 'item_image_bar'},
     {id: 'item_videoBar', message: 'item_video_bar'},
     {id: 'item_closeLastTab', message: 'item_close_last_tab'},
@@ -33,6 +34,7 @@ function setMessage() {
     {id: 'item_dbClickCloseTab', message: 'item_double_click_close_tab'},
     {id: 'item_closeChromePrompt', message: 'item_close_chrome_prompt'},
     {id: 'item_mouseWheelSwitchTab', message: 'item_mouse_wheel_switch_tab'},
+    {id: 'item_enableContextMenu', message: 'item_enable_context_menu'},
     {id: 'fillForm_title', message: 'fill_form_title'},
     {id: 'fillForm_address', message: 'fill_form_url'},
     {id: 'fillForm_date', message: 'fill_form_date'},
@@ -78,6 +80,7 @@ function Option() {
   this.dbclickCloseTab = $('dbclickCloseTab');
   this.closeChromePrompt = $('closeChromePrompt');
   this.mouseWheelSwitchTab = $('mouseWheelSwitchTab');
+  this.enableContextMenu = $('enableContextMenu');
   this.isCompare = $('isCompare');
 
   //div element
@@ -220,6 +223,7 @@ Option.prototype.setGeneralTabOption = function() {
   this.closeChromePrompt.checked = eval(localStorage['closeChromePrompt']);
   this.mouseWheelSwitchTab.checked = 
       eval(localStorage['mouseWheelSwitchTab']);
+  this.enableContextMenu.checked = eval(localStorage['enableContextMenu']);
   disabledRadioOrNOt();
   this.imageBar.addEventListener('change', function() {
     localStorage['imageBar'] = $('imageBar').checked;
@@ -260,6 +264,11 @@ Option.prototype.setGeneralTabOption = function() {
     bg.mouseWheelSwitchTab();
     showSavingSucceedTip();
   }, false);
+  this.enableContextMenu.addEventListener('change', function() {
+    localStorage['enableContextMenu'] = $('enableContextMenu').checked;
+    bg.enableContextMenu();
+    showSavingSucceedTip();
+  }, false);  
 }
 
 function disabledRadioOrNOt() {
