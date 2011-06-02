@@ -123,7 +123,8 @@ function Option() {
   this.nav_recommended.addEventListener('click',
       this.setNavigationBarStatus, false);
 
-  createQuickLaunchTab();
+  if (isWindowsPlatform())
+    createQuickLaunchTab();
   
   fillForm.showAllFormDate();
   this.form_deleteAll.addEventListener('click', function() {
@@ -133,37 +134,39 @@ function Option() {
   this.form_close.addEventListener('click', function() {
     this.form_content.style.display = 'none';
   }, false);
-
-
-  var categorySelect = shortcut.createSelect(key_util.category_table);
-  var browserSelect = shortcut.createSelect(key_util.browser);
-
-  this.isCompare.addEventListener('change', function() {
-    self.table_shortcut.innerHTML = '';
-    self.table_shortcut.appendChild(shortcut.showTable(
-        categorySelect, browserSelect, self.isCompare.checked));
-  }, false);
-  categorySelect.addEventListener('change', function() {
-    self.table_shortcut.innerHTML = '';
-    self.table_shortcut.appendChild(shortcut.showTable(
-        categorySelect, browserSelect, self.isCompare.checked));
-  }, false);
-  browserSelect.addEventListener('change', function() {
-    self.table_shortcut.innerHTML = '';
-    self.table_shortcut.appendChild(shortcut.showTable(
-        categorySelect, browserSelect, self.isCompare.checked));
-  }, false);
-  this.table_shortcut.appendChild(shortcut.showTable(
-      categorySelect, browserSelect, self.isCompare.checked));
   this.setGeneralTabOption();
 
-  this.gotoShortcutTab.addEventListener('click', function() {
-    categorySelect.value = key_util.category_table.CAT_QUICK_LAUNCH;
-    self.table_shortcut.innerHTML = '';
-    self.table_shortcut.appendChild(shortcut.showTable(
+  if (isWindowsPlatform()) {
+    var categorySelect = shortcut.createSelect(key_util.category_table);
+    var browserSelect = shortcut.createSelect(key_util.browser);
+
+    this.isCompare.addEventListener('change', function() {
+      self.table_shortcut.innerHTML = '';
+      self.table_shortcut.appendChild(shortcut.showTable(
+          categorySelect, browserSelect, self.isCompare.checked));
+    }, false);
+    categorySelect.addEventListener('change', function() {
+      self.table_shortcut.innerHTML = '';
+      self.table_shortcut.appendChild(shortcut.showTable(
+          categorySelect, browserSelect, self.isCompare.checked));
+    }, false);
+    browserSelect.addEventListener('change', function() {
+      self.table_shortcut.innerHTML = '';
+      self.table_shortcut.appendChild(shortcut.showTable(
+          categorySelect, browserSelect, self.isCompare.checked));
+    }, false);
+    this.table_shortcut.appendChild(shortcut.showTable(
         categorySelect, browserSelect, self.isCompare.checked));
-    self.setNavigationBarStatus(self.nav_shortcut);
-  }, false)
+
+    this.gotoShortcutTab.addEventListener('click', function() {
+      categorySelect.value = key_util.category_table.CAT_QUICK_LAUNCH;
+      self.table_shortcut.innerHTML = '';
+      self.table_shortcut.appendChild(shortcut.showTable(
+          categorySelect, browserSelect, self.isCompare.checked));
+      self.setNavigationBarStatus(self.nav_shortcut);
+    }, false)
+  }
+
   createRecommendedContext(this.googleExtensionsRecommended,
                                   this.thirdPartyExtensionsRecommended);
   setMessage();
