@@ -103,8 +103,11 @@
       case 'deleteForm':
         fillForm.deleteByUrl(request.url);
         break;
-      case 'createNewTabInBehind':
-        chrome.tabs.create({"url": request.url, "selected": false});
+      case 'createNewTab':
+        chrome.tabs.create({
+          url: request.url,
+          selected: request.selected
+        });
         break;
     }
   });
@@ -305,9 +308,13 @@
   }
 
   chrome.tabs.onSelectionChanged.addListener(function(tabId) {
-    chrome.tabs.sendRequest(tabId, {msg: 'status',
-      imageBar: localStorage['imageBar'], videoBar: localStorage['videoBar'],
-      openInNewTab: localStorage['openInNewTab']});
+    chrome.tabs.sendRequest(tabId, {
+      msg: 'status',
+      imageBar: localStorage['imageBar'],
+      videoBar: localStorage['videoBar'],
+      openInNewTab: localStorage['openInNewTab'],
+      openInBehind: localStorage['openInBehind']
+    });
   });
 
 
