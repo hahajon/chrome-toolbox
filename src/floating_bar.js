@@ -359,11 +359,15 @@ var floatingBar = {
                            width: '100%',
                            zIndex: 9999,
                            backgroundColor: '#000000'}
-    $(curElement.parentNode).setStyle(styleProperties);
+    var objectElement = curElement;
+    if (curElement.tagName == 'EMBED' && curElement.parentNode &&
+        curElement.parentNode.tagName == 'OBJECT')
+      objectElement = curElement.parentNode;                           
+    $(objectElement.parentNode).setStyle(styleProperties);
     floatingBar.curVideoSize = {videoElement: curElement,
                                 height: curElement.height,
                                 width: curElement.width};
-    floatingBar.setOtherNodesInvisible(curElement, styles);
+    floatingBar.setOtherNodesInvisible(objectElement, styles);
 
     floatingBar.nodeStyles = styles;
     document.body.height = position.width;
