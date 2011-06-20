@@ -25,7 +25,18 @@ public:
   bool MuteBrowser(const NPVariant *args, uint32_t argCount,
                    NPVariant *result);
 
+  // Check mute is available.
+  bool CheckMuteAvailable(const NPVariant *args, uint32_t argCount,
+                          NPVariant *result);
+
   BOOL get_mute_flag() { return mute_flag_; }
+
+private:
+  enum ErrorCode {
+    kAvailableMute = 1,
+    kUnavailableMute,
+    kFlashPluginNotRun,
+  };
 
 private:
   // The apihook.dll module hanlde.

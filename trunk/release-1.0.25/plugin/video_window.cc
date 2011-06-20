@@ -212,20 +212,20 @@ BOOL VideoWindow::WndProc(HWND hwnd, UINT& msg, WPARAM& wParam, LPARAM& lParam) 
       break;
     }
     case WM_NCMOUSEMOVE:
-      pt.x = LOWORD(lParam);
-      pt.y = HIWORD(lParam);
+      pt.x = GET_X_LPARAM(lParam);
+      pt.y = GET_Y_LPARAM(lParam);
       tip_button_.OnMouseOver(pt);
       break;
     case WM_NCLBUTTONDOWN:
-      pt.x = LOWORD(lParam);
-      pt.y = HIWORD(lParam);
+      pt.x = GET_X_LPARAM(lParam);
+      pt.y = GET_Y_LPARAM(lParam);
       tip_button_.OnMouseDown(pt);
       if (wParam == HTCLOSE)
         msg = WM_NULL;
       break;
     case WM_NCLBUTTONUP:
-      pt.x = LOWORD(lParam);
-      pt.y = HIWORD(lParam);
+      pt.x = GET_X_LPARAM(lParam);
+      pt.y = GET_Y_LPARAM(lParam);
       if (wParam == HTCLOSE) {
         PostMessage(video_hwnd_, WM_CHROMECLOSE, (WPARAM)chrome_hwnd_, 0);
         Unsubclass();

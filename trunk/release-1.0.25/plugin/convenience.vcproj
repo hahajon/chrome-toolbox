@@ -138,6 +138,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="gdiplus.lib comctl32.lib psapi.lib version.lib dwmapi.lib uxtheme.lib"
+				OutputFile="$(SolutionDir)\$(ProjectName).dll"
 				LinkIncremental="1"
 				ModuleDefinitionFile="convenience.def"
 				DelayLoadDLLs="dwmapi.dll;uxtheme.dll"

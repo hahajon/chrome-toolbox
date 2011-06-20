@@ -137,6 +137,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="ImageHlp.lib"
+				OutputFile="$(SolutionDir)\$(ProjectName).dll"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				SubSystem="2"
