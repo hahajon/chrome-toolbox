@@ -186,8 +186,15 @@ Shortcut.prototype.showTable = function(categorySelect, browserSelect, isCompare
 }
 
 Shortcut.prototype.createSelect = function(table) {
+  var muteAvailable = 1;
+  if (table == key_util.category_table) {
+    var bg = chrome.extension.getBackgroundPage();
+    muteAvailable = bg.plugin.checkMuteAvailable();
+  }
   var select = document.createElement('select');
   for(var name in table) {
+    if (muteAvailable == 2 && table[name] == 'mute_shortcuts')
+      continue;
     var option = document.createElement('option');
     option.innerText = chrome.i18n.getMessage(table[name]);
     option.value = table[name];
