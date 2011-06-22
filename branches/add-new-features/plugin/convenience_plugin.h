@@ -56,6 +56,12 @@ public:
   // switch tab feature or not.
   void EnableMouseSwitchTab(bool flag);
 
+  // Notify client process, the specified chrome window has pinned tab or not.
+  void ExistsPinnedTab(int windowid, bool pinned);
+
+  // Notify plugin to enable press enter to open new tab or not.
+  void PressEnterOpenNewTab(bool flag);
+
 private:
   // The plugin's new window process.
   static LRESULT WndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
@@ -99,6 +105,7 @@ private:
   static bool close_chrome_prompt_;
   static bool db_click_close_tab_;
   static bool enable_switch_tab_;
+  static bool press_enter_open_new_tab_;
 
   static ChromeWindowIdMap chrome_window_map_;
 
