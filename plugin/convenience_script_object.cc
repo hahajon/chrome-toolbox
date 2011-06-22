@@ -52,6 +52,7 @@ BOOL CALLBACK BosskeyDlgProc(HWND dlg, UINT message, WPARAM wParam,
   return FALSE; 
 } 
 
+std::list<HWND> ConvenienceScriptObject::hidden_window_list_;
 
 NPObject* ConvenienceScriptObject::Allocate(NPP npp, NPClass *aClass) {
   ConvenienceScriptObject* script_object = new ConvenienceScriptObject;
@@ -113,6 +114,22 @@ void ConvenienceScriptObject::InitHandler() {
   item.function_name = "EnableMouseSwitchTab";
   item.function_pointer = ON_INVOKEHELPER(&ConvenienceScriptObject::
       EnableMouseSwitchTab);
+  AddFunction(item);
+  item.function_name = "ExistsPinnedTab";
+  item.function_pointer = ON_INVOKEHELPER(
+      &ConvenienceScriptObject::ExistsPinnedTab);
+  AddFunction(item);
+  item.function_name = "PressEnterOpenNewTab";
+  item.function_pointer = ON_INVOKEHELPER(
+    &ConvenienceScriptObject::PressEnterOpenNewTab);
+  AddFunction(item);
+  item.function_name = "HideCurrentChromeWindow";
+  item.function_pointer = ON_INVOKEHELPER(
+      &ConvenienceScriptObject::HideCurrentChromeWindow);
+  AddFunction(item);
+  item.function_name = "RestoreLastHiddenWindow";
+  item.function_pointer = ON_INVOKEHELPER(
+      &ConvenienceScriptObject::RestoreLastHiddenWindow);
   AddFunction(item);
 }
 
@@ -184,17 +201,21 @@ bool ConvenienceScriptObject::UpdateShortCutList(const NPVariant *args,
       if (id) {
         NPN_GetProperty(plugin->get_npp(), array_object,
                         id, &property_value);
-        if (NPVARIANT_IS_STRING(property_value))
-          strcpy(item.shortcuts_key,
-                 NPVARIANT_TO_STRING(property_value).UTF8Characters);
+        if (NPVARIANT_IS_STRING(property_value)) {
+          std::string temp(NPVARIANT_TO_STRING(property_value).UTF8Characters,
+                           NPVARIANT_TO_STRING(property_value).UTF8Length);
+          strcpy(item.shortcuts_key, temp.c_str());
+        }
       }
       id = NPN_GetStringIdentifier("operation");
       if (id) {
         NPN_GetProperty(plugin->get_npp(), array_object,
                         id, &property_value);
-        if (NPVARIANT_IS_STRING(property_value))
-          strcpy(item.function,
-                 NPVARIANT_TO_STRING(property_value).UTF8Characters);
+        if (NPVARIANT_IS_STRING(property_value)) {
+          std::string temp(NPVARIANT_TO_STRING(property_value).UTF8Characters,
+                           NPVARIANT_TO_STRING(property_value).UTF8Length);
+          strcpy(item.function, temp.c_str());
+        }
       }
       id = NPN_GetStringIdentifier("type");
       if (id) {
@@ -264,10 +285,10 @@ bool ConvenienceScriptObject::UpdateShortCutList(const NPVariant *args,
   return true;
 }
 
-void ConvenienceScriptObject::GetShortCutsKey(char* shortcuts, UINT* modify,
+void ConvenienceScriptObject::GetShortCutsKey(const char* shortcuts, UINT* modify,
                                               UINT* vk) {
-  char* pStart = shortcuts;
-  char* pEnd = pStart;
+  const char* pStart = shortcuts;
+  const char* pEnd = pStart;
   char temp_value[10];
   int temp_key;
   *modify = 0;
@@ -456,6 +477,36 @@ bool ConvenienceScriptObject::PressBossKey(const NPVariant *args,
   return true;
 }
 
+bool ConvenienceScriptObject::HideCurrentChromeWindow(const NPVariant* args, 
+                                                      uint32_t argCount, 
+                                                      NPVariant* result) {
+  HWND chrome_hwnd = FindWindowEx(NULL, NULL, kChromeClassName, NULL);
+  while(chrome_hwnd) {
+    if (IsWindowVisible(chrome_hwnd) && GetParent(chrome_hwnd) == NULL &&
+        GetWindowThreadProcessId(chrome_hwnd, NULL) == g_chrome_main_thread) {
+      ShowWindow(chrome_hwnd, SW_HIDE);
+      if (!IsWindowVisible(chrome_hwnd))
+        hidden_window_list_.push_back(chrome_hwnd);
+      break;
+    }
+    chrome_hwnd = FindWindowEx(NULL, chrome_hwnd, kChromeClassName, NULL);
+  }
+
+  return true;
+}
+
+bool ConvenienceScriptObject::RestoreLastHiddenWindow(const NPVariant* args, 
+                                                      uint32_t argCount, 
+                                                      NPVariant* result) {
+  if (hidden_window_list_.size() > 0) {
+    std::list<HWND>::reverse_iterator iter = hidden_window_list_.rbegin();
+    ShowWindow(*iter, SW_SHOW);
+    if (IsWindowVisible(*iter))
+      hidden_window_list_.pop_back();
+  }
+  return true;
+}
+
 bool ConvenienceScriptObject::TriggerChromeShortcuts(const NPVariant *args, 
                                                      uint32_t argCount, 
                                                      NPVariant *result) {
@@ -463,11 +514,12 @@ bool ConvenienceScriptObject::TriggerChromeShortcuts(const NPVariant *args,
   if (argCount != 1 || !NPVARIANT_IS_STRING(args[0]))
     return false;
 
-  char* shortcuts = (char*)NPVARIANT_TO_STRING(args[0]).UTF8Characters;
-  g_log.WriteLog("Shortcuts", shortcuts);
+  std::string shortcuts(NPVARIANT_TO_STRING(args[0]).UTF8Characters,
+                        NPVARIANT_TO_STRING(args[0]).UTF8Length);
+  g_log.WriteLog("Shortcuts", shortcuts.c_str());
 
   UINT modify, vk, keycount = 0;
-  GetShortCutsKey(shortcuts, &modify, &vk);
+  GetShortCutsKey(shortcuts.c_str(), &modify, &vk);
   INPUT inputs[4] = { 0 };
   inputs[0].type = INPUT_KEYBOARD;
   inputs[0].ki.wVk = VK_ESCAPE;
@@ -606,6 +658,33 @@ bool ConvenienceScriptObject::EnableMouseSwitchTab(const NPVariant* args,
 
   ConveniencePlugin* plugin = (ConveniencePlugin*)get_plugin();
   plugin->EnableMouseSwitchTab(NPVARIANT_TO_BOOLEAN(args[0]));
+  return true;
+}
+
+bool ConvenienceScriptObject::ExistsPinnedTab(const NPVariant* args, 
+                                              uint32_t argCount, 
+                                              NPVariant* result) {
+  if (argCount != 2 || 
+      (!NPVARIANT_IS_DOUBLE(args[0]) && !NPVARIANT_IS_INT32(args[0])) ||
+      !NPVARIANT_IS_BOOLEAN(args[1]))
+    return false;
+
+  int windowid = NPVARIANT_IS_INT32(args[0]) ? NPVARIANT_TO_INT32(args[0]) :
+      NPVARIANT_TO_DOUBLE(args[0]);
+  bool pinned = NPVARIANT_TO_BOOLEAN(args[1]);
+  ConveniencePlugin* plugin = (ConveniencePlugin*)get_plugin();
+  plugin->ExistsPinnedTab(windowid, pinned);
+  return true;
+}
+
+bool ConvenienceScriptObject::PressEnterOpenNewTab(const NPVariant* args, 
+                                                   uint32_t argCount, 
+                                                   NPVariant* result) {
+  if (argCount != 1 || !NPVARIANT_IS_BOOLEAN(args[0]))
+    return false;
+
+  ConveniencePlugin* plugin = (ConveniencePlugin*)get_plugin();
+  plugin->PressEnterOpenNewTab(NPVARIANT_TO_BOOLEAN(args[0]));
   return true;
 }
 

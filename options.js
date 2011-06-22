@@ -35,6 +35,7 @@ function setMessage() {
     {id: 'item_closeChromePrompt', message: 'item_close_chrome_prompt'},
     {id: 'item_mouseWheelSwitchTab', message: 'item_mouse_wheel_switch_tab'},
     {id: 'item_enableContextMenu', message: 'item_enable_context_menu'},
+    {id: 'item_pressEnterOpenNewTab', message: 'item_press_enter_open_new_tab'},    
     {id: 'fillForm_title', message: 'fill_form_title'},
     {id: 'fillForm_address', message: 'fill_form_url'},
     {id: 'fillForm_date', message: 'fill_form_date'},
@@ -81,6 +82,7 @@ function Option() {
   this.closeChromePrompt = $('closeChromePrompt');
   this.mouseWheelSwitchTab = $('mouseWheelSwitchTab');
   this.enableContextMenu = $('enableContextMenu');
+  this.pressEnterOpenNewTab = $('pressEnterOpenNewTab');
   this.isCompare = $('isCompare');
 
   //div element
@@ -224,6 +226,8 @@ Option.prototype.setGeneralTabOption = function() {
   this.mouseWheelSwitchTab.checked = 
       eval(localStorage['mouseWheelSwitchTab']);
   this.enableContextMenu.checked = eval(localStorage['enableContextMenu']);
+  this.pressEnterOpenNewTab.checked = 
+      eval(localStorage['pressEnterOpenNewTab']);
   disabledRadioOrNOt();
   this.imageBar.addEventListener('change', function() {
     localStorage['imageBar'] = $('imageBar').checked;
@@ -268,7 +272,12 @@ Option.prototype.setGeneralTabOption = function() {
     localStorage['enableContextMenu'] = $('enableContextMenu').checked;
     bg.enableContextMenu();
     showSavingSucceedTip();
-  }, false);  
+  }, false);
+  this.pressEnterOpenNewTab.addEventListener('change', function() {
+    localStorage['pressEnterOpenNewTab'] = $('pressEnterOpenNewTab').checked;
+    bg.pressEnterOpenNewTab();
+    showSavingSucceedTip();
+  }, false);
 }
 
 function disabledRadioOrNOt() {
