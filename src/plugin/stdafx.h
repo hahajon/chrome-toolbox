@@ -24,6 +24,7 @@
 #define WM_UPDATE_CLOSECHROME_PROMPT  WM_USER+105
 #define WM_CHROMEMOUSEWHEEL           WM_USER+106
 #define WM_FLASH_FULLSCREEN_STATUS    WM_USER+107
+#define WM_PRESS_ENTER_OPEN_NEW_TAB   WM_USER+108
 
 #define EVENTID_FRESH   3456
 
@@ -80,6 +81,7 @@ enum CmdMsgType {
   kCmdUpdateCloseChromePrompt,
   kCmdUpdateCloseLastTab,
   kCmdUpdateSwitchTab,
+  kCmdUpdatePressEnterOpenNewTab,
   kCmdKeyDown,
   kCmdKeyUp,
   kCmdEvent,
@@ -91,6 +93,8 @@ enum CmdMsgType {
   kCmdClientShutDown,
   kCmdChromeWindowCreated,
   kCmdChromeWindowRemoved,
+  kCmdExistsPinnedTabs,
+  kCmdPressEnterOpenNewTab,
 };
 
 struct CmdMsgItem {
@@ -102,6 +106,7 @@ struct CmdMsgItem {
     bool is_closechrome_prompt;
     bool close_last_tab;
     bool enable_switch_tab;
+    bool press_enter_open_new_tab;
     int rotatedcount;
     struct KeyDown {
       WPARAM wparam;
@@ -114,6 +119,7 @@ struct CmdMsgItem {
     struct TabCount {
       int windowid;
       int tabcount;
+      bool pinnedtab;
     }tabcount;
   }value;
 };
