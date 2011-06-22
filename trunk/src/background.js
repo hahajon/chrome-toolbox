@@ -30,8 +30,17 @@
     setMouseWheelSwitchTab: function(switchTabFlag) {
       this.convenience.EnableMouseSwitchTab(switchTabFlag);
     },
+    setPressEnterOpenNewTab: function(flag) {
+      this.convenience.PressEnterOpenNewTab(flag);
+    },
     pressBossKey: function() {
       this.convenience.PressBossKey();
+    },
+    hiddenCurrentWindow: function() {
+      this.convenience.HideCurrentChromeWindow();
+    },
+    restoreLastHiddenWindow: function() {
+      this.convenience.RestoreLastHiddenWindow();
     },
     triggerChromeShortcuts: function(virtualKey) {
       this.convenience.TriggerChromeShortcuts(virtualKey)
@@ -41,6 +50,9 @@
     },
     closeChromePrompt: function(flag) {
       this.convenience.CloseChromePrompt(flag);
+    },
+    existsPinnedTab: function(windowId, pinned) {
+      this.convenience.ExistsPinnedTab(windowId, pinned);
     },
     getWindowMetric: function() {
       var json_str = this.videoAlone.GetWindowMetric();
@@ -119,8 +131,16 @@
   
   function updateTabCount(windowId) {
     chrome.tabs.getAllInWindow(windowId, function(tabs) {
-      if (tabs)
+      if (tabs) {
         plugin.updateTabCount(windowId, tabs.length);
+        var pinned = false;
+        for(var index = 0; index < tabs.length; index++) {
+          if (tabs[index].pinned) {
+            pinned = true;
+          }
+        }
+        plugin.existsPinnedTab(windowId, pinned);
+      }
     });
   }
 
@@ -147,6 +167,11 @@
   function mouseWheelSwitchTab() {
     var flag = eval(localStorage['mouseWheelSwitchTab']) && true;
     plugin.setMouseWheelSwitchTab(flag);
+  }
+  
+  function pressEnterOpenNewTab() {
+    var flag = eval(localStorage['pressEnterOpenNewTab']) && true;
+    plugin.setPressEnterOpenNewTab(flag);
   }
 
   function closeLastTabNotCloseWindow() {
@@ -184,6 +209,12 @@
           break;
         case 'refreshAllTabs':
           refreshAllTabs();
+          break;
+        case 'hideCurrentWindow':
+          plugin.hiddenCurrentWindow();
+          break;
+        case 'restoreLastHiddenWindow':
+          plugin.restoreLastHiddenWindow();
           break;
       }
     }
@@ -253,6 +284,8 @@
       localStorage['browserMute'] = localStorage['browserMute'] || 'false';
       localStorage['mouseWheelSwitchTab'] = 
           localStorage['mouseWheelSwitchTab'] || 'true';
+      localStorage['pressEnterOpenNewTab'] = 
+          localStorage['pressEnterOpenNewTab'] || 'false';
       plugin.muteBrowser(eval(localStorage['browserMute']));
       setBadgeTextByMute();
       localStorage['dbclickCloseTab'] =
@@ -265,6 +298,7 @@
       setCloseLastOneTabStatus();
       dbClickCloseTab();
       mouseWheelSwitchTab();
+      pressEnterOpenNewTab();
       chrome.tabs.onCreated.addListener(function(tab) {
         updateTabCount(tab.windowId);
       });
@@ -278,6 +312,21 @@
         if (!removeInfo.isWindowClosing) {
           chrome.windows.getCurrent(function(window) {
             updateTabCount(window.id);
+          });
+        }
+      });
+      chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
+        if (changeInfo.pinned == true) {
+          plugin.existsPinnedTab(tab.windowId, true);
+        } else if (changeInfo.pinned == false) {
+          chrome.tabs.getAllInWindow(tab.windowId, function(tabs) {
+            var pinned = false;
+            for(var index = 0; index < tabs.length; index++) {
+              if (tabs[index].pinned) {
+                pinned = true;
+              }
+            }
+            plugin.existsPinnedTab(tab.windowId, pinned);
           });
         }
       });

@@ -162,7 +162,8 @@ bool VideoAloneScriptObject::ShowVideoAlone(const NPVariant *args,
     }
   }
 
-  utils::Utf8ToUnicode title(NPVARIANT_TO_STRING(args[0]).UTF8Characters);
+  utils::Utf8ToUnicode title(NPVARIANT_TO_STRING(args[0]).UTF8Characters,
+                             NPVARIANT_TO_STRING(args[0]).UTF8Length);
 
   int loop = 0;
   HWND parent_hwnd = NULL;
@@ -189,8 +190,9 @@ bool VideoAloneScriptObject::ShowVideoAlone(const NPVariant *args,
     return false;
   }
 
-  utils::Utf8ToUnicode original_title
-      (NPVARIANT_TO_STRING(args[1]).UTF8Characters);
+  utils::Utf8ToUnicode original_title(
+      NPVARIANT_TO_STRING(args[1]).UTF8Characters,
+      NPVARIANT_TO_STRING(args[1]).UTF8Length);
 
   SetWindowText(hwnd, original_title);
   if (GetFirstChild(hwnd))
