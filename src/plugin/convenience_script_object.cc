@@ -11,47 +11,6 @@ extern const TCHAR* kChromeClassName;
 extern DWORD g_chrome_main_thread;
 extern LocalMessageItem g_local_message;
 
-// the dialog procedure for bosskey redefined
-BOOL CALLBACK BosskeyDlgProc(HWND dlg, UINT message, WPARAM wParam, 
-                             LPARAM lParam) {
-  switch (message) { 
-    case WM_INITDIALOG: {
-      NONCLIENTMETRICS metrics;
-      utils::GetNonClientMetrics(&metrics);
-      HFONT font = CreateFontIndirect(&(metrics.lfMenuFont));
-      SendMessage(GetDlgItem(dlg, IDC_NOALERT), WM_SETFONT, 
-                  (WPARAM)font, TRUE);
-      SendMessage(GetDlgItem(dlg, IDC_MESSAGE), WM_SETFONT, 
-                  (WPARAM)font, TRUE);
-      SendMessage(GetDlgItem(dlg, IDOK), WM_SETFONT, (WPARAM)font, TRUE);
-      SendMessage(GetDlgItem(dlg, IDCANCEL), WM_SETFONT, (WPARAM)font, TRUE);
-      SetWindowText(dlg, g_local_message.msg_closechrome_title);
-      SetDlgItemText(dlg, IDOK, g_local_message.msg_closechrome_ok);
-      SetDlgItemText(dlg, IDCANCEL, g_local_message.msg_closechrome_cancel);
-      SetDlgItemText(dlg, IDC_MESSAGE, g_local_message.msg_bosskey_defined);
-      SetDlgItemText(dlg, IDC_NOALERT, g_local_message.msg_bosskey_noalert);
-      break;
-    }
-    case WM_COMMAND: {
-      if (LOWORD(wParam) == IDOK) {
-        INT_PTR result = IDOK;
-        if (Button_GetCheck(GetDlgItem(dlg, IDC_NOALERT)) == BST_CHECKED) {
-          result = IDIGNORE;
-        }
-        HFONT font = (HFONT)SendMessage(GetDlgItem(dlg, IDC_MESSAGE), 
-                                        WM_GETFONT, 0, 0);
-        if (font)
-          DeleteObject(font);
-        EndDialog(dlg, result);
-      }
-      else if (LOWORD(wParam) == IDCANCEL)
-        EndDialog(dlg, IDCANCEL);
-      break;
-    }
-  }
-  return FALSE; 
-} 
-
 std::list<HWND> ConvenienceScriptObject::hidden_window_list_;
 
 NPObject* ConvenienceScriptObject::Allocate(NPP npp, NPClass *aClass) {
@@ -239,7 +198,6 @@ bool ConvenienceScriptObject::UpdateShortCutList(const NPVariant *args,
       }
     }
     key_map_old->clear();
-    static bool errorflag = false;
     for (iter = key_map_new->begin(); iter != key_map_new->end(); iter++) {
       if (iter->second.ishotkey) {
         ATOM atom = GlobalAddAtomA(iter->second.shortcuts_key);
@@ -247,36 +205,6 @@ bool ConvenienceScriptObject::UpdateShortCutList(const NPVariant *args,
         GetShortCutsKey(iter->second.shortcuts_key, &modify, &vk);
         BOOL register_ret = RegisterHotKey(plugin->get_hwnd(), 
                                            atom, modify, vk);
-        if (!register_ret && !errorflag) {
-          errorflag = true;
-          NPVariant ret;
-          VOID_TO_NPVARIANT(ret);
-          NPString str;
-          str.UTF8Characters = "eval(localStorage['alertBosskeyRedefined'])";
-          str.UTF8Length = strlen(str.UTF8Characters);
-          NPN_Evaluate(get_plugin()->get_npp(), window, &str, &ret);
-          bool flag = true;
-          if (NPVARIANT_IS_BOOLEAN(ret)) {
-            flag = NPVARIANT_TO_BOOLEAN(ret);
-          }
-          NPN_ReleaseVariantValue(&ret);
-          if (flag) {  // need alert user
-            INT_PTR dlg_result = DialogBox(
-                g_module, MAKEINTRESOURCE(IDD_BOSSKEY), 
-                get_plugin()->get_hwnd(), BosskeyDlgProc);
-            if (dlg_result == IDOK) {
-              InvokeJSMethod("redefineBossKey");
-            } else if (dlg_result == IDIGNORE) {
-              str.UTF8Characters = 
-                  "localStorage['alertBosskeyRedefined'] = false";
-              str.UTF8Length = strlen(str.UTF8Characters);
-              NPN_Evaluate(get_plugin()->get_npp(), window, &str, &ret);
-              NPN_ReleaseVariantValue(&ret);
-            }
-          }
-        } else if (register_ret) {
-          errorflag = false;
-        }
       }
     }
     shortcuts_used_flag_ = shortcuts_used_flag_ == 2 ? 1 : 2;

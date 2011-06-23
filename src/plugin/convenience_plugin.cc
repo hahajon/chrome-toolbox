@@ -502,7 +502,6 @@ void ConveniencePlugin::GetLocalMessage() {
   if (get_local_message_flag_)
     return;
 
-  GetNPMessage(MSG_BOSSKEY_DEFINED, g_local_message.msg_bosskey_defined, 256);
   GetNPMessage(MSG_ALWAYS_ON_TOP, g_local_message.msg_always_on_top, 256);
   GetNPMessage(MSG_CLOSECHROME_TITLE, g_local_message.msg_closechrome_title, 
                256);
@@ -513,7 +512,6 @@ void ConveniencePlugin::GetLocalMessage() {
                256);
   GetNPMessage(
       MSG_CLOSECHROME_NOALERT, g_local_message.msg_closechrome_noalert, 256);
-  GetNPMessage(MSG_BOSSKEY_NOALERT,g_local_message.msg_bosskey_noalert, 256);
 
   WriteMessageToMemory();
   get_local_message_flag_ = true;

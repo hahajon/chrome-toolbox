@@ -846,7 +846,7 @@ key_util.extension_support_shortcut_map = [
     id: 62, shortcut: '18+72', type: false, relationId: '',
     operation: 'hideCurrentWindow', extensionId: ''
   }, {
-    id: 63, shortcut: '18+82', type: false, relationId: '',
+    id: 63, shortcut: '18+82', type: true, relationId: '',
     operation: 'restoreLastHiddenWindow', extensionId: ''
   }
 ];
