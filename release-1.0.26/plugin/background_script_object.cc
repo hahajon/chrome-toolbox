@@ -166,17 +166,18 @@ bool BackgroundScriptObject::SetWallPaper(const NPVariant *args,
 bool BackgroundScriptObject::ApplyWallPaper(const NPVariant *args,
                                             uint32_t argCount,
                                             NPVariant *result) {
-  char* type = NULL;
-  char* base64 = NULL;
+  std::string type;
+  const char* base64 = NULL;
   BOOLEAN_TO_NPVARIANT(FALSE, *result);
 
   if (argCount == 2 && NPVARIANT_IS_STRING(args[0]) &&
       NPVARIANT_IS_STRING(args[1])) {
-    type = (char*)NPVARIANT_TO_STRING(args[1]).UTF8Characters; 
+    type.append(NPVARIANT_TO_STRING(args[1]).UTF8Characters,
+                NPVARIANT_TO_STRING(args[1]).UTF8Length); 
   } else if (argCount != 1 || !NPVARIANT_IS_STRING(args[0]))
     return false;
   
-  base64 = strstr((char*)NPVARIANT_TO_STRING(args[0]).UTF8Characters,
+  base64 = strstr(NPVARIANT_TO_STRING(args[0]).UTF8Characters,
                   "base64,");
   if (!base64)
     return true;
@@ -235,17 +236,15 @@ bool BackgroundScriptObject::ApplyWallPaper(const NPVariant *args,
 
   WALLPAPEROPT opt;
   opt.dwSize = sizeof(WALLPAPEROPT);
-  if (type) {
-    if (_stricmp(type, "Center") == 0) {
-      opt.dwStyle = WPSTYLE_CENTER;
-      active_desktop->SetWallpaperOptions(&opt, 0);
-    } else if (_stricmp(type, "Stretch") == 0) {
-      opt.dwStyle = WPSTYLE_STRETCH;
-      active_desktop->SetWallpaperOptions(&opt, 0);
-    } else if (_stricmp(type, "Tile") == 0) {
-      opt.dwStyle = WPSTYLE_TILE;
-      active_desktop->SetWallpaperOptions(&opt, 0);
-    }
+  if (type == "Center") {
+    opt.dwStyle = WPSTYLE_CENTER;
+    active_desktop->SetWallpaperOptions(&opt, 0);
+  } else if (type == "Stretch") {
+    opt.dwStyle = WPSTYLE_STRETCH;
+    active_desktop->SetWallpaperOptions(&opt, 0);
+  } else if (type == "Tile") {
+    opt.dwStyle = WPSTYLE_TILE;
+    active_desktop->SetWallpaperOptions(&opt, 0);
   }
 
   hr = active_desktop->ApplyChanges(AD_APPLY_ALL);

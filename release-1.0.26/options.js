@@ -24,6 +24,7 @@ function setMessage() {
     {id: 'mRecommended', message: 'tab_recommended'},
     {id: 'title_floatingBar', message: 'title_floating_bar'},
     {id: 'title_tab', message: 'title_tab'},
+    {id: 'title_contextMenu', message: 'title_context_menu'},
     {id: 'item_imageBar', message: 'item_image_bar'},
     {id: 'item_videoBar', message: 'item_video_bar'},
     {id: 'item_closeLastTab', message: 'item_close_last_tab'},
@@ -33,6 +34,8 @@ function setMessage() {
     {id: 'item_dbClickCloseTab', message: 'item_double_click_close_tab'},
     {id: 'item_closeChromePrompt', message: 'item_close_chrome_prompt'},
     {id: 'item_mouseWheelSwitchTab', message: 'item_mouse_wheel_switch_tab'},
+    {id: 'item_enableContextMenu', message: 'item_enable_context_menu'},
+    {id: 'item_pressEnterOpenNewTab', message: 'item_press_enter_open_new_tab'},    
     {id: 'fillForm_title', message: 'fill_form_title'},
     {id: 'fillForm_address', message: 'fill_form_url'},
     {id: 'fillForm_date', message: 'fill_form_date'},
@@ -78,6 +81,8 @@ function Option() {
   this.dbclickCloseTab = $('dbclickCloseTab');
   this.closeChromePrompt = $('closeChromePrompt');
   this.mouseWheelSwitchTab = $('mouseWheelSwitchTab');
+  this.enableContextMenu = $('enableContextMenu');
+  this.pressEnterOpenNewTab = $('pressEnterOpenNewTab');
   this.isCompare = $('isCompare');
 
   //div element
@@ -123,7 +128,8 @@ function Option() {
   this.nav_recommended.addEventListener('click',
       this.setNavigationBarStatus, false);
 
-  createQuickLaunchTab();
+  if (isWindowsPlatform())
+    createQuickLaunchTab();
   
   fillForm.showAllFormDate();
   this.form_deleteAll.addEventListener('click', function() {
@@ -133,37 +139,39 @@ function Option() {
   this.form_close.addEventListener('click', function() {
     this.form_content.style.display = 'none';
   }, false);
-
-
-  var categorySelect = shortcut.createSelect(key_util.category_table);
-  var browserSelect = shortcut.createSelect(key_util.browser);
-
-  this.isCompare.addEventListener('change', function() {
-    self.table_shortcut.innerHTML = '';
-    self.table_shortcut.appendChild(shortcut.showTable(
-        categorySelect, browserSelect, self.isCompare.checked));
-  }, false);
-  categorySelect.addEventListener('change', function() {
-    self.table_shortcut.innerHTML = '';
-    self.table_shortcut.appendChild(shortcut.showTable(
-        categorySelect, browserSelect, self.isCompare.checked));
-  }, false);
-  browserSelect.addEventListener('change', function() {
-    self.table_shortcut.innerHTML = '';
-    self.table_shortcut.appendChild(shortcut.showTable(
-        categorySelect, browserSelect, self.isCompare.checked));
-  }, false);
-  this.table_shortcut.appendChild(shortcut.showTable(
-      categorySelect, browserSelect, self.isCompare.checked));
   this.setGeneralTabOption();
 
-  this.gotoShortcutTab.addEventListener('click', function() {
-    categorySelect.value = key_util.category_table.CAT_QUICK_LAUNCH;
-    self.table_shortcut.innerHTML = '';
-    self.table_shortcut.appendChild(shortcut.showTable(
+  if (isWindowsPlatform()) {
+    var categorySelect = shortcut.createSelect(key_util.category_table);
+    var browserSelect = shortcut.createSelect(key_util.browser);
+
+    this.isCompare.addEventListener('change', function() {
+      self.table_shortcut.innerHTML = '';
+      self.table_shortcut.appendChild(shortcut.showTable(
+          categorySelect, browserSelect, self.isCompare.checked));
+    }, false);
+    categorySelect.addEventListener('change', function() {
+      self.table_shortcut.innerHTML = '';
+      self.table_shortcut.appendChild(shortcut.showTable(
+          categorySelect, browserSelect, self.isCompare.checked));
+    }, false);
+    browserSelect.addEventListener('change', function() {
+      self.table_shortcut.innerHTML = '';
+      self.table_shortcut.appendChild(shortcut.showTable(
+          categorySelect, browserSelect, self.isCompare.checked));
+    }, false);
+    this.table_shortcut.appendChild(shortcut.showTable(
         categorySelect, browserSelect, self.isCompare.checked));
-    self.setNavigationBarStatus(self.nav_shortcut);
-  }, false)
+
+    this.gotoShortcutTab.addEventListener('click', function() {
+      categorySelect.value = key_util.category_table.CAT_QUICK_LAUNCH;
+      self.table_shortcut.innerHTML = '';
+      self.table_shortcut.appendChild(shortcut.showTable(
+          categorySelect, browserSelect, self.isCompare.checked));
+      self.setNavigationBarStatus(self.nav_shortcut);
+    }, false)
+  }
+
   createRecommendedContext(this.googleExtensionsRecommended,
                                   this.thirdPartyExtensionsRecommended);
   setMessage();
@@ -217,6 +225,9 @@ Option.prototype.setGeneralTabOption = function() {
   this.closeChromePrompt.checked = eval(localStorage['closeChromePrompt']);
   this.mouseWheelSwitchTab.checked = 
       eval(localStorage['mouseWheelSwitchTab']);
+  this.enableContextMenu.checked = eval(localStorage['enableContextMenu']);
+  this.pressEnterOpenNewTab.checked = 
+      eval(localStorage['pressEnterOpenNewTab']);
   disabledRadioOrNOt();
   this.imageBar.addEventListener('change', function() {
     localStorage['imageBar'] = $('imageBar').checked;
@@ -255,6 +266,16 @@ Option.prototype.setGeneralTabOption = function() {
   this.mouseWheelSwitchTab.addEventListener('change', function() {
     localStorage['mouseWheelSwitchTab'] = $('mouseWheelSwitchTab').checked;
     bg.mouseWheelSwitchTab();
+    showSavingSucceedTip();
+  }, false);
+  this.enableContextMenu.addEventListener('change', function() {
+    localStorage['enableContextMenu'] = $('enableContextMenu').checked;
+    bg.enableContextMenu();
+    showSavingSucceedTip();
+  }, false);
+  this.pressEnterOpenNewTab.addEventListener('change', function() {
+    localStorage['pressEnterOpenNewTab'] = $('pressEnterOpenNewTab').checked;
+    bg.pressEnterOpenNewTab();
     showSavingSucceedTip();
   }, false);
 }
