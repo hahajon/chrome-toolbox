@@ -591,30 +591,19 @@
   }
 
   function getNPMessage(messageId) {
-    var npMessages = [
-      {messageId: 1000, message: 'np_message_1000'},
-
-    ];
     var npMessage = {
-      1000: 'np_message_1000',
       1001: 'np_message_1001',
       1002: 'np_message_1002',
       1003: 'np_message_1003',
       1004: 'np_message_1004',
       1005: 'np_message_1005',
-      1006: 'np_message_1006',
-      1007: 'np_message_1007'
+      1006: 'np_message_1006'
     };
     var message = '';
     if (npMessage[messageId]) {
       message = chrome.i18n.getMessage(npMessage[messageId]);
     }
     return message;
-  }
-
-  function redefineBossKey() {
-    shortcut.updateShortcut(null, 48);
-    chrome.tabs.create({url: 'options.html#bossKey', selected: true});
   }
 
   function refreshAllTabs() {

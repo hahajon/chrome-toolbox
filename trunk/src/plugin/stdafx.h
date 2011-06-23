@@ -37,14 +37,12 @@
 #define MINIMUM_VERSION_SUPPORT_POPUP 10
 
 #define MSG_BASE                      1000
-#define MSG_BOSSKEY_DEFINED           MSG_BASE
 #define MSG_ALWAYS_ON_TOP             MSG_BASE+1
 #define MSG_CLOSECHROME_TITLE         MSG_BASE+2
 #define MSG_CLOSECHROME_MESSAGE       MSG_BASE+3
 #define MSG_CLOSECHROME_OK            MSG_BASE+4
 #define MSG_CLOSECHROME_CANCEL        MSG_BASE+5
 #define MSG_CLOSECHROME_NOALERT       MSG_BASE+6
-#define MSG_BOSSKEY_NOALERT           MSG_BASE+7
 
 struct KeyStokeItem {
   WORD virual_key;
@@ -52,14 +50,12 @@ struct KeyStokeItem {
 };
 
 struct LocalMessageItem {
-  TCHAR msg_bosskey_defined[256];
   TCHAR msg_always_on_top[256]; 
   TCHAR msg_closechrome_title[256]; 
   TCHAR msg_closechrome_message[256]; 
   TCHAR msg_closechrome_ok[256]; 
   TCHAR msg_closechrome_cancel[256]; 
   TCHAR msg_closechrome_noalert[256];
-  TCHAR msg_bosskey_noalert[256];
 };
 
 struct ShortCutItem {

@@ -103,17 +103,6 @@ BEGIN
     CONTROL         "Check1",IDC_NOALERT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,13,26,228,10
 END
 
-IDD_BOSSKEY DIALOGEX 0, 0, 259, 62
-STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "Dialog"
-FONT 8, "MS Shell Dlg", 400, 0, 0x1
-BEGIN
-    DEFPUSHBUTTON   "确定",IDOK,149,43,50,14
-    PUSHBUTTON      "取消",IDCANCEL,202,43,50,14
-    CONTROL         "Check1",IDC_NOALERT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,13,28,228,10
-    LTEXT           "",IDC_MESSAGE,13,8,228,17
-END
-
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -127,14 +116,6 @@ BEGIN
     BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 248
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 55
-    END
-
-    IDD_BOSSKEY, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 252
         TOPMARGIN, 7
         BOTTOMMARGIN, 55
     END
