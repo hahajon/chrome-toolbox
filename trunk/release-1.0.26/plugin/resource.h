@@ -3,7 +3,6 @@
 // Used by convenience.rc
 //
 #define IDD_CLOSECHROME                 102
-#define IDD_BOSSKEY                     107
 #define IDC_MESSAGE                     1001
 #define IDC_NOALERT                     1003
 

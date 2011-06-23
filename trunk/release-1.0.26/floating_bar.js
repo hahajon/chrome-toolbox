@@ -50,14 +50,14 @@ var isWindowsPlatform =
 chrome.extension.onRequest.addListener(function(request, sender, response) {
   if (request.msg == 'restoreVideoAlone') {
     response(floatingBar.restoreVideoWindow());
-  }else if (request.msg == 'status') {
+  } else if (request.msg == 'status') {
     imageBarStatus = eval(request.imageBar);
     videoBarStatus = eval(request.videoBar);
     openInBehindStatus = eval(request.openInBehind); 
     openInNewTabStatus = eval(request.openInNewTab);
     initFloatingBarMenu();
   } else if (request.msg == 'restoreTabTitle') {
-	document.title = request.orgTitle;
+    document.title = request.orgTitle;
   }
 });
 
@@ -66,8 +66,7 @@ chrome.extension.sendRequest({msg: 'getStatus'}, function(response) {
     imageBarStatus = eval(response.imageBar);
     videoBarStatus = eval(response.videoBar);
     openInNewTabStatus = eval(response.openInNewTab);
-    openInBehindStatus = eval(response.openInBehind); 
-    setAElementTarget();
+    openInBehindStatus = eval(response.openInBehind);
     initFloatingBarMenu();
     init();
   }
@@ -171,9 +170,17 @@ var floatingBar = {
       var floatingMenu = document.createElement('div');
       var curElementData = floatingBar.getCurElementData(curElement);
       floatingMenu.id = 'media_floatingBar';
-      var styleProperties = {position: 'absolute',
-                             left: curElementData.left + 'px',
-                             top: curElementData.top - 25 + 'px'};
+      var floatMenuHeight = 25;
+      var floatMenuTop = curElementData.top - floatMenuHeight;
+      if (floatMenuTop < 0)
+        floatMenuTop = curElementData.bottom;
+
+      var styleProperties = {
+        position: 'absolute',
+        left: curElementData.left + 'px',
+        top: floatMenuTop + 'px'
+      };
+
       $(floatingMenu).setStyle(styleProperties);
 
       for (var i = 0; i < checkedElements.length; i++) {
@@ -183,7 +190,7 @@ var floatingBar = {
         if (!isWindowsMenu && checkedElements[i].menu.status &&
             curElementData.minSizeChecked) {
           var specialConditionReturnValue =  floatingBar.specialCondition(
-              checkedElements[i].specialCondition,curElement)
+              checkedElements[i].specialCondition,curElement);
           if (!checkedElements[i].specialCondition ||
               (checkedElements[i].specialCondition &&
               specialConditionReturnValue)) {
@@ -240,8 +247,13 @@ var floatingBar = {
   },
 
   getCurElementData: function(curElement) {
-    var curElementData = {top: 0, left: 0, width: 0, height: 0,
-                          minSizeChecked: true};
+    var curElementData = {
+      top: 0,
+      left: 0,
+      width: 0,
+      height: 0,
+      minSizeChecked: true
+    };
     var node = curElement;
     curElementData.width = node.clientWidth;
     curElementData.height = node.clientHeight;
@@ -249,18 +261,15 @@ var floatingBar = {
         curElementData.height < floatingBar.minHeight) {
       curElementData.minSizeChecked = false;
     }
-//    while(node && node != document.body) {
-//      curElementData.top += node.offsetTop;
-//      curElementData.left += node.offsetLeft;
-//      node = node.offsetParent;
-//    }
+    
     var range = document.createRange();
     range.setStartBefore(curElement);
     range.setEndAfter(curElement);
-	var clientRects = range.getClientRects();
+    var clientRects = range.getClientRects();
     if (clientRects && clientRects.length == 1) {
       curElementData.top = clientRects[0].top + document.body.scrollTop;
       curElementData.left = clientRects[0].left + document.body.scrollLeft;
+      curElementData.bottom = clientRects[0].bottom + document.body.scrollTop;
     }
     return curElementData;
   },
@@ -350,11 +359,15 @@ var floatingBar = {
                            width: '100%',
                            zIndex: 9999,
                            backgroundColor: '#000000'}
-    $(curElement.parentNode).setStyle(styleProperties);
+    var objectElement = curElement;
+    if (curElement.tagName == 'EMBED' && curElement.parentNode &&
+        curElement.parentNode.tagName == 'OBJECT')
+      objectElement = curElement.parentNode;                           
+    $(objectElement.parentNode).setStyle(styleProperties);
     floatingBar.curVideoSize = {videoElement: curElement,
                                 height: curElement.height,
                                 width: curElement.width};
-    floatingBar.setOtherNodesInvisible(curElement, styles);
+    floatingBar.setOtherNodesInvisible(objectElement, styles);
 
     floatingBar.nodeStyles = styles;
     document.body.height = position.width;
@@ -518,44 +531,39 @@ function isGoogleLogoutBtn(url) {
   }
   return isLogoutBtn;
 }
-                
-function changeAElementTarget(curElement) {
-  var target = curElement.target;
-  var targetUrl = curElement.href;
-  if (openInBehindStatus) {
-    curElement.removeAttribute('href');
-    chrome.extension.sendRequest({msg: 'createNewTabInBehind', url: targetUrl })
-  } else {
-    curElement.target = '_blank';
-  }
-  curElement.addEventListener('mouseup', function() {
-    window.setTimeout(function() {
-      curElement.setAttribute('href', targetUrl);
-      if (target) {
-        curElement.target = target;
-      } else {
-        curElement.removeAttribute('target');
-      }
-    }, 10)
-  }, false)
+
+function isGeneralAnchor(anchorElement) {
+  var href = anchorElement.href.toLowerCase();
+  return href && href.indexOf('javascript:') != 0 && !isGoogleLogoutBtn(href);
 }
 
-function setAElementTarget() {
-  document.addEventListener('mousedown', function() {
-    if (1 == event.button || 2 == event.button) {
-      return;
+const MIDDLE_MOUSE_BUTTON = 1;
+const RIGHT_MOUSE_BUTTON = 2;
+document.addEventListener('click', function(event) {
+  if (MIDDLE_MOUSE_BUTTON == event.button ||
+      RIGHT_MOUSE_BUTTON == event.button) {
+    return;
+  }
+
+  if (openInNewTabStatus) {
+    var target = event.target;
+    while (target.parentNode) {
+      if (target.tagName == 'A')
+       break;
+      target = target.parentNode;
     }
-    if (openInNewTabStatus) {
-      var curElement = event.target;
-      if (curElement.tagName == 'A' && !isGoogleLogoutBtn(curElement.href)){
-        changeAElementTarget(curElement);
-      } else if (curElement.parentElement.tagName == 'A'  && 
-          !isGoogleLogoutBtn(curElement.parentElement.href) ) {
-        changeAElementTarget(curElement.parentElement);
-      }
+
+    var tagName = target.tagName;
+    if (tagName == 'A' && isGeneralAnchor(target)) {
+      chrome.extension.sendRequest({
+        msg: 'createNewTab',
+        url: target.href,
+        selected: !openInBehindStatus
+      });
+      event.preventDefault();
     }
-  }, false)
-}
+  }
+}, false);
 
 function init() {
   document.addEventListener('mousemove', floatingBar.onMouseMove, false);

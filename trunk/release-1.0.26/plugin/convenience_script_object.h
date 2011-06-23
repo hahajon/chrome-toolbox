@@ -1,6 +1,7 @@
 #ifndef CONVENIENCE_SCRIPT_OBJECT_H_
 #define CONVENIENCE_SCRIPT_OBJECT_H_
 
+#include <list>
 #include <map>
 #include <string> 
 
@@ -76,6 +77,22 @@ public:
   bool EnableMouseSwitchTab(const NPVariant* args, uint32_t argCount,
                             NPVariant* result);
 
+  // Notify plugin the specified chrome window has pinned tab or not.
+  bool ExistsPinnedTab(const NPVariant* args, uint32_t argCount,
+                       NPVariant* result);
+
+  // Notify plugin to enable press enter to open new tab or not.
+  bool PressEnterOpenNewTab(const NPVariant* args, uint32_t argCount,
+                            NPVariant* result);
+
+  // Hide current chrome window.
+  bool HideCurrentChromeWindow(const NPVariant* args, uint32_t argCount,
+                               NPVariant* result);
+
+  // Restore last hidden window.
+  bool RestoreLastHiddenWindow(const NPVariant* args, uint32_t argCount,
+                               NPVariant* result);
+
 
   // For plugin object used. when plugin receive keyboard stroke key, 
   // then call this function to notify frontend some key pressed.
@@ -107,7 +124,7 @@ public:
 
 private:
   // According shortcuts string to generate modify flag and virtual key code.
-  void GetShortCutsKey(char* shortcuts, UINT* modify, UINT* vk);
+  void GetShortCutsKey(const char* shortcuts, UINT* modify, UINT* vk);
   
 private:
   // The flag indicate current shortcut key map used.
@@ -126,6 +143,9 @@ private:
 
   // Input box object.
   NPObject* input_object_;
+
+  // Store hidden chrome window.
+  static std::list<HWND> hidden_window_list_;
 
 };
 
