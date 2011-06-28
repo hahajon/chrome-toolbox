@@ -27,6 +27,7 @@ HANDLE client_thread_handle = INVALID_HANDLE_VALUE;
 const TCHAR* kFileMappingName = _T("Convenience_File");
 const TCHAR* kMsgFileMappingName = _T("Convenience_Message_File");
 const TCHAR* kChromeClassName = _T("Chrome_WidgetWin_0");
+const TCHAR* kRenderClassName = _T("Chrome_RenderWidgetHostHWND");
 const TCHAR* kPipeName = _T("\\\\.\\pipe\\convenience");
 const TCHAR* kAddressBarClassName = _T("Chrome_AutocompleteEditView");
 const TCHAR* kOmniboxViewClassName = _T("Chrome_OmniboxView");
@@ -316,6 +317,31 @@ DWORD WINAPI Client_Thread(void* param) {
   return 0;
 }
 
+bool CheckVerticalTabsEnable(HWND chrome_hwnd) {
+  // Check vertical tab is enabled/disabled.
+  HWND render_window = FindWindowEx(chrome_hwnd, NULL, kChromeClassName, NULL);
+  bool enable_vertical_tabs = false;
+  while (render_window) {
+    RECT render_rect;
+    HWND hwnd = FindWindowEx(chrome_hwnd, render_window, 
+                             kRenderClassName, NULL);
+    if (!hwnd) {
+      render_window = FindWindowEx(chrome_hwnd, render_window, 
+                                   kChromeClassName, NULL);
+      continue;
+    }
+    GetWindowRect(render_window, &render_rect);
+    RECT chrome_rect = { 0 };
+    GetWindowRect(chrome_hwnd, &chrome_rect);
+    if (render_rect.left - chrome_rect.left > 20) {
+      enable_vertical_tabs = true;
+      break;
+    }
+  }
+
+  return enable_vertical_tabs;
+}
+
 LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
   if (!(HIWORD(lParam) & KF_REPEAT)) {
     std::string shortcuts;
@@ -422,18 +448,7 @@ LRESULT CALLBACK GetMsgProc(int code, WPARAM wParam, LPARAM lParam){
     return CallNextHookEx(NULL, code, wParam, lParam);
 
   bool is_only_one_tab = (iter->second.tabcount == 1);
-
-  // Check vertical tab is enabled/disabled.
-  HWND render_window = FindWindowEx(msg->hwnd, NULL, kChromeClassName, NULL);
-  bool enable_vertical_tabs = false;
-  if (render_window) {
-    RECT render_rect;
-    GetWindowRect(render_window, &render_rect);
-    RECT chrome_rect = { 0 };
-    GetWindowRect(msg->hwnd, &chrome_rect);
-    if (render_rect.left - chrome_rect.left > 20)
-      enable_vertical_tabs = true;
-  }
+  bool enable_vertical_tabs = CheckVerticalTabsEnable(msg->hwnd);
 
   if ((msg->message == WM_LBUTTONDOWN || msg->message == WM_LBUTTONDBLCLK) 
       && wParam == PM_REMOVE && msg->wParam == MK_LBUTTON && close_last_tab 
@@ -547,17 +562,7 @@ LRESULT CALLBACK CallWndProcHook(int code, WPARAM wParam, LPARAM lParam) {
 
   ChromeWindowIdMap::iterator iter = chrome_window_map.find(msg->hwnd);
   if (enable_switch_tab && iter != chrome_window_map.end()) {
-    // Check vertical tab is enabled/disabled.
-    HWND render_window = FindWindowEx(msg->hwnd, NULL, kChromeClassName, NULL);
-    bool enable_vertical_tabs = false;
-    if (render_window) {
-      RECT render_rect;
-      GetWindowRect(render_window, &render_rect);
-      RECT chrome_rect = { 0 };
-      GetWindowRect(msg->hwnd, &chrome_rect);
-      if (render_rect.left - chrome_rect.left > 20)
-        enable_vertical_tabs = true;
-    }
+    bool enable_vertical_tabs = CheckVerticalTabsEnable(msg->hwnd);
 
     switch(msg->message) {
       case WM_MOUSEWHEEL: {
