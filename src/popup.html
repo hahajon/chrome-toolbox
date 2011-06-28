@@ -282,6 +282,12 @@
       li.value = id;
       li.innerHTML = '<div class="left">' + name +
           '</div><div class="right">' + showKey + '</div>';
+      (function(virtualKey) {
+        li.addEventListener('click', function() {
+          bg.plugin.triggerChromeShortcuts(virtualKey);
+          window.close();
+        }, false);
+      })(virtualKey);
       ul.appendChild(li);
     }
     $('quicklyMenu').appendChild(ul);
