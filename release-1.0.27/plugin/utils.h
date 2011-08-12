@@ -25,13 +25,15 @@ private:
 
 class Utf8ToUnicode {
 public:
-  explicit Utf8ToUnicode(const char* utf8data)
+  explicit Utf8ToUnicode(const char* utf8data, unsigned int datalen = -1)
     : buffer_(NULL) {
-    int size = MultiByteToWideChar(CP_UTF8, 0, utf8data, -1, 0, 0);
+    int size = MultiByteToWideChar(CP_UTF8, 0, utf8data, datalen, 0, 0);
     if (size > 0)
-      buffer_ = new WCHAR[size];
-    if (buffer_)
-      MultiByteToWideChar(CP_UTF8, 0, utf8data, -1, buffer_, size);
+      buffer_ = new WCHAR[size + 1];
+    if (buffer_) {
+      MultiByteToWideChar(CP_UTF8, 0, utf8data, datalen, buffer_, size);
+      buffer_[size] = 0;
+    }
   }
   operator WCHAR*() const { return buffer_; }
   WCHAR** operator &() { return &buffer_; }

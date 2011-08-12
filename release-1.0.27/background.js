@@ -30,8 +30,17 @@
     setMouseWheelSwitchTab: function(switchTabFlag) {
       this.convenience.EnableMouseSwitchTab(switchTabFlag);
     },
+    setPressEnterOpenNewTab: function(flag) {
+      this.convenience.PressEnterOpenNewTab(flag);
+    },
     pressBossKey: function() {
       this.convenience.PressBossKey();
+    },
+    hiddenCurrentWindow: function() {
+      this.convenience.HideCurrentChromeWindow();
+    },
+    restoreLastHiddenWindow: function() {
+      this.convenience.RestoreLastHiddenWindow();
     },
     triggerChromeShortcuts: function(virtualKey) {
       this.convenience.TriggerChromeShortcuts(virtualKey)
@@ -41,6 +50,9 @@
     },
     closeChromePrompt: function(flag) {
       this.convenience.CloseChromePrompt(flag);
+    },
+    existsPinnedTab: function(windowId, pinned) {
+      this.convenience.ExistsPinnedTab(windowId, pinned);
     },
     getWindowMetric: function() {
       var json_str = this.videoAlone.GetWindowMetric();
@@ -103,8 +115,11 @@
       case 'deleteForm':
         fillForm.deleteByUrl(request.url);
         break;
-      case 'createNewTabInBehind':
-        chrome.tabs.create({"url": request.url, "selected": false});
+      case 'createNewTab':
+        chrome.tabs.create({
+          url: request.url,
+          selected: request.selected
+        });
         break;
     }
   });
@@ -116,8 +131,16 @@
   
   function updateTabCount(windowId) {
     chrome.tabs.getAllInWindow(windowId, function(tabs) {
-      if (tabs)
+      if (tabs) {
         plugin.updateTabCount(windowId, tabs.length);
+        var pinned = false;
+        for(var index = 0; index < tabs.length; index++) {
+          if (tabs[index].pinned) {
+            pinned = true;
+          }
+        }
+        plugin.existsPinnedTab(windowId, pinned);
+      }
     });
   }
 
@@ -144,6 +167,11 @@
   function mouseWheelSwitchTab() {
     var flag = eval(localStorage['mouseWheelSwitchTab']) && true;
     plugin.setMouseWheelSwitchTab(flag);
+  }
+  
+  function pressEnterOpenNewTab() {
+    var flag = eval(localStorage['pressEnterOpenNewTab']) && true;
+    plugin.setPressEnterOpenNewTab(flag);
   }
 
   function closeLastTabNotCloseWindow() {
@@ -181,6 +209,12 @@
           break;
         case 'refreshAllTabs':
           refreshAllTabs();
+          break;
+        case 'hideCurrentWindow':
+          plugin.hiddenCurrentWindow();
+          break;
+        case 'restoreLastHiddenWindow':
+          plugin.restoreLastHiddenWindow();
           break;
       }
     }
@@ -250,6 +284,8 @@
       localStorage['browserMute'] = localStorage['browserMute'] || 'false';
       localStorage['mouseWheelSwitchTab'] = 
           localStorage['mouseWheelSwitchTab'] || 'true';
+      localStorage['pressEnterOpenNewTab'] = 
+          localStorage['pressEnterOpenNewTab'] || 'false';
       plugin.muteBrowser(eval(localStorage['browserMute']));
       setBadgeTextByMute();
       localStorage['dbclickCloseTab'] =
@@ -262,6 +298,7 @@
       setCloseLastOneTabStatus();
       dbClickCloseTab();
       mouseWheelSwitchTab();
+      pressEnterOpenNewTab();
       chrome.tabs.onCreated.addListener(function(tab) {
         updateTabCount(tab.windowId);
       });
@@ -275,6 +312,21 @@
         if (!removeInfo.isWindowClosing) {
           chrome.windows.getCurrent(function(window) {
             updateTabCount(window.id);
+          });
+        }
+      });
+      chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
+        if (changeInfo.pinned == true) {
+          plugin.existsPinnedTab(tab.windowId, true);
+        } else if (changeInfo.pinned == false) {
+          chrome.tabs.getAllInWindow(tab.windowId, function(tabs) {
+            var pinned = false;
+            for(var index = 0; index < tabs.length; index++) {
+              if (tabs[index].pinned) {
+                pinned = true;
+              }
+            }
+            plugin.existsPinnedTab(tab.windowId, pinned);
           });
         }
       });
@@ -305,9 +357,13 @@
   }
 
   chrome.tabs.onSelectionChanged.addListener(function(tabId) {
-    chrome.tabs.sendRequest(tabId, {msg: 'status',
-      imageBar: localStorage['imageBar'], videoBar: localStorage['videoBar'],
-      openInNewTab: localStorage['openInNewTab']});
+    chrome.tabs.sendRequest(tabId, {
+      msg: 'status',
+      imageBar: localStorage['imageBar'],
+      videoBar: localStorage['videoBar'],
+      openInNewTab: localStorage['openInNewTab'],
+      openInBehind: localStorage['openInBehind']
+    });
   });
 
 
@@ -535,30 +591,19 @@
   }
 
   function getNPMessage(messageId) {
-    var npMessages = [
-      {messageId: 1000, message: 'np_message_1000'},
-
-    ];
     var npMessage = {
-      1000: 'np_message_1000',
       1001: 'np_message_1001',
       1002: 'np_message_1002',
       1003: 'np_message_1003',
       1004: 'np_message_1004',
       1005: 'np_message_1005',
-      1006: 'np_message_1006',
-      1007: 'np_message_1007'
+      1006: 'np_message_1006'
     };
     var message = '';
     if (npMessage[messageId]) {
       message = chrome.i18n.getMessage(npMessage[messageId]);
     }
     return message;
-  }
-
-  function redefineBossKey() {
-    shortcut.updateShortcut(null, 48);
-    chrome.tabs.create({url: 'options.html#bossKey', selected: true});
   }
 
   function refreshAllTabs() {
