@@ -11,47 +11,7 @@ extern const TCHAR* kChromeClassName;
 extern DWORD g_chrome_main_thread;
 extern LocalMessageItem g_local_message;
 
-// the dialog procedure for bosskey redefined
-BOOL CALLBACK BosskeyDlgProc(HWND dlg, UINT message, WPARAM wParam, 
-                             LPARAM lParam) {
-  switch (message) { 
-    case WM_INITDIALOG: {
-      NONCLIENTMETRICS metrics;
-      utils::GetNonClientMetrics(&metrics);
-      HFONT font = CreateFontIndirect(&(metrics.lfMenuFont));
-      SendMessage(GetDlgItem(dlg, IDC_NOALERT), WM_SETFONT, 
-                  (WPARAM)font, TRUE);
-      SendMessage(GetDlgItem(dlg, IDC_MESSAGE), WM_SETFONT, 
-                  (WPARAM)font, TRUE);
-      SendMessage(GetDlgItem(dlg, IDOK), WM_SETFONT, (WPARAM)font, TRUE);
-      SendMessage(GetDlgItem(dlg, IDCANCEL), WM_SETFONT, (WPARAM)font, TRUE);
-      SetWindowText(dlg, g_local_message.msg_closechrome_title);
-      SetDlgItemText(dlg, IDOK, g_local_message.msg_closechrome_ok);
-      SetDlgItemText(dlg, IDCANCEL, g_local_message.msg_closechrome_cancel);
-      SetDlgItemText(dlg, IDC_MESSAGE, g_local_message.msg_bosskey_defined);
-      SetDlgItemText(dlg, IDC_NOALERT, g_local_message.msg_bosskey_noalert);
-      break;
-    }
-    case WM_COMMAND: {
-      if (LOWORD(wParam) == IDOK) {
-        INT_PTR result = IDOK;
-        if (Button_GetCheck(GetDlgItem(dlg, IDC_NOALERT)) == BST_CHECKED) {
-          result = IDIGNORE;
-        }
-        HFONT font = (HFONT)SendMessage(GetDlgItem(dlg, IDC_MESSAGE), 
-                                        WM_GETFONT, 0, 0);
-        if (font)
-          DeleteObject(font);
-        EndDialog(dlg, result);
-      }
-      else if (LOWORD(wParam) == IDCANCEL)
-        EndDialog(dlg, IDCANCEL);
-      break;
-    }
-  }
-  return FALSE; 
-} 
-
+std::list<HWND> ConvenienceScriptObject::hidden_window_list_;
 
 NPObject* ConvenienceScriptObject::Allocate(NPP npp, NPClass *aClass) {
   ConvenienceScriptObject* script_object = new ConvenienceScriptObject;
@@ -113,6 +73,22 @@ void ConvenienceScriptObject::InitHandler() {
   item.function_name = "EnableMouseSwitchTab";
   item.function_pointer = ON_INVOKEHELPER(&ConvenienceScriptObject::
       EnableMouseSwitchTab);
+  AddFunction(item);
+  item.function_name = "ExistsPinnedTab";
+  item.function_pointer = ON_INVOKEHELPER(
+      &ConvenienceScriptObject::ExistsPinnedTab);
+  AddFunction(item);
+  item.function_name = "PressEnterOpenNewTab";
+  item.function_pointer = ON_INVOKEHELPER(
+    &ConvenienceScriptObject::PressEnterOpenNewTab);
+  AddFunction(item);
+  item.function_name = "HideCurrentChromeWindow";
+  item.function_pointer = ON_INVOKEHELPER(
+      &ConvenienceScriptObject::HideCurrentChromeWindow);
+  AddFunction(item);
+  item.function_name = "RestoreLastHiddenWindow";
+  item.function_pointer = ON_INVOKEHELPER(
+      &ConvenienceScriptObject::RestoreLastHiddenWindow);
   AddFunction(item);
 }
 
@@ -184,17 +160,21 @@ bool ConvenienceScriptObject::UpdateShortCutList(const NPVariant *args,
       if (id) {
         NPN_GetProperty(plugin->get_npp(), array_object,
                         id, &property_value);
-        if (NPVARIANT_IS_STRING(property_value))
-          strcpy(item.shortcuts_key,
-                 NPVARIANT_TO_STRING(property_value).UTF8Characters);
+        if (NPVARIANT_IS_STRING(property_value)) {
+          std::string temp(NPVARIANT_TO_STRING(property_value).UTF8Characters,
+                           NPVARIANT_TO_STRING(property_value).UTF8Length);
+          strcpy(item.shortcuts_key, temp.c_str());
+        }
       }
       id = NPN_GetStringIdentifier("operation");
       if (id) {
         NPN_GetProperty(plugin->get_npp(), array_object,
                         id, &property_value);
-        if (NPVARIANT_IS_STRING(property_value))
-          strcpy(item.function,
-                 NPVARIANT_TO_STRING(property_value).UTF8Characters);
+        if (NPVARIANT_IS_STRING(property_value)) {
+          std::string temp(NPVARIANT_TO_STRING(property_value).UTF8Characters,
+                           NPVARIANT_TO_STRING(property_value).UTF8Length);
+          strcpy(item.function, temp.c_str());
+        }
       }
       id = NPN_GetStringIdentifier("type");
       if (id) {
@@ -218,7 +198,6 @@ bool ConvenienceScriptObject::UpdateShortCutList(const NPVariant *args,
       }
     }
     key_map_old->clear();
-    static bool errorflag = false;
     for (iter = key_map_new->begin(); iter != key_map_new->end(); iter++) {
       if (iter->second.ishotkey) {
         ATOM atom = GlobalAddAtomA(iter->second.shortcuts_key);
@@ -226,36 +205,6 @@ bool ConvenienceScriptObject::UpdateShortCutList(const NPVariant *args,
         GetShortCutsKey(iter->second.shortcuts_key, &modify, &vk);
         BOOL register_ret = RegisterHotKey(plugin->get_hwnd(), 
                                            atom, modify, vk);
-        if (!register_ret && !errorflag) {
-          errorflag = true;
-          NPVariant ret;
-          VOID_TO_NPVARIANT(ret);
-          NPString str;
-          str.UTF8Characters = "eval(localStorage['alertBosskeyRedefined'])";
-          str.UTF8Length = strlen(str.UTF8Characters);
-          NPN_Evaluate(get_plugin()->get_npp(), window, &str, &ret);
-          bool flag = true;
-          if (NPVARIANT_IS_BOOLEAN(ret)) {
-            flag = NPVARIANT_TO_BOOLEAN(ret);
-          }
-          NPN_ReleaseVariantValue(&ret);
-          if (flag) {  // need alert user
-            INT_PTR dlg_result = DialogBox(
-                g_module, MAKEINTRESOURCE(IDD_BOSSKEY), 
-                get_plugin()->get_hwnd(), BosskeyDlgProc);
-            if (dlg_result == IDOK) {
-              InvokeJSMethod("redefineBossKey");
-            } else if (dlg_result == IDIGNORE) {
-              str.UTF8Characters = 
-                  "localStorage['alertBosskeyRedefined'] = false";
-              str.UTF8Length = strlen(str.UTF8Characters);
-              NPN_Evaluate(get_plugin()->get_npp(), window, &str, &ret);
-              NPN_ReleaseVariantValue(&ret);
-            }
-          }
-        } else if (register_ret) {
-          errorflag = false;
-        }
       }
     }
     shortcuts_used_flag_ = shortcuts_used_flag_ == 2 ? 1 : 2;
@@ -264,10 +213,10 @@ bool ConvenienceScriptObject::UpdateShortCutList(const NPVariant *args,
   return true;
 }
 
-void ConvenienceScriptObject::GetShortCutsKey(char* shortcuts, UINT* modify,
+void ConvenienceScriptObject::GetShortCutsKey(const char* shortcuts, UINT* modify,
                                               UINT* vk) {
-  char* pStart = shortcuts;
-  char* pEnd = pStart;
+  const char* pStart = shortcuts;
+  const char* pEnd = pStart;
   char temp_value[10];
   int temp_key;
   *modify = 0;
@@ -456,6 +405,36 @@ bool ConvenienceScriptObject::PressBossKey(const NPVariant *args,
   return true;
 }
 
+bool ConvenienceScriptObject::HideCurrentChromeWindow(const NPVariant* args, 
+                                                      uint32_t argCount, 
+                                                      NPVariant* result) {
+  HWND chrome_hwnd = FindWindowEx(NULL, NULL, kChromeClassName, NULL);
+  while(chrome_hwnd) {
+    if (IsWindowVisible(chrome_hwnd) && GetParent(chrome_hwnd) == NULL &&
+        GetWindowThreadProcessId(chrome_hwnd, NULL) == g_chrome_main_thread) {
+      ShowWindow(chrome_hwnd, SW_HIDE);
+      if (!IsWindowVisible(chrome_hwnd))
+        hidden_window_list_.push_back(chrome_hwnd);
+      break;
+    }
+    chrome_hwnd = FindWindowEx(NULL, chrome_hwnd, kChromeClassName, NULL);
+  }
+
+  return true;
+}
+
+bool ConvenienceScriptObject::RestoreLastHiddenWindow(const NPVariant* args, 
+                                                      uint32_t argCount, 
+                                                      NPVariant* result) {
+  if (hidden_window_list_.size() > 0) {
+    std::list<HWND>::reverse_iterator iter = hidden_window_list_.rbegin();
+    ShowWindow(*iter, SW_SHOW);
+    if (IsWindowVisible(*iter))
+      hidden_window_list_.pop_back();
+  }
+  return true;
+}
+
 bool ConvenienceScriptObject::TriggerChromeShortcuts(const NPVariant *args, 
                                                      uint32_t argCount, 
                                                      NPVariant *result) {
@@ -463,11 +442,12 @@ bool ConvenienceScriptObject::TriggerChromeShortcuts(const NPVariant *args,
   if (argCount != 1 || !NPVARIANT_IS_STRING(args[0]))
     return false;
 
-  char* shortcuts = (char*)NPVARIANT_TO_STRING(args[0]).UTF8Characters;
-  g_log.WriteLog("Shortcuts", shortcuts);
+  std::string shortcuts(NPVARIANT_TO_STRING(args[0]).UTF8Characters,
+                        NPVARIANT_TO_STRING(args[0]).UTF8Length);
+  g_log.WriteLog("Shortcuts", shortcuts.c_str());
 
   UINT modify, vk, keycount = 0;
-  GetShortCutsKey(shortcuts, &modify, &vk);
+  GetShortCutsKey(shortcuts.c_str(), &modify, &vk);
   INPUT inputs[4] = { 0 };
   inputs[0].type = INPUT_KEYBOARD;
   inputs[0].ki.wVk = VK_ESCAPE;
@@ -606,6 +586,33 @@ bool ConvenienceScriptObject::EnableMouseSwitchTab(const NPVariant* args,
 
   ConveniencePlugin* plugin = (ConveniencePlugin*)get_plugin();
   plugin->EnableMouseSwitchTab(NPVARIANT_TO_BOOLEAN(args[0]));
+  return true;
+}
+
+bool ConvenienceScriptObject::ExistsPinnedTab(const NPVariant* args, 
+                                              uint32_t argCount, 
+                                              NPVariant* result) {
+  if (argCount != 2 || 
+      (!NPVARIANT_IS_DOUBLE(args[0]) && !NPVARIANT_IS_INT32(args[0])) ||
+      !NPVARIANT_IS_BOOLEAN(args[1]))
+    return false;
+
+  int windowid = NPVARIANT_IS_INT32(args[0]) ? NPVARIANT_TO_INT32(args[0]) :
+      NPVARIANT_TO_DOUBLE(args[0]);
+  bool pinned = NPVARIANT_TO_BOOLEAN(args[1]);
+  ConveniencePlugin* plugin = (ConveniencePlugin*)get_plugin();
+  plugin->ExistsPinnedTab(windowid, pinned);
+  return true;
+}
+
+bool ConvenienceScriptObject::PressEnterOpenNewTab(const NPVariant* args, 
+                                                   uint32_t argCount, 
+                                                   NPVariant* result) {
+  if (argCount != 1 || !NPVARIANT_IS_BOOLEAN(args[0]))
+    return false;
+
+  ConveniencePlugin* plugin = (ConveniencePlugin*)get_plugin();
+  plugin->PressEnterOpenNewTab(NPVARIANT_TO_BOOLEAN(args[0]));
   return true;
 }
 

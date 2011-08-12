@@ -607,8 +607,8 @@ key_util.function_table[47] = {
   safari_key: 'Ctrl+X, Shift+Delete', firefox_key: 'Ctrl+X, Shift+Delete'
 };
 key_util.function_table[48] = {
-  id: 48, function_name: 'boss_key',
-  function_description: 'boss_key',
+  id: 48, function_name: 'hide_restore_all_windows',
+  function_description: 'hide_restore_all_windows',
   category: key_util.category_table.CAT_BOSS_KEY,
   isQuickly: true, isSystem: false, isSupport: true,
   chrome_key: '',
@@ -774,6 +774,30 @@ key_util.function_table[61] = {
   ie8_key: '', opera_key: 'Ctrl+F5',
   safari_key: '', firefox_key: ''
 };
+key_util.function_table[62] = {
+  id: 62, function_name: 'hide_current_window',
+  function_description: 'hide_current_window',
+  category: key_util.category_table.CAT_BOSS_KEY,
+  isQuickly: true, isSystem: false, isSupport: true,
+  chrome_key: '',
+  browser360_key: '', maxthon_key: '',
+  tt_key: '', sogou_key: '',
+  ie6_key: '', ie7_key: '',
+  ie8_key: '', opera_key: '',
+  safari_key: '', firefox_key: ''
+};
+key_util.function_table[63] = {
+  id: 63, function_name: 'restore_last_hidden_window',
+  function_description: 'restore_last_hidden_window',
+  category: key_util.category_table.CAT_BOSS_KEY,
+  isQuickly: true, isSystem: false, isSupport: true,
+  chrome_key: '',
+  browser360_key: '', maxthon_key: '',
+  tt_key: '', sogou_key: '',
+  ie6_key: '', ie7_key: '',
+  ie8_key: '', opera_key: '',
+  safari_key: '', firefox_key: ''
+};
 
 key_util.extension_support_shortcut_map = [
   {
@@ -818,11 +842,17 @@ key_util.extension_support_shortcut_map = [
   }, {
     id: 61, shortcut: '18+116', type: false, relationId: '',
     operation: 'refreshAllTabs', extensionId: ''
+  }, {
+    id: 62, shortcut: '18+72', type: false, relationId: '',
+    operation: 'hideCurrentWindow', extensionId: ''
+  }, {
+    id: 63, shortcut: '18+82', type: true, relationId: '',
+    operation: 'restoreLastHiddenWindow', extensionId: ''
   }
 ];
 
 key_util.custom_shortcut_id_list = [
-    48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60];
+    48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63];
 
 key_util.key_code_map = [];
 for (var i = 0; i < 222; i++) {

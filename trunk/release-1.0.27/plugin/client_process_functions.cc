@@ -19,6 +19,7 @@ bool close_last_tab = false;
 bool close_chrome_prompt = true;
 bool db_click_close_tab = true;
 bool enable_switch_tab = false;
+bool press_enter_open_new_tab = false;
 
 HANDLE client_pipe_handle = INVALID_HANDLE_VALUE;
 HANDLE client_thread_handle = INVALID_HANDLE_VALUE;
@@ -26,7 +27,10 @@ HANDLE client_thread_handle = INVALID_HANDLE_VALUE;
 const TCHAR* kFileMappingName = _T("Convenience_File");
 const TCHAR* kMsgFileMappingName = _T("Convenience_Message_File");
 const TCHAR* kChromeClassName = _T("Chrome_WidgetWin_0");
+const TCHAR* kRenderClassName = _T("Chrome_RenderWidgetHostHWND");
 const TCHAR* kPipeName = _T("\\\\.\\pipe\\convenience");
+const TCHAR* kAddressBarClassName = _T("Chrome_AutocompleteEditView");
+const TCHAR* kOmniboxViewClassName = _T("Chrome_OmniboxView");
 
 ChromeWindowIdMap chrome_window_map;
 
@@ -37,6 +41,9 @@ const int kCloseTabButtonTopOffset_MaxState = 5;
 const int kChromeWindowMinChangeSize = 343;
 const int kCloseTabButtonWidth = 20;
 const int kCloseTabButtonHeight = 20;
+const int kVerticalTabsWidth = 150;
+const int kVerticalTabsLeftOffset = 122;
+const int kVerticalTabsTopOffset = 65;
 
 int map_current_used_flag = 2;
 ConvenienceScriptObject::ShortCutKeyMap map_one;
@@ -233,6 +240,20 @@ DWORD WINAPI Client_Thread(void* param) {
           case kCmdUpdateSwitchTab:
             enable_switch_tab = cmd.value.enable_switch_tab;
             break;
+          case kCmdUpdatePressEnterOpenNewTab:
+            press_enter_open_new_tab = cmd.value.press_enter_open_new_tab;
+            break;
+          case kCmdExistsPinnedTabs:{
+            ChromeWindowIdMap::iterator iter;
+            for (iter = chrome_window_map.begin(); 
+                 iter != chrome_window_map.end(); iter++) {
+              if (iter->second.windowid == cmd.value.tabcount.windowid) {
+                iter->second.pinnedtab = cmd.value.tabcount.pinnedtab;
+                break;
+              }
+            }
+            break;
+          }
           case kCmdUpdateTabCount: {
             ChromeWindowIdMap::iterator iter;
             for (iter = chrome_window_map.begin(); 
@@ -249,7 +270,7 @@ DWORD WINAPI Client_Thread(void* param) {
             break;
           }
           case kCmdChromeWindowCreated: {
-            CmdMsgItem::CmdMsgValue::TabCount tabcount;
+            CmdMsgItem::CmdMsgValue::TabCount tabcount = {0};
             tabcount.windowid = cmd.value.chrome_window.windowid;
             tabcount.tabcount = 1;
             chrome_window_map.insert(std::make_pair(
@@ -294,6 +315,31 @@ DWORD WINAPI Client_Thread(void* param) {
     client_pipe_handle = INVALID_HANDLE_VALUE;
   }
   return 0;
+}
+
+bool CheckVerticalTabsEnable(HWND chrome_hwnd) {
+  // Check vertical tab is enabled/disabled.
+  HWND render_window = FindWindowEx(chrome_hwnd, NULL, kChromeClassName, NULL);
+  bool enable_vertical_tabs = false;
+  while (render_window) {
+    RECT render_rect;
+    HWND hwnd = FindWindowEx(chrome_hwnd, render_window, 
+                             kRenderClassName, NULL);
+    if (!hwnd) {
+      render_window = FindWindowEx(chrome_hwnd, render_window, 
+                                   kChromeClassName, NULL);
+      continue;
+    }
+    GetWindowRect(render_window, &render_rect);
+    RECT chrome_rect = { 0 };
+    GetWindowRect(chrome_hwnd, &chrome_rect);
+    if (render_rect.left - chrome_rect.left > 20) {
+      enable_vertical_tabs = true;
+      break;
+    }
+  }
+
+  return enable_vertical_tabs;
 }
 
 LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
@@ -377,11 +423,32 @@ LRESULT CALLBACK GetMsgProc(int code, WPARAM wParam, LPARAM lParam){
   }
   MSG* msg = (MSG*)lParam;
 
+  // Check user press enter key in the address bar.
+  if (msg->message == WM_KEYDOWN && msg->wParam == VK_RETURN &&
+      press_enter_open_new_tab) {
+    HWND chrome_hwnd = GetParent(msg->hwnd);
+    if (chrome_hwnd) {
+      ChromeWindowIdMap::iterator iter = chrome_window_map.find(chrome_hwnd);
+      if (iter != chrome_window_map.end()) {
+       TCHAR class_name[256];
+        GetClassName(msg->hwnd, class_name, 256);
+        if (_tcscmp(class_name, kAddressBarClassName) == 0 ||
+            _tcscmp(class_name, kOmniboxViewClassName) == 0) {
+          CmdMsgItem item;
+          item.cmd = kCmdPressEnterOpenNewTab;
+          WriteToServer(item);
+          msg->message = WM_NULL;
+        }
+      }
+    }
+  }
+
   ChromeWindowIdMap::iterator iter = chrome_window_map.find(msg->hwnd);
   if (iter == chrome_window_map.end())
     return CallNextHookEx(NULL, code, wParam, lParam);
 
   bool is_only_one_tab = (iter->second.tabcount == 1);
+  bool enable_vertical_tabs = CheckVerticalTabsEnable(msg->hwnd);
 
   if ((msg->message == WM_LBUTTONDOWN || msg->message == WM_LBUTTONDBLCLK) 
       && wParam == PM_REMOVE && msg->wParam == MK_LBUTTON && close_last_tab 
@@ -391,24 +458,34 @@ LRESULT CALLBACK GetMsgProc(int code, WPARAM wParam, LPARAM lParam){
     if (_tcscmp(class_name, kChromeClassName) == 0 && 
         GetParent(msg->hwnd) == NULL) { 
       RECT rt = {0};
-      if (IsMaximized(msg->hwnd)) {
-        rt.left = kCloseTabButtonLeftOffset_MaxState;
-        rt.top = kCloseTabButtonTopOffset_MaxState;
+      if (enable_vertical_tabs) {
+        if (iter->second.pinnedtab)
+          rt.top = 35;
+        else
+          rt.top = kVerticalTabsTopOffset;
+        rt.left = kVerticalTabsLeftOffset;        
       } else {
-        RECT chrome_rect = { 0 };
-        GetWindowRect(msg->hwnd, &chrome_rect);
-        if (chrome_rect.right - chrome_rect.left < kChromeWindowMinChangeSize) {
-          rt.left = 
-              kCloseTabButtonLeftOffset - (kChromeWindowMinChangeSize - 
-              (chrome_rect.right - chrome_rect.left));
-          rt.top = kCloseTabButtonTopOffset;
+        if (IsMaximized(msg->hwnd)) {
+          rt.left = kCloseTabButtonLeftOffset_MaxState;
+          rt.top = kCloseTabButtonTopOffset_MaxState;
         } else {
-          rt.left = kCloseTabButtonLeftOffset;
-          rt.top = kCloseTabButtonTopOffset;
+          RECT chrome_rect = { 0 };
+          GetWindowRect(msg->hwnd, &chrome_rect);
+          if (chrome_rect.right - chrome_rect.left < 
+              kChromeWindowMinChangeSize) {
+            rt.left = 
+                kCloseTabButtonLeftOffset - (kChromeWindowMinChangeSize - 
+                (chrome_rect.right - chrome_rect.left));
+            rt.top = kCloseTabButtonTopOffset;
+          } else {
+            rt.left = kCloseTabButtonLeftOffset;
+            rt.top = kCloseTabButtonTopOffset;
+          }
         }
       }
       rt.bottom = rt.top + kCloseTabButtonHeight;
       rt.right = rt.left + kCloseTabButtonWidth;
+
       POINT pt;
       pt.x = GET_X_LPARAM(msg->lParam);
       pt.y = GET_Y_LPARAM(msg->lParam);
@@ -447,14 +524,17 @@ LRESULT CALLBACK GetMsgProc(int code, WPARAM wParam, LPARAM lParam){
     pt.y = GET_Y_LPARAM(msg->lParam);
     RECT tab_client_rect = { 0 };
     GetClientRect(msg->hwnd, &tab_client_rect);
-    if (IsMaximized(msg->hwnd)) {
-      tab_client_rect.top = 0;
-      tab_client_rect.bottom = 25;
+    if (enable_vertical_tabs) {
+      tab_client_rect.right = tab_client_rect.left + kVerticalTabsWidth;
     } else {
-      tab_client_rect.top += 15;
-      tab_client_rect.bottom = tab_client_rect.top + 25;
+      if (IsMaximized(msg->hwnd)) {
+        tab_client_rect.top = 0;
+        tab_client_rect.bottom = 25;
+      } else {
+        tab_client_rect.top += 15;
+        tab_client_rect.bottom = tab_client_rect.top + 25;
+      }
     }
-    
     if (!PtInRect(&tab_client_rect, pt))
       return CallNextHookEx(NULL, code, wParam, lParam);
 
@@ -482,6 +562,8 @@ LRESULT CALLBACK CallWndProcHook(int code, WPARAM wParam, LPARAM lParam) {
 
   ChromeWindowIdMap::iterator iter = chrome_window_map.find(msg->hwnd);
   if (enable_switch_tab && iter != chrome_window_map.end()) {
+    bool enable_vertical_tabs = CheckVerticalTabsEnable(msg->hwnd);
+
     switch(msg->message) {
       case WM_MOUSEWHEEL: {
         RECT window_rect = {0};
@@ -489,11 +571,15 @@ LRESULT CALLBACK CallWndProcHook(int code, WPARAM wParam, LPARAM lParam) {
         pt.x = GET_X_LPARAM(msg->lParam);
         pt.y = GET_Y_LPARAM(msg->lParam);
         GetWindowRect(msg->hwnd, &window_rect);
-        if (IsMaximized(msg->hwnd)) {
-          window_rect.bottom = window_rect.top + 
-            GetSystemMetrics(SM_CYCAPTION) + GetSystemMetrics(SM_CYFRAME);
+        if (enable_vertical_tabs) {
+          window_rect.right = window_rect.left + kVerticalTabsWidth;
         } else {
-          window_rect.bottom = window_rect.top + CONST_FRAME_CAPTION_HEIGHT;
+          if (IsMaximized(msg->hwnd)) {
+            window_rect.bottom = window_rect.top + 
+               GetSystemMetrics(SM_CYCAPTION) + GetSystemMetrics(SM_CYFRAME);
+          } else {
+            window_rect.bottom = window_rect.top + CONST_FRAME_CAPTION_HEIGHT;
+          }
         }
         if (PtInRect(&window_rect, pt)) {
           CmdMsgItem item;

@@ -100,6 +100,7 @@ DWORD ConveniencePlugin::Server_Thread(void* param) {
     plugin->UpdateCloseChromePromptFlag(close_chrome_prompt_);
     plugin->UpdateCloseLastTab(close_last_tab_);
     plugin->EnableMouseSwitchTab(enable_switch_tab_);
+    plugin->PressEnterOpenNewTab(press_enter_open_new_tab_);
     ChromeWindowIdMap::iterator iter;
     for (iter = chrome_window_map_.begin(); iter != chrome_window_map_.end();
          iter++) {
@@ -163,6 +164,9 @@ DWORD ConveniencePlugin::Server_Thread(void* param) {
         case kCmdDBClickCloseTab:
           PostMessage(plugin->get_hwnd(), WM_CLOSE_CURRENT_TAB, 0, 0);
           break;
+        case kCmdPressEnterOpenNewTab:
+          PostMessage(plugin->get_hwnd(), WM_PRESS_ENTER_OPEN_NEW_TAB, 0, 0);
+          break;
         case kCmdKeyDown:
           PostMessage(plugin->get_hwnd(), WM_KEYDOWN, 
                       cmd.value.key_down.wparam, cmd.value.key_down.lparam);
@@ -205,6 +209,7 @@ bool ConveniencePlugin::close_last_tab_ = false;
 bool ConveniencePlugin::close_chrome_prompt_ = true;
 bool ConveniencePlugin::db_click_close_tab_ = true;
 bool ConveniencePlugin::enable_switch_tab_ = false;
+bool ConveniencePlugin::press_enter_open_new_tab_ = false;
 ChromeWindowIdMap ConveniencePlugin::chrome_window_map_;
 
 ConveniencePlugin::ConveniencePlugin(void) {
@@ -292,7 +297,6 @@ NPError ConveniencePlugin::UnInit(NPSavedData **save) {
 
 bool ConveniencePlugin::GetNPMessage(int index, TCHAR* msg, int msglen) {
   NPObject* window;
-  _tcscpy(msg, _T(""));
   NPN_GetValue(get_npp(), NPNVWindowNPObject, &window);
   NPIdentifier id;
   id = NPN_GetStringIdentifier("getNPMessage");
@@ -302,9 +306,10 @@ bool ConveniencePlugin::GetNPMessage(int index, TCHAR* msg, int msglen) {
     NPVariant param;
     INT32_TO_NPVARIANT(index, param);
     if (NPN_Invoke(get_npp(), window, id, &param, 1, &result)) {
-      if (MultiByteToWideChar(CP_UTF8, 0, 
-        NPVARIANT_TO_STRING(result).UTF8Characters, -1, msg, msglen)) {
-      }
+      utils::Utf8ToUnicode message(NPVARIANT_TO_STRING(result).UTF8Characters,
+                                   NPVARIANT_TO_STRING(result).UTF8Length);
+      _tcsncpy(msg, message, msglen);
+      msg[msglen - 1] = 0;
       NPN_ReleaseVariantValue(&result);
       return true;
     }
@@ -437,22 +442,24 @@ void ConveniencePlugin::ChromeWindowCreated(int windowid) {
   item.value.chrome_window.chrome_handle = NULL;
   VideoAloneScriptObject::WindowMap* window_list = 
       VideoAloneScriptObject::get_video_alone_list();
+
   HWND chrome_hwnd = FindWindowEx(NULL, NULL, kChromeClassName, NULL);
   char logs[256];
   while(chrome_hwnd) {
     BOOL visible = IsWindowVisible(chrome_hwnd);
     HWND hwnd = GetParent(chrome_hwnd);
-    sprintf(logs, "chrome_hwnd=%X,IsWindowVisible=%d,GetParent=%X", chrome_hwnd, 
-            visible, hwnd);
+    sprintf(logs, "chrome_hwnd=%X,IsWindowVisible=%d,GetParent=%X", 
+            chrome_hwnd, visible, hwnd);
     g_log.WriteLog("create", logs);
     if (GetWindowThreadProcessId(chrome_hwnd, NULL) == g_chrome_main_thread &&
-        hwnd == NULL && window_list->find(chrome_hwnd) == window_list->end()) {
-        item.value.chrome_window.chrome_handle = chrome_hwnd;
-        CmdMsgItem::CmdMsgValue::TabCount tabcount;
-        tabcount.windowid = windowid;
-        tabcount.tabcount = 1;
-        chrome_window_map_.insert(std::make_pair(chrome_hwnd, tabcount));
-        break;
+        hwnd == NULL && window_list->find(chrome_hwnd) == window_list->end() &&
+        visible && GetWindow(chrome_hwnd, GW_CHILD)) {
+      item.value.chrome_window.chrome_handle = chrome_hwnd;
+      CmdMsgItem::CmdMsgValue::TabCount tabcount;
+      tabcount.windowid = windowid;
+      tabcount.tabcount = 1;
+      chrome_window_map_.insert(std::make_pair(chrome_hwnd, tabcount));
+      break;
     }
     chrome_hwnd = FindWindowEx(NULL, chrome_hwnd, kChromeClassName, NULL);
   }
@@ -475,26 +482,37 @@ void ConveniencePlugin::EnableMouseSwitchTab(bool flag) {
   WriteToClient(item);
 }
 
+void ConveniencePlugin::PressEnterOpenNewTab(bool flag) {
+  CmdMsgItem item;
+  item.cmd = kCmdUpdatePressEnterOpenNewTab;
+  item.value.press_enter_open_new_tab = flag;
+  press_enter_open_new_tab_ = flag;
+  WriteToClient(item);
+}
+
+void ConveniencePlugin::ExistsPinnedTab(int windowid, bool pinned) {
+  CmdMsgItem item;
+  item.cmd = kCmdExistsPinnedTabs;
+  item.value.tabcount.windowid = windowid;
+  item.value.tabcount.pinnedtab = pinned;
+  WriteToClient(item);
+}
+
 void ConveniencePlugin::GetLocalMessage() {
   if (get_local_message_flag_)
     return;
 
-  GetNPMessage(MSG_BOSSKEY_DEFINED, g_local_message.msg_bosskey_defined,
-               sizeof(g_local_message.msg_bosskey_defined));
-  GetNPMessage(MSG_ALWAYS_ON_TOP, g_local_message.msg_always_on_top,
-               sizeof(g_local_message.msg_always_on_top));
-  GetNPMessage(MSG_CLOSECHROME_TITLE, g_local_message.msg_closechrome_title,
-               sizeof(g_local_message.msg_closechrome_title));
+  GetNPMessage(MSG_ALWAYS_ON_TOP, g_local_message.msg_always_on_top, 256);
+  GetNPMessage(MSG_CLOSECHROME_TITLE, g_local_message.msg_closechrome_title, 
+               256);
   GetNPMessage(MSG_CLOSECHROME_MESSAGE, g_local_message.msg_closechrome_message,
-               sizeof(g_local_message.msg_closechrome_message));
-  GetNPMessage(MSG_CLOSECHROME_OK, g_local_message.msg_closechrome_ok,
-               sizeof(g_local_message.msg_closechrome_ok));
+               256);
+  GetNPMessage(MSG_CLOSECHROME_OK, g_local_message.msg_closechrome_ok, 256);
   GetNPMessage(MSG_CLOSECHROME_CANCEL, g_local_message.msg_closechrome_cancel,
-               sizeof(g_local_message.msg_closechrome_cancel));
-  GetNPMessage(MSG_CLOSECHROME_NOALERT, g_local_message.msg_closechrome_noalert,
-               sizeof(g_local_message.msg_closechrome_noalert));
-  GetNPMessage(MSG_BOSSKEY_NOALERT,g_local_message.msg_bosskey_noalert,
-               sizeof(g_local_message.msg_bosskey_noalert));
+               256);
+  GetNPMessage(
+      MSG_CLOSECHROME_NOALERT, g_local_message.msg_closechrome_noalert, 256);
+
   WriteMessageToMemory();
   get_local_message_flag_ = true;
   CmdMsgItem item;
@@ -534,6 +552,9 @@ LRESULT ConveniencePlugin::WndProc(HWND hWnd, UINT Msg,
       break;
     case WM_CLOSE_CURRENT_TAB:
       pObject->InvokeJSMethod("closeCurrentTab");
+      break;
+    case WM_PRESS_ENTER_OPEN_NEW_TAB:
+      pObject->TriggerShortcuts(MOD_ALT, VK_RETURN);
       break;
     case WM_UPDATE_CLOSECHROME_PROMPT:
       pObject->UpdateCloseChromePromptFlag(wParam);

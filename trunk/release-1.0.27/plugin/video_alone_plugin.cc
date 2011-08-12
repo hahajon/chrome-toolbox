@@ -126,7 +126,6 @@ LRESULT VideoAlonePlugin::WndProc(HWND hWnd, UINT Msg,
       VideoAloneScriptObject::WindowMap::iterator item = 
           window_list->find(HWND(wParam));
       if (item != window_list->end()) {
-        window_list->erase(item);
         NPVariant params[3];
         INT32_TO_NPVARIANT(item->second.parent_window_id, params[0]);
         INT32_TO_NPVARIANT(item->second.window_id, params[1]);
@@ -140,6 +139,7 @@ LRESULT VideoAlonePlugin::WndProc(HWND hWnd, UINT Msg,
                    NPN_GetStringIdentifier("restore"), params, 3, &vRet);
         NPN_ReleaseVariantValue(&vRet);
         NPN_ReleaseVariantValue(&varObject);
+        window_list->erase(item);
       }
     }
     return 1;
