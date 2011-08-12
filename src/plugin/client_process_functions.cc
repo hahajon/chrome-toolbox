@@ -323,7 +323,7 @@ bool CheckVerticalTabsEnable(HWND chrome_hwnd) {
   bool enable_vertical_tabs = false;
   while (render_window) {
     RECT render_rect;
-    HWND hwnd = FindWindowEx(chrome_hwnd, render_window, 
+    HWND hwnd = FindWindowEx(render_window, NULL, 
                              kRenderClassName, NULL);
     if (!hwnd) {
       render_window = FindWindowEx(chrome_hwnd, render_window, 
@@ -333,10 +333,9 @@ bool CheckVerticalTabsEnable(HWND chrome_hwnd) {
     GetWindowRect(render_window, &render_rect);
     RECT chrome_rect = { 0 };
     GetWindowRect(chrome_hwnd, &chrome_rect);
-    if (render_rect.left - chrome_rect.left > 20) {
+    if (render_rect.left - chrome_rect.left > 20)
       enable_vertical_tabs = true;
-      break;
-    }
+    break;
   }
 
   return enable_vertical_tabs;
