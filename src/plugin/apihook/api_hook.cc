@@ -305,7 +305,8 @@ BOOL WINAPI ApiHook::CreateProcessA(LPCSTR lpApplicationName,
     g_log.WriteLog("Msg", logs);
     if (lpCommandLine != NULL && strstr(lpCommandLine, "--type=plugin") != 0 &&
         !strstr(lpCommandLine, "npaliedit.dll") &&
-        !strstr(lpCommandLine, "npqqedit.dll"))
+        !strstr(lpCommandLine, "npqqedit.dll") &&
+        !strstr(lpCommandLine, "npqqcert.dll"))
       InjectIntoProcess(lpProcessInformation->hProcess);
   }
   return ret;
@@ -332,7 +333,8 @@ BOOL WINAPI ApiHook::CreateProcessW(LPCWSTR lpApplicationName,
     g_log.WriteLog("Msg", logs);
     if (lpCommandLine != NULL && wcsstr(lpCommandLine, L"--type=plugin") != 0 &&
         !wcsstr(lpCommandLine, L"npaliedit.dll") &&
-        !wcsstr(lpCommandLine, L"npqqedit.dll"))
+        !wcsstr(lpCommandLine, L"npqqedit.dll") &&
+        !wcsstr(lpCommandLine, L"npqqcert.dll"))
       InjectIntoProcess(lpProcessInformation->hProcess);
   }
   return ret;
