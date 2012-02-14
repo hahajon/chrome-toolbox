@@ -225,9 +225,10 @@
       chrome.tabs.sendRequest(tab.id, {msg: 'checkForm'}, function(response) {
         if (response.msg == 'existForm') {
           $('btnSaveForm').className = 'menu';
-          $('btnSaveForm').addEventListener('click', function(){
-            chrome.tabs.executeScript(null,
-                {code: 'sendFormData("' + tab.url + '","' + tab.title + '")'});
+          $('btnSaveForm').addEventListener('click', function() {
+            chrome.tabs.executeScript(null, {
+                code: 'sendFormData("' + escape(tab.url) + '","' +
+                      escape(tab.title) + '")'});
             window.close();
           }, false);
         }
