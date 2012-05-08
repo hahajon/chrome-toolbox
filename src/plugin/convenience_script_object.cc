@@ -7,7 +7,7 @@
 
 extern Log g_log;
 extern HMODULE g_module;
-extern const TCHAR* kChromeClassName;
+extern TCHAR g_ChromeClassName[MAX_PATH];
 extern DWORD g_chrome_main_thread;
 extern LocalMessageItem g_local_message;
 
@@ -364,14 +364,14 @@ bool ConvenienceScriptObject::PressBossKey(const NPVariant *args,
   HWND chrome_hwnd;
   if (bosskey_state){
     bosskey_state = FALSE;
-    chrome_hwnd = FindWindowEx(NULL, NULL, kChromeClassName, NULL);
+    chrome_hwnd = FindWindowEx(NULL, NULL, g_ChromeClassName, NULL);
     while(chrome_hwnd) {
       if (IsWindowVisible(chrome_hwnd) && 
           GetWindowThreadProcessId(chrome_hwnd, NULL) == g_chrome_main_thread) {
         window_list.insert(window_list.begin(), chrome_hwnd);
         bosskey_state = TRUE;
       }
-      chrome_hwnd = FindWindowEx(NULL, chrome_hwnd, kChromeClassName, NULL);
+      chrome_hwnd = FindWindowEx(NULL, chrome_hwnd, g_ChromeClassName, NULL);
     }
     if (bosskey_state) {
       std::vector<HWND>::iterator iter;
@@ -388,13 +388,13 @@ bool ConvenienceScriptObject::PressBossKey(const NPVariant *args,
     window_list.clear();
   } else {
     bosskey_state = TRUE;
-    chrome_hwnd = FindWindowEx(NULL, NULL, kChromeClassName, NULL);
+    chrome_hwnd = FindWindowEx(NULL, NULL, g_ChromeClassName, NULL);
     while(chrome_hwnd) {
       if (IsWindowVisible(chrome_hwnd) && 
           GetWindowThreadProcessId(chrome_hwnd, NULL) == g_chrome_main_thread) {
         window_list.insert(window_list.begin(), chrome_hwnd);
       }
-      chrome_hwnd = FindWindowEx(NULL, chrome_hwnd, kChromeClassName,NULL);
+      chrome_hwnd = FindWindowEx(NULL, chrome_hwnd, g_ChromeClassName,NULL);
     }
     std::vector<HWND>::iterator iter;
     for (iter = window_list.begin(); iter != window_list.end(); iter++) {
@@ -408,7 +408,7 @@ bool ConvenienceScriptObject::PressBossKey(const NPVariant *args,
 bool ConvenienceScriptObject::HideCurrentChromeWindow(const NPVariant* args, 
                                                       uint32_t argCount, 
                                                       NPVariant* result) {
-  HWND chrome_hwnd = FindWindowEx(NULL, NULL, kChromeClassName, NULL);
+  HWND chrome_hwnd = FindWindowEx(NULL, NULL, g_ChromeClassName, NULL);
   while(chrome_hwnd) {
     if (IsWindowVisible(chrome_hwnd) && GetParent(chrome_hwnd) == NULL &&
         GetWindowThreadProcessId(chrome_hwnd, NULL) == g_chrome_main_thread) {
@@ -417,7 +417,7 @@ bool ConvenienceScriptObject::HideCurrentChromeWindow(const NPVariant* args,
         hidden_window_list_.push_back(chrome_hwnd);
       break;
     }
-    chrome_hwnd = FindWindowEx(NULL, chrome_hwnd, kChromeClassName, NULL);
+    chrome_hwnd = FindWindowEx(NULL, chrome_hwnd, g_ChromeClassName, NULL);
   }
 
   return true;

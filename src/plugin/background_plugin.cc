@@ -8,7 +8,7 @@
 #include "video_alone_script_object.h"
 
 extern Log g_log;
-extern const TCHAR* kChromeClassName;
+extern TCHAR g_ChromeClassName[MAX_PATH];
 extern DWORD g_chrome_main_thread;
 
 NPError BackgroundPlugin::Init(NPP instance, uint16_t mode, int16_t argc,
@@ -151,7 +151,7 @@ void BackgroundPlugin::SaveImageFile(const ImageData* image_data) {
   // get foreground chrome window.
   VideoAloneScriptObject::WindowMap* window_list = 
       VideoAloneScriptObject::get_video_alone_list();
-  HWND chrome_hwnd = FindWindowEx(NULL, NULL, kChromeClassName, NULL);
+  HWND chrome_hwnd = FindWindowEx(NULL, NULL, g_ChromeClassName, NULL);
   while(chrome_hwnd) {
     BOOL visible = IsWindowVisible(chrome_hwnd);
     HWND hwnd = GetParent(chrome_hwnd);
@@ -160,7 +160,7 @@ void BackgroundPlugin::SaveImageFile(const ImageData* image_data) {
       Ofn.hwndOwner = chrome_hwnd;
       break;
     }
-    chrome_hwnd = FindWindowEx(NULL, chrome_hwnd, kChromeClassName, NULL);
+    chrome_hwnd = FindWindowEx(NULL, chrome_hwnd, g_ChromeClassName, NULL);
   }
 
   if (GetSaveFileNameA(&Ofn)) {
