@@ -225,9 +225,10 @@
       chrome.tabs.sendRequest(tab.id, {msg: 'checkForm'}, function(response) {
         if (response.msg == 'existForm') {
           $('btnSaveForm').className = 'menu';
-          $('btnSaveForm').addEventListener('click', function(){
-            chrome.tabs.executeScript(null,
-                {code: 'sendFormData("' + tab.url + '","' + tab.title + '")'});
+          $('btnSaveForm').addEventListener('click', function() {
+            chrome.tabs.executeScript(null, {
+                code: 'sendFormData("' + escape(tab.url) + '","' +
+                      escape(tab.title) + '")'});
             window.close();
           }, false);
         }
@@ -282,6 +283,12 @@
       li.value = id;
       li.innerHTML = '<div class="left">' + name +
           '</div><div class="right">' + showKey + '</div>';
+      (function(virtualKey) {
+        li.addEventListener('click', function() {
+          bg.plugin.triggerChromeShortcuts(virtualKey);
+          window.close();
+        }, false);
+      })(virtualKey);
       ul.appendChild(li);
     }
     $('quicklyMenu').appendChild(ul);

@@ -118,10 +118,10 @@ var fillTextarea = function(id, name, value) {
   }
 }
 
-function sendFormData(url, title) {
+function sendFormData(escapedUrl, escapedTitle) {
   var formInfo = formDataCollection();
   chrome.extension.sendRequest({msg: 'saveForm',formInfo: formInfo,
-     url: url, title: title});
+     url: unescape(escapedUrl), title: unescape(escapedTitle)});
 }
 
 var fillForm = function(formInfo) {
