@@ -163,6 +163,9 @@ var floatingBar = {
   onMouseMove: function(event) {
     var curElement = event.target;
     var curElementName = curElement.tagName;
+    if ((curElementName == 'OBJECT' || curElementName == 'EMBED') &&
+        curElement.type == 'application/pdf')
+      return;
     var checkedElements =
         floatingBar.checkCurrentElement(floatingBarClass, curElementName);
 

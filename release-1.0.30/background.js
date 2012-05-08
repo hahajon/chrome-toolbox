@@ -224,7 +224,7 @@
     chrome.tabs.getSelected(null, function(tab) {
       if (operate == 'saveForm') {
         chrome.tabs.executeScript(null,
-          {code: 'sendFormData("' + tab.url + '","' + tab.title + '")'});
+          {code: 'sendFormData("' + escape(tab.url) + '","' + escape(tab.title) + '")'});
       } else if (operate == 'fillForm'){
         fillForm.selectByUrl(tab.url, function(tx, results) {
           if (results.rows.length > 0) {
