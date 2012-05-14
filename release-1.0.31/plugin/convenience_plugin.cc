@@ -19,7 +19,7 @@ extern HMODULE g_module;
 
 LocalMessageItem g_local_message;
 DWORD g_chrome_main_thread = 0;
-const TCHAR* kChromeClassName = _T("Chrome_WidgetWin_0");
+TCHAR g_ChromeClassName[MAX_PATH] = _T("");
 
 namespace {
 
@@ -27,20 +27,19 @@ const TCHAR* kFileMappingName = _T("Convenience_File");
 const TCHAR* kMsgFileMappingName = _T("Convenience_Message_File");
 const TCHAR* kPipeName = _T("\\\\.\\pipe\\convenience");
 
-void WritePluginProcessId() {
+void WriteBaseInfomation(const TCHAR* appname, const TCHAR* cfgname, 
+                         const TCHAR* value) {
   TCHAR current_path[MAX_PATH];
   GetCurrentDirectory(MAX_PATH, current_path);
   TCHAR file_name[MAX_PATH];
   _stprintf(file_name, _T("%s\\convenience.ini"), current_path);
-  TCHAR value[32];
-  _stprintf(value, _T("%ld"), GetCurrentProcessId());
-  WritePrivateProfileString(_T("CFG"), _T("PID"), value, file_name);
+  WritePrivateProfileString(appname, cfgname, value, file_name);
 }
 
 void WriteMessageToMemory() {
   TCHAR filemap_name[MAX_PATH];
   _stprintf(filemap_name, _T("%s_%ld"), kMsgFileMappingName, 
-            ReadPluginProcessId());
+            ReadBaseInfomation(_T("CFG"), _T("PID")));
 
   HANDLE memory_file_handle = CreateFileMapping(
       NULL, NULL, PAGE_READWRITE|SEC_COMMIT,
@@ -53,6 +52,19 @@ void WriteMessageToMemory() {
       UnmapViewOfFile(p);
     }
   }
+}
+
+int GetChromeMajorVersion(std::string& user_agent) {
+  int index = user_agent.find("Chrome/");
+  if (index != std::string::npos) {
+    int last_index = user_agent.find('.', index);
+    if (last_index != std::string::npos) {
+      std::string majorversion = user_agent.substr(index + 7, 
+        last_index - index - 7);
+      return atoi(majorversion.c_str());
+    }
+  }
+  return 0;
 }
 
 }
@@ -70,7 +82,8 @@ DWORD ConveniencePlugin::Server_Thread(void* param) {
 
   ConveniencePlugin* plugin = (ConveniencePlugin*)param;
   TCHAR pipe_name[MAX_PATH];
-  _stprintf(pipe_name, _T("%s_%ld"), kPipeName, ReadPluginProcessId());
+  _stprintf(pipe_name, _T("%s_%ld"), kPipeName, 
+            ReadBaseInfomation(_T("CFG"), _T("PID")));
 
   plugin->server_pipe_handle_ = CreateNamedPipe(
       pipe_name, PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
@@ -229,7 +242,13 @@ NPError ConveniencePlugin::Init(NPP instance, uint16_t mode, int16_t argc,
   scriptobject_ = NULL;
   instance->pdata = this;
   g_log.WriteLog("Msg", "ConveniencePlugin Init");
-  WritePluginProcessId();
+  TCHAR info[MAX_PATH];
+  _stprintf(info, _T("%d"), GetCurrentProcessId());
+  WriteBaseInfomation(_T("CFG"), _T("PID"), info);
+  std::string user_agent = NPN_UserAgent(instance);
+  int chrome_version = GetChromeMajorVersion(user_agent);
+  _stprintf(info, _T("%d"), chrome_version);
+  WriteBaseInfomation(_T("CFG"), _T("MAJORVERSION"), info);
 
   server_thread_handle_ = CreateThread(NULL, 0, Server_Thread, this, 0, NULL);
   TCHAR exe_name[MAX_PATH];
@@ -248,7 +267,13 @@ NPError ConveniencePlugin::Init(NPP instance, uint16_t mode, int16_t argc,
   }
   if (hprocess != INVALID_HANDLE_VALUE)
     CloseHandle(hprocess);
-  HWND chrome_hwnd = FindWindowEx(NULL, NULL, kChromeClassName, NULL);
+  if (chrome_version >= 20)
+    _tcscpy(g_ChromeClassName, _T("Chrome_WidgetWin_1"));
+  else
+    _tcscpy(g_ChromeClassName, _T("Chrome_WidgetWin_0"));
+  WriteBaseInfomation(_T("CFG"), _T("CLASSNAME"), g_ChromeClassName);
+
+  HWND chrome_hwnd = FindWindowEx(NULL, NULL, g_ChromeClassName, NULL);
   while (chrome_hwnd) {
     DWORD process_id;
     g_chrome_main_thread = GetWindowThreadProcessId(chrome_hwnd, &process_id);
@@ -266,9 +291,10 @@ NPError ConveniencePlugin::Init(NPP instance, uint16_t mode, int16_t argc,
         break;
       }
     } else {
-      chrome_hwnd = FindWindowEx(NULL, chrome_hwnd, kChromeClassName, NULL);
+      chrome_hwnd = FindWindowEx(NULL, chrome_hwnd, g_ChromeClassName, NULL);
     }
   }
+  
   return PluginBase::Init(instance, mode, argc, argn, argv, saved);
 }
 
@@ -364,7 +390,8 @@ void ConveniencePlugin::SetShortcutsToMemory(ShortCutItem* list, int count) {
 
   int num = sizeof(ShortCutItem)*count + sizeof(int);
   TCHAR filemap_name[MAX_PATH];
-  _stprintf(filemap_name, _T("%s_%ld"), kFileMappingName, ReadPluginProcessId());
+  _stprintf(filemap_name, _T("%s_%ld"), kFileMappingName, 
+            ReadBaseInfomation(_T("CFG"), _T("PID")));
 
   memory_file_handle_ = CreateFileMapping(NULL, NULL,
                                           PAGE_READWRITE|SEC_COMMIT,
@@ -443,7 +470,7 @@ void ConveniencePlugin::ChromeWindowCreated(int windowid) {
   VideoAloneScriptObject::WindowMap* window_list = 
       VideoAloneScriptObject::get_video_alone_list();
 
-  HWND chrome_hwnd = FindWindowEx(NULL, NULL, kChromeClassName, NULL);
+  HWND chrome_hwnd = FindWindowEx(NULL, NULL, g_ChromeClassName, NULL);
   char logs[256];
   while(chrome_hwnd) {
     BOOL visible = IsWindowVisible(chrome_hwnd);
@@ -461,7 +488,7 @@ void ConveniencePlugin::ChromeWindowCreated(int windowid) {
       chrome_window_map_.insert(std::make_pair(chrome_hwnd, tabcount));
       break;
     }
-    chrome_hwnd = FindWindowEx(NULL, chrome_hwnd, kChromeClassName, NULL);
+    chrome_hwnd = FindWindowEx(NULL, chrome_hwnd, g_ChromeClassName, NULL);
   }
 
   WriteToClient(item);

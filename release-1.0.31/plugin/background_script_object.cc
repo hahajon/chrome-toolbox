@@ -9,6 +9,7 @@
 
 extern HMODULE g_module;
 extern Log g_log;
+extern TCHAR g_ChromeClassName[MAX_PATH];
 
 namespace {
 
@@ -51,7 +52,7 @@ void WINAPI TimerProc(HWND hWnd, UINT nMsg, UINT nIDEvent, DWORD dwTime) {
   if (!GetClassName(g_WallPapperWindow, class_name, 256))
     return;
 
-  if (_tcscmp(class_name, _T("Chrome_WidgetWin_0")) == 0) {
+  if (_tcscmp(class_name, g_ChromeClassName) == 0) {
     HWND hChildWnd = FindWindowEx(
         g_WallPapperWindow, NULL, _T("Chrome_AutocompleteEditView"), NULL);
     if (hChildWnd)
