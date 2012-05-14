@@ -245,7 +245,7 @@ NPError ConveniencePlugin::Init(NPP instance, uint16_t mode, int16_t argc,
   TCHAR info[MAX_PATH];
   _stprintf(info, _T("%d"), GetCurrentProcessId());
   WriteBaseInfomation(_T("CFG"), _T("PID"), info);
-  std::string user_agent = NPN_UserAgent(get_npp());
+  std::string user_agent = NPN_UserAgent(instance);
   int chrome_version = GetChromeMajorVersion(user_agent);
   _stprintf(info, _T("%d"), chrome_version);
   WriteBaseInfomation(_T("CFG"), _T("MAJORVERSION"), info);
