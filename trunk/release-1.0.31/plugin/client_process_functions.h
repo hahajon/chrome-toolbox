@@ -20,8 +20,10 @@ LRESULT CALLBACK CallWndProcHook(int code, WPARAM wParam, LPARAM lParam);
 // Send command to server.
 void WriteToServer(const CmdMsgItem& item);
 
-// Read plugin process id from ini file.
-int ReadPluginProcessId();
+// Read some infomation from config file.
+int ReadBaseInfomation(const TCHAR* appname, const TCHAR* cfgname);
+void ReadBaseInfomation(const TCHAR* appname, const TCHAR* cfgname, 
+                        TCHAR* buffer, unsigned int len);
 
 // When dll terminate, terminate the client thread.
 void ExitClientThread();
