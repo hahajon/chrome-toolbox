@@ -26,6 +26,7 @@ namespace {
 const TCHAR* kFileMappingName = _T("Convenience_File");
 const TCHAR* kMsgFileMappingName = _T("Convenience_Message_File");
 const TCHAR* kPipeName = _T("\\\\.\\pipe\\convenience");
+const int kClassNameChangedChromeVersion = 19;
 
 void WriteBaseInfomation(const TCHAR* appname, const TCHAR* cfgname, 
                          const TCHAR* value) {
@@ -267,7 +268,7 @@ NPError ConveniencePlugin::Init(NPP instance, uint16_t mode, int16_t argc,
   }
   if (hprocess != INVALID_HANDLE_VALUE)
     CloseHandle(hprocess);
-  if (chrome_version >= 20)
+  if (chrome_version >= kClassNameChangedChromeVersion)
     _tcscpy(g_ChromeClassName, _T("Chrome_WidgetWin_1"));
   else
     _tcscpy(g_ChromeClassName, _T("Chrome_WidgetWin_0"));
